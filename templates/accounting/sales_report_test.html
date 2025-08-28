@@ -1,0 +1,46 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}Test Reporte{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Test Reporte</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'apps.accounting:sales_report' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="report_date">Fecha:</label>
+                            <input type="date" name="report_date" class="form-control" value="{{ date_now }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subsidiary">Sucursal:</label>
+                            <select name="subsidiary" class="form-control">
+                                <option value="0">Todas</option>
+                                {% for subsidiary in subsidiary_set %}
+                                    <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cash_account">Cuenta:</label>
+                            <select name="cash_account" class="form-control">
+                                <option value="0">Todas</option>
+                                {% for cash in cash_accounts %}
+                                    <option value="{{ cash.id }}">{{ cash.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

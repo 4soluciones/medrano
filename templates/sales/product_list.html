@@ -1,0 +1,1159 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}Gestión de Productos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .card {
+        box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
+        margin-bottom: 1rem;
+        border-radius: 1.5rem !important;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background-color: rgba(0, 0, 0, .03);
+        border-bottom: 1px solid rgba(0, 0, 0, .125);
+    }
+
+    .btn {
+        border-radius: 1rem !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-sm {
+        border-radius: 0.75rem !important;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .form-control {
+        border-radius: 1rem !important;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .form-control-sm {
+        border-radius: 0.75rem !important;
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+        height: auto;
+        border: 1px solid #ced4da;
+    }
+
+    .form-control-sm:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    /* Estilos mejorados para todos los selects */
+    select.form-control,
+    select.form-control-sm {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        border-radius: 1rem !important;
+        cursor: pointer;
+    }
+
+    /* Estilos específicos para selects pequeños */
+    select.form-control-sm {
+        background-position: right 0.5rem center;
+        background-size: 1.2em 1.2em;
+        padding-right: 2rem;
+        border-radius: 0.75rem !important;
+    }
+
+    /* Forzar estilos en todos los selects */
+    select {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 0.75rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1.5em 1.5em !important;
+        padding-right: 2.5rem !important;
+        border-radius: 1rem !important;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+        background-color: rgba(0, 0, 0, .03);
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        display: block;
+    }
+
+    .form-label-sm {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .modal-xl {
+        max-width: 1200px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid rgba(0, 0, 0, .125);
+    }
+
+    .modal-footer {
+        border-top: 1px solid rgba(0, 0, 0, .125);
+    }
+
+    .badge {
+        font-size: 0.75em;
+        padding: 0.375em 0.75em;
+        border-radius: 1rem;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .badge-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .badge-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .badge-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-group .btn {
+        border-radius: 0 !important;
+    }
+
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.75rem !important;
+        border-bottom-left-radius: 0.75rem !important;
+    }
+
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.75rem !important;
+        border-bottom-right-radius: 0.75rem !important;
+    }
+
+    .compact-filters {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 1.5rem !important;
+    }
+
+    .compact-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 1.5rem 1.5rem 0 0 !important;
+    }
+
+    .compact-body {
+        background: white;
+        border-radius: 0 0 1.5rem 1.5rem !important;
+    }
+
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 1rem;
+    }
+
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .modal-xl {
+            max-width: 95%;
+            margin: 1.75rem auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .col-md-3 {
+            margin-bottom: 1rem;
+        }
+
+        .modal-xl {
+            max-width: 98%;
+            margin: 0.5rem auto;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .btn-group .btn {
+            border-radius: 0.75rem !important;
+            margin-bottom: 0.25rem;
+        }
+        
+        .btn-group .btn:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .modal-dialog {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Animaciones */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Estilos para el scroll de productos */
+    #products-grid {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    #products-grid .table-responsive {
+        border: none;
+        box-shadow: none;
+    }
+
+    #products-grid .card {
+        border: none;
+        box-shadow: none;
+    }
+
+    #products-grid .card-body {
+        padding: 0;
+    }
+
+    /* Estilos para los totales */
+    .table-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
+    }
+
+    .table-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+    }
+
+    /* Estilos para el placeholder */
+    .form-control::placeholder {
+        color: #6c757d;
+        opacity: 0.7;
+        font-style: italic;
+    }
+
+    /* Estilos adicionales para bordes redondeados */
+    .modal-content {
+        border-radius: 1.5rem !important;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        border-radius: 1.5rem 1.5rem 0 0 !important;
+    }
+
+    .modal-footer {
+        border-radius: 0 0 1.5rem 1.5rem !important;
+    }
+
+    .table {
+        border-radius: 1rem !important;
+        overflow: hidden;
+    }
+
+    .table th:first-child {
+        border-top-left-radius: 1rem;
+    }
+
+    .table th:last-child {
+        border-top-right-radius: 1rem;
+    }
+
+    .table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 1rem;
+    }
+
+    .table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 1rem;
+    }
+
+    /* Forzar estilos en todos los elementos */
+    *[class*="btn"] {
+        border-radius: 1rem !important;
+    }
+
+    *[class*="form-control"] {
+        border-radius: 1rem !important;
+    }
+
+    *[class*="card"] {
+        border-radius: 1.5rem !important;
+    }
+
+    /* Estilos específicos para elementos de formulario */
+    input[type="text"], 
+    input[type="number"], 
+    input[type="email"], 
+    input[type="password"],
+    textarea,
+    select {
+        border-radius: 1rem !important;
+    }
+
+    /* Asegurar que los estilos se apliquen inmediatamente */
+    .form-control-sm {
+        border-radius: 0.75rem !important;
+    }
+
+    .btn-sm {
+        border-radius: 0.75rem !important;
+    }
+    
+    /* Estilos adicionales para asegurar que los selects se vean correctamente */
+    select {
+        border-radius: 1rem !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 0.75rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1.5em 1.5em !important;
+        padding-right: 2.5rem !important;
+        cursor: pointer !important;
+    }
+    
+    /* Estilos específicos para selects pequeños */
+    select.form-control-sm {
+        border-radius: 0.75rem !important;
+        background-position: right 0.5rem center !important;
+        background-size: 1.2em 1.2em !important;
+        padding-right: 2rem !important;
+    }
+    
+    /* Forzar estilos en todos los navegadores */
+    * {
+        box-sizing: border-box;
+    }
+    
+    /* Estilos específicos para los filtros de la página de productos */
+    #filterCategory,
+    #filterType,
+    #filterStatus {
+        border-radius: 0.75rem !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 0.5rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1.2em 1.2em !important;
+        padding-right: 2rem !important;
+        cursor: pointer !important;
+        border: 1px solid #ced4da !important;
+        background-color: white !important;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block body %}
+<div class="container-fluid pt-2 roboto-condensed-regular">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h4 class="m-0 text-dark">
+                        <i class="fas fa-boxes mr-2"></i>Gestión de Productos
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-cube mr-1"></i>
+                            <span id="products-count">Mostrando todos los productos</span>
+                        </small>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <!-- Filtros de búsqueda -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-secondary card-outline compact-filters">
+                        <div class="card-header compact-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-search mr-2"></i>Filtros de Búsqueda
+                                    </h6>
+                                    <button type="button" class="btn btn-success ml-3"
+                                            onclick="openProductModal()">
+                                        <i class="fas fa-plus mr-1"></i>Nuevo Producto
+                                    </button>
+                                    <button type="button" class="btn btn-info ml-2"
+                                            onclick="openCategoryModal()">
+                                        <i class="fas fa-layer-group mr-1"></i>Nueva Categoría
+                                    </button>
+                                    <button type="button" class="btn btn-warning ml-2"
+                                            onclick="openUnitModal()">
+                                        <i class="fas fa-ruler mr-1"></i>Nueva Unidad
+                                    </button>
+                                </div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            id="toggle-filters" title="Colapsar/Expandir filtros">
+                                        <i class="fas fa-chevron-up" id="toggle-icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body compact-body">
+                            <!-- Mensaje informativo compacto -->
+                            <div class="alert alert-info alert-sm mb-2" role="alert">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <small><strong>Use los filtros para buscar productos específicos por nombre, código, categoría o tipo.</strong></small>
+                            </div>
+
+                            <form id="search-form">
+                                <div class="row g-2">
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-1">
+                                            <label for="searchProduct" class="form-label-sm">Buscar Producto</label>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                   id="searchProduct" name="search" 
+                                                   placeholder="Nombre o código del producto">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-1">
+                                            <label for="filterCategory" class="form-label-sm">Categoría</label>
+                                            <select class="form-control form-control-sm" id="filterCategory" name="category">
+                                                <option value="">Todas las categorías</option>
+                                                {% for category in category_set %}
+                                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-1">
+                                            <label for="filterType" class="form-label-sm">Tipo</label>
+                                            <select class="form-control form-control-sm" id="filterType" name="type">
+                                                <option value="">Todos los tipos</option>
+                                                <option value="P">PRODUCTO</option>
+                                                <option value="S">SERVICIO</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-1">
+                                            <label for="filterStatus" class="form-label-sm">Estado</label>
+                                            <select class="form-control form-control-sm" id="filterStatus" name="status">
+                                                <option value="">Todos los estados</option>
+                                                <option value="1">Habilitado</option>
+                                                <option value="0">Deshabilitado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12 text-center">
+                                        <button type="submit" class="btn btn-primary btn-sm mr-2">
+                                            <i class="fas fa-search mr-1"></i>Buscar
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="clear-filters">
+                                            <i class="fas fa-times mr-1"></i>Limpiar
+                                        </button>
+                                        <button type="button" class="btn btn-outline-dark btn-sm ml-2" onclick="exportProducts()">
+                                            <i class="fas fa-download mr-1"></i>Exportar
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-list mr-2"></i>Listado de Productos
+                                    <small class="text-muted ml-2" id="products-count">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <span id="products-count-text">{{ product_set|length }} productos</span>
+                                    </small>
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                            onclick="loadProducts()" title="Actualizar listado">
+                                        <i class="fas fa-refresh"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="products-grid" class="w-100">
+                                {% if product_set %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="productsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" onclick="sortTable(0)">ID <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(1)">CÓDIGO <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(2)">DESCRIPCIÓN <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(3)">TIPO <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(4)">CATEGORÍA <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(5)">PRECIO VENTA <i class="fas fa-sort"></i></th>
+{#                                                    <th scope="col" onclick="sortTable(6)">PRECIO COMPRA <i class="fas fa-sort"></i></th>#}
+                                                    <th scope="col" onclick="sortTable(6)">UNIDAD <i class="fas fa-sort"></i></th>
+                                                    <th scope="col" onclick="sortTable(7)">ESTADO <i class="fas fa-sort"></i></th>
+                                                    <th scope="col">ACCIONES</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product in product_set %}
+                                                <tr class="product-row" data-category="{{ product.product_category.id }}" data-type="{{ product.type_product }}">
+                                                    <td class="product-id-cell">#{{ product.id }}</td>
+                                                    <td class="product-code-cell">{{ product.code|default:"-" }}</td>
+                                                    <td class="product-name-cell">{{ product.name }}</td>
+                                                    <td>
+                                                        <span class="badge {% if product.type_product == 'P' %}badge-success{% else %}badge-info{% endif %}">
+                                                            {{ product.get_type_product_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="category-cell">{{ product.product_category.name }}</td>
+                                                    <td class="price-cell price-sale">
+                                                        {% for detail in product.productdetail_set.all %}
+                                                            {% if detail.is_enabled %}
+                                                                S/ {{ detail.price_sale|floatformat:2 }}
+                                                            {% endif %}
+                                                        {% empty %}
+                                                            -
+                                                        {% endfor %}
+                                                    </td>
+{#                                                    <td class="price-cell price-purchase">#}
+{#                                                        {% for detail in product.productdetail_set.all %}#}
+{#                                                            {% if detail.is_enabled %}#}
+{#                                                                S/ {{ detail.price_purchase|floatformat:2 }}#}
+{#                                                            {% endif %}#}
+{#                                                        {% empty %}#}
+{#                                                            -#}
+{#                                                        {% endfor %}#}
+{#                                                    </td>#}
+                                                    <td class="unit-cell">
+                                                        {% for detail in product.productdetail_set.all %}
+                                                            {% if detail.is_enabled %}
+                                                                {{ detail.unit.name }}
+                                                            {% endif %}
+                                                        {% empty %}
+                                                            -
+                                                        {% endfor %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge {% if product.is_enabled %}badge-success{% else %}badge-danger{% endif %}">
+                                                            {% if product.is_enabled %}Habilitado{% else %}Deshabilitado{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td class="actions-cell">
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <button type="button" class="btn btn-outline-primary" onclick="editProduct({{ product.id }})" 
+                                                                    title="Editar Producto">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-info" onclick="viewProduct({{ product.id }})" 
+                                                                    title="Ver Detalles">
+                                                                <i class="fas fa-eye"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-{% if product.is_enabled %}warning{% else %}success{% endif %}" 
+                                                                    onclick="toggleProductStatus({{ product.id }}, {{ product.is_enabled|yesno:'false,true' }})" 
+                                                                    title="{% if product.is_enabled %}Deshabilitar{% else %}Habilitar{% endif %}">
+                                                                <i class="fas fa-{% if product.is_enabled %}ban{% else %}check{% endif %}"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No hay productos registrados</h5>
+                                        <p class="text-muted">Crea tu primer producto para comenzar a gestionar tu inventario</p>
+                                        <button type="button" class="btn btn-primary" onclick="openProductModal()">
+                                            <i class="fas fa-plus mr-2"></i>Crear Producto
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear/editar producto -->
+<div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="productModalLabel">
+                    <i class="fas fa-plus-circle mr-2"></i>Crear Producto
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="productModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear categoría -->
+<div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="categoryModalLabel">
+                    <i class="fas fa-layer-group mr-2"></i>Crear Nueva Categoría
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="categoryModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear unidad -->
+<div class="modal fade" id="unitModal" tabindex="-1" role="dialog" aria-labelledby="unitModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="unitModalLabel">
+                    <i class="fas fa-ruler mr-2"></i>Crear Nueva Unidad
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="unitModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ver producto -->
+<div class="modal fade" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewProductModalLabel">
+                    <i class="fas fa-eye mr-2"></i>Detalles del Producto
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="viewProductModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script>
+// Función para aplicar estilos redondeados
+function applyRoundedStyles() {
+    // Aplicar estilos a todos los botones
+    $('.btn').each(function() {
+        $(this).css('border-radius', '1rem');
+    });
+    
+    // Aplicar estilos a todos los formularios
+    $('.form-control').each(function() {
+        $(this).css('border-radius', '1rem');
+    });
+    
+    // Aplicar estilos específicos a selects
+    $('select').each(function() {
+        $(this).css({
+            'border-radius': '1rem',
+            'appearance': 'none',
+            '-webkit-appearance': 'none',
+            '-moz-appearance': 'none',
+            'background-image': 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'m6 8 4 4 4-4\'/%3e%3c/svg%3e")',
+            'background-position': 'right 0.75rem center',
+            'background-repeat': 'no-repeat',
+            'background-size': '1.5em 1.5em',
+            'padding-right': '2.5rem',
+            'cursor': 'pointer'
+        });
+    });
+    
+    // Aplicar estilos a elementos pequeños
+    $('.btn-sm').css('border-radius', '0.75rem');
+    $('.form-control-sm').css('border-radius', '0.75rem');
+    
+    // Aplicar estilos a cards
+    $('.card').css('border-radius', '1.5rem');
+    
+    // Aplicar estilos a modales
+    $('.modal-content').css('border-radius', '1.5rem');
+}
+
+// Aplicar estilos inmediatamente si jQuery ya está disponible
+if (typeof $ !== 'undefined') {
+    applyRoundedStyles();
+}
+
+$(document).ready(function() {
+    // Aplicar estilos al cargar
+    applyRoundedStyles();
+    
+    // Aplicar estilos también cuando se cargan elementos dinámicamente
+    $(document).on('DOMNodeInserted', function() {
+        setTimeout(function() {
+            applyRoundedStyles();
+        }, 50);
+    });
+
+    // Filtros personalizados sin DataTables
+    $('#searchProduct').on('keyup', function() {
+        filterProducts();
+    });
+
+    $('#filterCategory').on('change', function() {
+        filterProducts();
+    });
+
+    $('#filterType').on('change', function() {
+        filterProducts();
+    });
+
+    $('#filterStatus').on('change', function() {
+        filterProducts();
+    });
+
+    // Toggle de filtros
+    $('#toggle-filters').on('click', function() {
+        $('.compact-body').slideToggle();
+        var icon = $('#toggle-icon');
+        if (icon.hasClass('fa-chevron-up')) {
+            icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        } else {
+            icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        }
+    });
+
+    // Limpiar filtros
+    $('#clear-filters').on('click', function() {
+        $('#search-form')[0].reset();
+        filterProducts();
+    });
+
+    // Formulario de búsqueda
+    $('#search-form').on('submit', function(e) {
+        e.preventDefault();
+        filterProducts();
+    });
+});
+
+// Función para filtrar productos
+function filterProducts() {
+    var searchTerm = $('#searchProduct').val().toLowerCase();
+    var categoryFilter = $('#filterCategory').val();
+    var typeFilter = $('#filterType').val();
+    var statusFilter = $('#filterStatus').val();
+    
+    $('.product-row').each(function() {
+        var $row = $(this);
+        var productName = $row.find('.product-name-cell').text().toLowerCase();
+        var productCode = $row.find('.product-code-cell').text().toLowerCase();
+        var category = $row.data('category').toString();
+        var type = $row.data('type');
+        var status = $row.find('.badge').text().toLowerCase();
+        
+        var matchesSearch = productName.includes(searchTerm) || productCode.includes(searchTerm);
+        var matchesCategory = !categoryFilter || category === categoryFilter;
+        var matchesType = !typeFilter || type === typeFilter;
+        var matchesStatus = !statusFilter || 
+            (statusFilter === '1' && status.includes('habilitado')) ||
+            (statusFilter === '0' && status.includes('deshabilitado'));
+        
+        if (matchesSearch && matchesCategory && matchesType && matchesStatus) {
+            $row.show();
+        } else {
+            $row.hide();
+        }
+    });
+
+    // Actualizar contador
+    var visibleCount = $('.product-row:visible').length;
+    $('#products-count-text').text(visibleCount + ' productos');
+}
+
+// Función para ordenar tabla
+function sortTable(columnIndex) {
+    var table = document.getElementById('productsTable');
+    var tbody = table.getElementsByTagName('tbody')[0];
+    var rows = Array.from(tbody.getElementsByTagName('tr'));
+    
+    // Cambiar dirección de ordenamiento
+    var currentDirection = table.getAttribute('data-sort-direction') === 'asc' ? 'desc' : 'asc';
+    table.setAttribute('data-sort-direction', currentDirection);
+    
+    // Ordenar filas
+    rows.sort(function(a, b) {
+        var aValue = a.cells[columnIndex].textContent.trim();
+        var bValue = b.cells[columnIndex].textContent.trim();
+        
+        // Convertir a número si es posible
+        var aNum = parseFloat(aValue.replace(/[^\d.-]/g, ''));
+        var bNum = parseFloat(bValue.replace(/[^\d.-]/g, ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return currentDirection === 'asc' ? aNum - bNum : bNum - aNum;
+        } else {
+            if (currentDirection === 'asc') {
+                return aValue.localeCompare(bValue);
+            } else {
+                return bValue.localeCompare(aValue);
+            }
+        }
+    });
+    
+    // Reordenar filas en la tabla
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+    
+    // Actualizar iconos de ordenamiento
+    updateSortIcons(columnIndex, currentDirection);
+}
+
+// Función para actualizar iconos de ordenamiento
+function updateSortIcons(columnIndex, direction) {
+    var headers = document.querySelectorAll('#productsTable thead th');
+    headers.forEach(function(header, index) {
+        var icon = header.querySelector('i');
+        if (icon) {
+            if (index === columnIndex) {
+                icon.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            } else {
+                icon.className = 'fas fa-sort';
+            }
+        }
+    });
+}
+
+// Función para abrir modal de producto
+function openProductModal(productId = null) {
+    var url = productId ? 
+        `{% url 'apps.sales:modal_product_update' %}?pk=${productId}` : 
+        "{% url 'apps.sales:modal_product_create' %}";
+    
+    $.get(url, function(data) {
+        $('#productModalBody').html(data.form);
+        $('#productModalLabel').html(productId ? 
+            '<i class="fas fa-edit mr-2"></i>Editar Producto' : 
+            '<i class="fas fa-plus-circle mr-2"></i>Crear Producto');
+        $('#productModal').modal('show');
+    });
+}
+
+// Función para abrir modal de categoría
+function openCategoryModal() {
+    $.get("{% url 'apps.sales:modal_category_create' %}", function(data) {
+        $('#categoryModalBody').html(data.form);
+        $('#categoryModal').modal('show');
+    });
+}
+
+// Función para abrir modal de unidad
+function openUnitModal() {
+    $.get("{% url 'apps.sales:modal_unit_create' %}", function(data) {
+        $('#unitModalBody').html(data.form);
+        $('#unitModal').modal('show');
+    });
+}
+
+// Función para editar producto
+function editProduct(productId) {
+    openProductModal(productId);
+}
+
+// Función para ver producto
+function viewProduct(productId) {
+    $.get("{% url 'apps.sales:get_product_data' %}", {product_id: productId}, function(data) {
+        if (data.success) {
+            var product = data.product;
+            var html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>Información General
+                        </h6>
+                        <table class="table table-borderless">
+                            <tr><td class="font-weight-bold">ID:</td><td>${product.id}</td></tr>
+                            <tr><td class="font-weight-bold">Nombre:</td><td>${product.name}</td></tr>
+                            <tr><td class="font-weight-bold">Código:</td><td>${product.code || '-'}</td></tr>
+                            <tr><td class="font-weight-bold">Tipo:</td><td>${product.type}</td></tr>
+                            <tr><td class="font-weight-bold">Categoría:</td><td>${product.category}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success border-bottom pb-2 mb-3">
+                            <i class="fas fa-dollar-sign mr-2"></i>Detalles de Precios
+                        </h6>
+                        <table class="table table-borderless">
+                            <tr><td class="font-weight-bold">Precio Venta:</td><td class="text-success">S/ ${product.price_sale.toFixed(2)}</td></tr>
+                            <tr><td class="font-weight-bold">Precio Compra:</td><td class="text-info">S/ ${product.price_purchase.toFixed(2)}</td></tr>
+                            <tr><td class="font-weight-bold">Unidad:</td><td>${product.unit || '-'}</td></tr>
+                            <tr><td class="font-weight-bold">Stock Mínimo:</td><td>${product.stock_min}</td></tr>
+                            <tr><td class="font-weight-bold">Stock Máximo:</td><td>${product.stock_max}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            $('#viewProductModalBody').html(html);
+            $('#viewProductModal').modal('show');
+        } else {
+            toastr.error(data.message);
+        }
+    });
+}
+
+// Función para exportar productos
+function exportProducts() {
+    toastr.info('Función de exportación en desarrollo');
+}
+
+// Función para cambiar estado del producto
+function toggleProductStatus(productId, newStatus) {
+    var statusText = newStatus ? 'habilitar' : 'deshabilitar';
+    if (confirm(`¿Está seguro que desea ${statusText} este producto?`)) {
+        // Aquí implementarías la lógica para cambiar el estado
+        toastr.info('Función de cambio de estado en desarrollo');
+    }
+}
+
+// Función para cargar productos
+function loadProducts() {
+    location.reload();
+}
+
+// Función para guardar producto
+function saveProduct() {
+    var formData = new FormData($('#productForm')[0]);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:save_product' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                $('#productModal').modal('hide');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+
+// Función para actualizar producto
+function updateProduct() {
+    var formData = new FormData($('#productUpdateForm')[0]);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:update_product' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                $('#productModal').modal('hide');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+
+// Función para guardar categoría
+function saveCategory() {
+    var formData = new FormData($('#categoryForm')[0]);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:save_category' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                $('#categoryModal').modal('hide');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+
+// Función para guardar unidad
+function saveUnit() {
+    var formData = new FormData($('#unitForm')[0]);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:save_unit' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                $('#unitModal').modal('hide');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+</script>
+{% endblock extrajs %}

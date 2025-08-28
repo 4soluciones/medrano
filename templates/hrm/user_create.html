@@ -1,0 +1,356 @@
+{% load static %}
+<div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-content">
+        <div id="modal-loader" class="overlay" style="display: none">
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-header bg-gradient-primary text-white">
+            <h5 class="modal-title mb-0">
+                <i class="fas fa-user-plus mr-2"></i>
+                Nuevo Colaborador
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <form id="form-user" action="{% url 'apps.hrm:create_user' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Columna izquierda - Información personal -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-user mr-2"></i>Información Personal
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Nombres *</label>
+                                        <input type="text" class="form-control"
+                                               id="first_name" name="first-name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Apellidos *</label>
+                                        <input type="text" class="form-control"
+                                               id="last_name" name="last-name" required>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Documento *</label>
+                                        <input type="text" class="form-control"
+                                               id="document" name="document" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Fecha de Nacimiento</label>
+                                        <input type="date" class="form-control"
+                                               name="birth-date" value="{{ date_now }}">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Género</label>
+                                        <select class="form-control" name="gender">
+                                            {% for g in gender_set %}
+                                                <option value="{{ g.0 }}">{{ g.1 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Nacionalidad</label>
+                                        <select class="form-control" name="nationality">
+                                            {% for n in nationality_set %}
+                                                <option value="{{ n.0 }}">{{ n.1 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Estado Civil</label>
+                                        <select class="form-control" name="marital-status">
+                                            {% for m in marital_status_set %}
+                                                <option value="{{ m.0 }}">{{ m.1 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Educación</label>
+                                        <select class="form-control" name="education">
+                                            {% for e in education_set %}
+                                                <option value="{{ e.0 }}">{{ e.1 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Dirección</label>
+                                    <input type="text" class="form-control"
+                                           name="address" placeholder="Ingrese dirección completa">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Teléfono</label>
+                                        <input type="text" class="form-control"
+                                               name="phone" placeholder="Número telefónico">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Celular</label>
+                                        <input type="text" class="form-control"
+                                               name="cellphone" placeholder="Número celular">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Referencia</label>
+                                    <input type="text" class="form-control"
+                                           name="reference" placeholder="Punto de referencia">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mt-4">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-envelope mr-2"></i>Información de Contacto
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Correo Electrónico *</label>
+                                        <input type="email" class="form-control"
+                                               name="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Usuario</label>
+                                        <input type="text" class="form-control"
+                                               name="user" placeholder="Nombre de usuario">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Contraseña *</label>
+                                        <input type="password" class="form-control"
+                                               name="password" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Sucursal *</label>
+                                        <select class="form-control" name="subsidiary" required>
+                                            <option value="">Seleccione una sucursal</option>
+                                            {% for s in subsidiary_set %}
+                                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna derecha - Foto y permisos -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-camera mr-2"></i>Foto del Colaborador
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <img id="blah" class="img-fluid rounded-circle border"
+                                         width="150" height="150"
+                                         src="{% static 'img/employee/employee.jpg' %}"
+                                         style="object-fit: cover;">
+                                </div>
+                                <div class="mb-3">
+                                    <input type="file" class="form-control-file"
+                                           id="exampleInputFile" name="exampleInputFile"
+                                           onchange="readURL(this);" accept="image/*">
+                                </div>
+                                <small class="text-muted">Formatos: JPG, PNG, GIF. Máximo 2MB</small>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm mt-4">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-shield-alt mr-2"></i>Permisos del Sistema
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input"
+                                           id="customCheckActive" name="customCheckActive" checked>
+                                    <label class="custom-control-label" for="customCheckActive">
+                                        Usuario Activo
+                                    </label>
+                                </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input"
+                                           id="customCheckboxAccess" name="customCheckboxAccess" checked>
+                                    <label class="custom-control-label" for="customCheckboxAccess">
+                                        Acceso al Sistema
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>Registrar Colaborador
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .modal-content {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        border-radius: 15px 15px 0 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .card-header h6 {
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .custom-switch .custom-control-label::before {
+        border-radius: 20px;
+        background-color: #e9ecef;
+    }
+
+    .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #667eea;
+    }
+
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 1000;
+        border-radius: 15px;
+    }
+</style>
+
+<script type="text/javascript">
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                $('#blah').attr('src', e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    $('#form-user').submit(function (event) {
+        event.preventDefault();
+
+        // Mostrar loader
+        $('#modal-loader').show();
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            cache: false,
+            processData: false,
+            contentType: false,
+            headers: {"X-CSRFToken": '{{ csrf_token }}'},
+            success: function (response) {
+                $('#modal-loader').hide();
+                if (response.success) {
+                    toastr.success(response.message, '¡Éxito!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    toastr.error(response.message, 'Error');
+                }
+            },
+            error: function () {
+                $('#modal-loader').hide();
+                toastr.error('Ocurrió un problema al registrar el colaborador', 'Error');
+            }
+        });
+    });
+</script>

@@ -1,0 +1,281 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    Empleados
+{% endblock title %}
+
+{% block body %}
+    <div class="card border-0 shadow-sm p-3 roboto-condensed-regular">
+        <div class="card-header bg-gradient-primary text-white border-0">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <h6 class="mb-0 mr-3">
+                                <i class="fas fa-users mr-2"></i>Gestión de Empleados
+                            </h6>
+                            <button type="button" onclick="showModalView('modal_user_create')"
+                                    class="btn btn-light btn-sm rounded-pill">
+                                <i class="fas fa-user-plus mr-2"></i>Nuevo Empleado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="filter-wrapper d-flex justify-content-start">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check m-2" name="filter-status" id="filter-active" value="Activo" checked>
+                            <label class="btn btn-outline-success btn-sm rounded-pill" for="filter-active">
+                                <i class="fas fa-check-circle mr-2"></i>Activos
+                            </label>
+                            
+                            <input type="radio" class="btn-check m-2" name="filter-status" id="filter-inactive" value="Inactivo">
+                            <label class="btn btn-outline-danger btn-sm rounded-pill" for="filter-inactive">
+                                <i class="fas fa-times-circle mr-2"></i>Inactivos
+                            </label>
+                            
+                            <input type="radio" class="btn-check m-2" name="filter-status" id="filter-all" value="All">
+                            <label class="btn btn-outline-primary btn-sm rounded-pill" for="filter-all">
+                                <i class="fas fa-users mr-2"></i>Todos
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="search-wrapper d-flex justify-content-end">
+                        <div class="input-group" style="max-width: 350px;">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0 rounded-start">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control border-left-0 rounded-end" 
+                                   id="search-employee" placeholder="Buscar colaborador...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="employee-grid-list" class="table-responsive">
+                {% include "hrm/employee_grid_list.html" %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para crear empleado -->
+    <div class="modal fade" id="modal-employee-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+    
+    <!-- Modal para editar empleado -->
+    <div class="modal fade" id="modal-employee-update" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <style>
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .btn-group .btn {
+            border-radius: 25px !important;
+            margin: 0 2px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-check:checked + .btn {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .filter-wrapper {
+            padding: 20px 0;
+        }
+        
+        .search-wrapper {
+            padding: 20px 0;
+        }
+        
+        .search-wrapper .form-control {
+            border-radius: 0 25px 25px 0 !important;
+            border-left: none;
+        }
+        
+        .search-wrapper .input-group-text {
+            border-radius: 25px 0 0 25px !important;
+            border-right: none;
+        }
+        
+        /* Asegurar que todos los botones tengan bordes redondeados */
+        .btn {
+            border-radius: 25px !important;
+        }
+        
+        .form-control {
+            border-radius: 25px !important;
+        }
+        
+        .input-group-text {
+            border-radius: 25px !important;
+        }
+    </style>
+
+{% endblock body %}
+
+{% block extrajs %}
+
+    <script type="text/javascript">
+        console.log('Script de employee_list cargado');
+        
+        // Esperar a que jQuery esté disponible
+        $(document).ready(function() {
+            // Configuración del usuario
+            let isAdmin = '{{ user_log.has_access_to_all|yesno:"true,false" }}' === 'true';
+            
+            // Filtros de estado simples
+            $('input[name="filter-status"]').on('change', function () {
+                let value = $(this).val();
+                let rows = $('#table-employee-list tbody tr');
+                
+                if (value === "Activo") {
+                    rows.show();
+                    rows.filter(function() {
+                        return $(this).find('td:eq(8) .badge-success').length === 0;
+                    }).hide();
+                } else if (value === "Inactivo") {
+                    rows.show();
+                    rows.filter(function() {
+                        return $(this).find('td:eq(8) .badge-danger').length === 0;
+                    }).hide();
+                } else if (value === "All") {
+                    rows.show();
+                }
+            });
+            
+            // Búsqueda simple
+            $('#search-employee').on('keyup', function() {
+                let searchTerm = $(this).val().toLowerCase();
+                let rows = $('#table-employee-list tbody tr');
+                
+                rows.each(function() {
+                    let text = $(this).text().toLowerCase();
+                    if (text.indexOf(searchTerm) > -1) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+        });
+
+
+        window.showModalView = function(route) {
+            console.log('showModalView called with route:', route);
+            $.ajax({
+                url: '/hrm/' + route + '/',
+                dataType: 'json',
+                type: 'GET',
+                data: {'pk': 1},
+                success: function (response) {
+                    console.log('Modal response:', response);
+                    $('#modal-employee-create').html(response.form);
+                    $('#modal-employee-create').modal('show');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    toastr.error('Error en la petición', '¡Mensaje!');
+                }
+            });
+        }
+        
+        $(document).on('click', '.item-edit', function () {
+            let _pk = $(this).attr('pk');
+            $.ajax({
+                url: '/hrm/modal_user_update/',
+                dataType: 'json',
+                type: 'GET',
+                data: {'pk': _pk},
+                success: function (response) {
+                    $('#modal-employee-update').html(response.form);
+                    $('#modal-employee-update').modal('show');
+                },
+                error: function () {
+                    toastr.error('Error en la petición', '¡Mensaje!');
+                }
+            });
+        });
+
+        $(document).on('click', '.btn-assignment-subsidiary', function () {
+            let search = $(this).attr('pk');
+            $.ajax({
+                url: '/hrm/get_employee_by_id/',
+                dataType: 'json',
+                type: 'GET',
+                data: {'pk': search},
+                success: function (response) {
+                    if (response.success) {
+                        $('#modal-employee-create').html(response.form);
+                        $('#modal-employee-create').modal('show');
+                    }
+                },
+                error: function () {
+                    toastr.error('Problemas al abrir el formulario', '¡Mensaje!');
+                }
+            });
+        });
+        
+        $(document).on('click', '.btn-create-user', function () {
+            let search = $(this).attr('pk');
+            $.ajax({
+                url: '/hrm/get_create_user/',
+                dataType: 'json',
+                type: 'GET',
+                data: {'pk': search},
+                success: function (response) {
+                    if (response.success) {
+                        $('#modal-employee-form').html(response.form);
+                        $('#modal-employee-form').modal('show');
+                    }
+                },
+                error: function () {
+                    toastr.error('Problemas al mostrar formulario', '¡Mensaje!');
+                }
+            });
+        });
+
+        $(document).on('click', '.btn-update-user', function () {
+            let search = $(this).attr('pk');
+            $.ajax({
+                url: '/hrm/get_update_user/',
+                dataType: 'json',
+                type: 'GET',
+                data: {'pk': search},
+                success: function (response) {
+                    if (response.success) {
+                        $('#modal-employee-form').html(response.form);
+                        $('#modal-employee-form').modal('show');
+                    }
+                },
+                error: function () {
+                    toastr.error('Problemas al mostrar formulario', '¡Mensaje!');
+                }
+            });
+        });
+    </script>
+{% endblock extrajs %}

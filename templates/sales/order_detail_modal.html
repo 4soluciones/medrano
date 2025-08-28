@@ -1,0 +1,273 @@
+{% if order %}
+<div class="container-fluid roboto-condensed-regular">
+    <!-- Información General -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle mr-2"></i>Información General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>N° Comprobante:</strong><br>
+                            <span class="badge badge-primary">{{ order.subsidiary.serial }}-{{ order.correlative|stringformat:"03d" }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Tipo:</strong><br>
+                            <span class="badge badge-info">{{ order.get_type_display }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Estado:</strong><br>
+                            {% if order.status == 'P' %}
+                                <span class="badge badge-warning">PENDIENTE</span>
+                            {% elif order.status == 'C' %}
+                                <span class="badge badge-success">COMPLETADO</span>
+                            {% elif order.status == 'A' %}
+                                <span class="badge badge-danger">ANULADO</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Fecha:</strong><br>
+                            <span class="text-muted">{{ order.register_date|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+                    {% if order.delivery_date %}
+                    <div class="row mt-2">
+                        <div class="col-md-3">
+                            <strong>Fecha de Entrega:</strong><br>
+                            <span class="text-info">{{ order.delivery_date|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Cliente -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-success">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user mr-2"></i>Información del Cliente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Nombre:</strong><br>
+                            <span class="text-primary">{{ order.client.full_name }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Documento:</strong><br>
+                            <span class="text-muted">
+                                {% if order.client.document == '01' %}DNI{% else %}RUC{% endif %}: {{ order.client.number }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Teléfono:</strong><br>
+                            <span class="text-muted">{{ order.client.phone1|default:"-" }}</span>
+                        </div>
+                    </div>
+                    {% if order.client.address %}
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>Dirección:</strong><br>
+                            <span class="text-muted">{{ order.client.address }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de la Orden -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-success">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cog mr-2"></i>Detalles de la Orden
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th class="text-dark" style="width: 5%">#</th>
+                                    <th class="text-dark" style="width: 50%">Producto/Servicio</th>
+                                    <th class="text-dark" style="width: 15%">Cantidad</th>
+                                    <th class="text-dark" style="width: 15%">Precio Unit.</th>
+                                    <th class="text-dark" style="width: 15%">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail in order.orderdetail_set.all %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td>
+                                        {% if detail.product %}
+                                            <strong>{{ detail.product.name }}</strong>
+                                            {% if detail.product.code %}
+                                                <br><small class="text-muted">Código: {{ detail.product.code }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <strong>{{ detail.product_name|default:"Producto Manual" }}</strong>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ detail.quantity }}</td>
+                                    <td class="text-right">S/ {{ detail.price_unit|floatformat:2 }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ detail.multiply|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-info">
+                                <tr>
+                                    <td colspan="4" class="text-right font-weight-bold">Subtotal:</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right font-weight-bold">IGV (18%):</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.igv|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td colspan="4" class="text-right font-weight-bold">Total:</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.total|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td colspan="4" class="text-right font-weight-bold">Adelanto:</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.cash_advance|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-danger">
+                                    <td colspan="4" class="text-right font-weight-bold">Saldo:</td>
+                                    <td class="text-right font-weight-bold">
+                                        {% if order.saldo > 0 %}
+                                            S/ {{ order.saldo|floatformat:2 }}
+                                        {% elif order.saldo < 0 %}
+                                            S/ {{ order.saldo|floatformat:2|slice:"1:" }} (Excedente)
+                                        {% else %}
+                                            S/ 0.00 (Pagado)
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-success">
+                    <h6 class="mb-0">
+                        <i class="fas fa-plus-circle mr-2"></i>Información Adicional
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Vendedor:</strong><br>
+                            <span class="text-muted">{{ order.user.first_name }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Sucursal:</strong><br>
+                            <span class="text-muted">{{ order.subsidiary.name }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Forma de Pago:</strong><br>
+                            <span class="text-muted">{{ order.get_way_to_pay_display }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Comprobante:</strong><br>
+                            <span class="text-muted">{{ order.get_voucher_type_display }}</span>
+                        </div>
+                    </div>
+                    {% if order.observation %}
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>Observaciones:</strong><br>
+                            <span class="text-muted">{{ order.observation }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75em;
+    padding: 0.375em 0.75em;
+}
+
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.font-weight-bold {
+    font-weight: 600 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.table-responsive {
+    border: none;
+    box-shadow: none;
+}
+
+.table tfoot td {
+    font-weight: 600;
+}
+
+.table-info {
+    background-color: #d1ecf1 !important;
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+.table-success {
+    background-color: #d4edda !important;
+}
+
+.table-danger {
+    background-color: #f8d7da !important;
+}
+</style>
+{% else %}
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    No se pudo cargar la información de la orden.
+</div>
+{% endif %}

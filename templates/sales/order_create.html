@@ -1,0 +1,685 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+    Nueva Orden
+{% endblock title %}
+
+{% block body %}
+<div class="content-wrapper">
+    <!-- Content Header -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">
+                        <i class="fas fa-plus-circle mr-2 text-primary"></i>Nueva Orden
+                    </h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'apps.sales:order_list' %}">Órdenes</a></li>
+                        <li class="breadcrumb-item active">Nueva Orden</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <form id="order-form">
+                <!-- Información General -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-primary card-outline shadow-sm">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-info-circle mr-2"></i>Información General
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="order_type" class="form-label">
+                                                <i class="fas fa-tag mr-1"></i>Tipo de Orden <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control form-control-lg" id="order_type" name="order_type" required>
+                                                <option value="">Seleccione tipo</option>
+                                                <option value="C">Cotización</option>
+                                                <option value="O">Orden de Servicio</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="subsidiary_id" class="form-label">
+                                                <i class="fas fa-building mr-1"></i>Sucursal <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control form-control-lg" id="subsidiary_id" name="subsidiary_id" required>
+                                                <option value="">Seleccione sucursal</option>
+                                                {% for subsidiary in subsidiary_set %}
+                                                    <option value="{{ subsidiary.id }}" data-serial="{{ subsidiary.serial }}">
+                                                        {{ subsidiary.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="user_id" class="form-label">
+                                                <i class="fas fa-user-tie mr-1"></i>Vendedor <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control form-control-lg" id="user_id" name="user_id" required>
+                                                <option value="">Seleccione vendedor</option>
+                                                {% for user in user_set %}
+                                                    <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="register_date" class="form-label">
+                                                <i class="fas fa-calendar mr-1"></i>Fecha <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" class="form-control form-control-lg" id="register_date" name="register_date" 
+                                                   value="{{ date_now }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="way_to_pay" class="form-label">
+                                                <i class="fas fa-credit-card mr-1"></i>Forma de Pago
+                                            </label>
+                                            <select class="form-control" id="way_to_pay" name="way_to_pay">
+                                                <option value="E">Efectivo</option>
+                                                <option value="D">Depósito</option>
+                                                <option value="C">Crédito</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="discount" class="form-label">
+                                                <i class="fas fa-percentage mr-1"></i>Descuento (%)
+                                            </label>
+                                            <input type="number" class="form-control" id="discount" name="discount" 
+                                                   min="0" max="100" step="0.01" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="cash_advance" class="form-label">
+                                                <i class="fas fa-money-bill-wave mr-1"></i>Adelanto
+                                            </label>
+                                            <input type="number" class="form-control" id="cash_advance" name="cash_advance" 
+                                                   min="0" step="0.01" value="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="correlative_display" class="form-label">
+                                                <i class="fas fa-hashtag mr-1"></i>Correlativo
+                                            </label>
+                                            <input type="text" class="form-control" id="correlative_display" 
+                                                   value="{{ correlative }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Cliente -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-info card-outline shadow-sm">
+                            <div class="card-header bg-gradient-info text-white">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-user mr-2"></i>Información del Cliente
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="client_id" class="form-label">
+                                                <i class="fas fa-user-circle mr-1"></i>Cliente <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control form-control-lg" id="client_id" name="client_id" required>
+                                                <option value="">Seleccione cliente</option>
+                                                {% for client in client_set %}
+                                                    <option value="{{ client.id }}" 
+                                                            data-document="{{ client.document }}"
+                                                            data-number="{{ client.number }}">
+                                                        {{ client.full_name }} - 
+                                                        {% if client.document == '01' %}DNI{% else %}RUC{% endif %}: {{ client.number }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="observation" class="form-label">
+                                                <i class="fas fa-comment mr-1"></i>Observaciones
+                                            </label>
+                                            <textarea class="form-control" id="observation" name="observation" 
+                                                      rows="2" placeholder="Observaciones adicionales"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productos y Servicios -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-success card-outline shadow-sm">
+                            <div class="card-header bg-gradient-success text-white">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-boxes mr-2"></i>Productos y Servicios
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-light btn-sm" onclick="addProductRow()">
+                                        <i class="fas fa-plus mr-1"></i>Agregar Producto
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" id="products-table">
+                                        <thead class="thead-dark">
+                                            <tr>
+                                                <th style="width: 5%">#</th>
+                                                <th style="width: 30%">Producto/Servicio</th>
+                                                <th style="width: 15%">Cantidad</th>
+                                                <th style="width: 20%">Precio Unitario</th>
+                                                <th style="width: 20%">Total</th>
+                                                <th style="width: 10%">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-tbody">
+                                            <!-- Las filas de productos se agregarán dinámicamente -->
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="4" class="text-right font-weight-bold h5">Subtotal:</td>
+                                                <td class="text-right">
+                                                    <span id="subtotal-display" class="h5 text-primary">S/ 0.00</span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="4" class="text-right font-weight-bold">IGV (18%):</td>
+                                                <td class="text-right">
+                                                    <span id="igv-display" class="text-info">S/ 0.00</span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="4" class="text-right font-weight-bold">Descuento:</td>
+                                                <td class="text-right">
+                                                    <span id="discount-display" class="text-danger">S/ 0.00</span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="table-success">
+                                                <td colspan="4" class="text-right font-weight-bold h4">Total:</td>
+                                                <td class="text-right">
+                                                    <span id="total-display" class="h4 text-success font-weight-bold">S/ 0.00</span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg mr-3 shadow">
+                            <i class="fas fa-save mr-2"></i>Guardar Orden
+                        </button>
+                        <a href="{% url 'apps.sales:order_list' %}" class="btn btn-secondary btn-lg shadow">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para seleccionar productos -->
+<div class="modal fade" id="productModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-search mr-2"></i>Seleccionar Producto/Servicio
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="category-filter" class="form-label">Categoría:</label>
+                        <select class="form-control" id="category-filter">
+                            <option value="0">Todas las categorías</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="product-search" class="form-label">Buscar productos:</label>
+                        <input type="text" class="form-control" id="product-search" 
+                               placeholder="Escriba para buscar productos...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="products-modal-table">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Unidad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Productos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+let productRowCounter = 0;
+let selectedProducts = [];
+
+$(document).ready(function() {
+    // Cargar productos al iniciar
+    loadProducts();
+    
+    // Manejar envío del formulario
+    $('#order-form').on('submit', function(e) {
+        e.preventDefault();
+        saveOrder();
+    });
+    
+    // Actualizar correlativo cuando cambie la sucursal o tipo
+    $('#subsidiary_id, #order_type').on('change', updateCorrelative);
+    
+    // Calcular totales cuando cambie el descuento
+    $('#discount').on('input', calculateTotals);
+});
+
+function updateCorrelative() {
+    const subsidiaryId = $('#subsidiary_id').val();
+    const orderType = $('#order_type').val();
+    
+    if (subsidiaryId && orderType) {
+        $.ajax({
+            url: '{% url "apps.sales:get_correlative_order" %}',
+            type: 'GET',
+            data: {
+                'doc_type': orderType,
+                'subsidiary': subsidiaryId
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#correlative_display').val(response.correlative);
+                }
+            }
+        });
+    }
+}
+
+function loadProducts() {
+    $.ajax({
+        url: '{% url "apps.sales:get_products_for_order" %}',
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                selectedProducts = response.products;
+                populateProductsTable();
+            }
+        }
+    });
+}
+
+function populateProductsTable() {
+    const tbody = $('#products-modal-table tbody');
+    tbody.empty();
+    
+    selectedProducts.forEach(product => {
+        const row = `
+            <tr>
+                <td>
+                    <strong>${product.name}</strong>
+                    ${product.code ? `<br><small class="text-muted">Código: ${product.code}</small>` : ''}
+                </td>
+                <td><span class="badge badge-info">${product.category}</span></td>
+                <td><span class="text-success font-weight-bold">S/ ${product.price_sale.toFixed(2)}</span></td>
+                <td><span class="badge badge-secondary">${product.unit}</span></td>
+                <td>
+                    <button type="button" class="btn btn-primary btn-sm" 
+                            onclick="selectProduct(${product.id})">
+                        <i class="fas fa-plus mr-1"></i>Seleccionar
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function addProductRow() {
+    $('#productModal').modal('show');
+}
+
+function selectProduct(productId) {
+    const product = selectedProducts.find(p => p.id === productId);
+    if (product) {
+        const row = `
+            <tr data-product-id="${product.id}">
+                <td class="text-center">${++productRowCounter}</td>
+                <td>
+                    <strong>${product.name}</strong>
+                    ${product.code ? `<br><small class="text-muted">Código: ${product.code}</small>` : ''}
+                </td>
+                <td>
+                    <input type="number" class="form-control quantity-input" 
+                           min="0" step="0.01" value="1" 
+                           onchange="calculateRowTotal(this)">
+                </td>
+                <td>
+                    <input type="number" class="form-control price-input" 
+                           min="0" step="0.01" value="${product.price_sale}" 
+                           onchange="calculateRowTotal(this)">
+                </td>
+                <td class="text-right">
+                    <span class="row-total font-weight-bold text-success">S/ ${product.price_sale.toFixed(2)}</span>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm" 
+                            onclick="removeProductRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        $('#products-tbody').append(row);
+        $('#productModal').modal('hide');
+        calculateTotals();
+    }
+}
+
+function calculateRowTotal(input) {
+    const row = $(input).closest('tr');
+    const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
+    const price = parseFloat(row.find('.price-input').val()) || 0;
+    const total = quantity * price;
+    row.find('.row-total').text(`S/ ${total.toFixed(2)}`);
+    calculateTotals();
+}
+
+function removeProductRow(button) {
+    $(button).closest('tr').remove();
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    
+    $('#products-tbody tr').each(function() {
+        const totalText = $(this).find('.row-total').text();
+        const total = parseFloat(totalText.replace('S/ ', '')) || 0;
+        subtotal += total;
+    });
+    
+    const discountPercent = parseFloat($('#discount').val()) || 0;
+    const discountAmount = subtotal * (discountPercent / 100);
+    const igv = subtotal * 0.18;
+    const total = subtotal + igv - discountAmount;
+    
+    $('#subtotal-display').text(`S/ ${subtotal.toFixed(2)}`);
+    $('#igv-display').text(`S/ ${igv.toFixed(2)}`);
+    $('#discount-display').text(`S/ ${discountAmount.toFixed(2)}`);
+    $('#total-display').text(`S/ ${total.toFixed(2)}`);
+}
+
+function saveOrder() {
+    // Validar formulario
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Preparar datos
+    const formData = new FormData($('#order-form')[0]);
+    
+    // Agregar detalles de productos
+    const details = [];
+    $('#products-tbody tr').each(function() {
+        const productId = $(this).data('product-id');
+        const quantity = $(this).find('.quantity-input').val();
+        const price = $(this).find('.price-input').val();
+        
+        if (productId && quantity && price) {
+            details.push({
+                product_id: productId,
+                quantity: quantity,
+                price_unit: price
+            });
+        }
+    });
+    
+    formData.append('details', JSON.stringify(details));
+    
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.sales:order_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    window.location.href = '{% url "apps.sales:order_list" %}';
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al guardar la orden', 'error');
+        }
+    });
+}
+
+function validateForm() {
+    const requiredFields = ['order_type', 'subsidiary_id', 'user_id', 'client_id'];
+    
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+    
+    if ($('#products-tbody tr').length === 0) {
+        Swal.fire('Error', 'Debe agregar al menos un producto o servicio', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Filtros del modal de productos
+$('#category-filter, #product-search').on('change keyup', function() {
+    const categoryId = $('#category-filter').val();
+    const searchTerm = $('#product-search').val().toLowerCase();
+    
+    $('#products-modal-table tbody tr').each(function() {
+        const category = $(this).find('td:eq(1)').text();
+        const productName = $(this).find('td:eq(0)').text().toLowerCase();
+        
+        const categoryMatch = categoryId === '0' || category.includes(categoryId);
+        const searchMatch = productName.includes(searchTerm);
+        
+        $(this).toggle(categoryMatch && searchMatch);
+    });
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control-lg {
+    height: calc(1.5em + 1rem + 2px);
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 0.5rem;
+}
+
+.shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.badge {
+    font-size: 0.75em;
+    padding: 0.375em 0.75em;
+    border-radius: 0.375rem;
+}
+
+.modal-xl {
+    max-width: 1140px;
+}
+
+#products-table tfoot tr {
+    background-color: #f8f9fa;
+}
+
+#products-table tfoot tr:last-child {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.h4 {
+    font-size: 1.5rem;
+}
+
+.h5 {
+    font-size: 1.25rem;
+}
+</style>
+{% endblock extrajs %}

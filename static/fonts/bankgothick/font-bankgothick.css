@@ -1,0 +1,30 @@
+@font-face {
+    font-family: 'BankGothic Md BT';
+    src: url('BankGothicBT-Medium.woff2') format('woff2'),
+        url('BankGothicBT-Medium.woff') format('woff'),
+        url('BankGothicBT-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BankGothic Md BT';
+    src: url('BankGothicBT-Medium_1.woff2') format('woff2'),
+        url('BankGothicBT-Medium_1.woff') format('woff'),
+        url('BankGothicBT-Medium_1.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BankGothic Md BT';
+    src: url('BankGothicBT-Medium_2.woff2') format('woff2'),
+        url('BankGothicBT-Medium_2.woff') format('woff'),
+        url('BankGothicBT-Medium_2.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+

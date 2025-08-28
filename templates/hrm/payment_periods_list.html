@@ -1,0 +1,501 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    Períodos de Pago
+{% endblock title %}
+
+{% block body %}
+    <div class="container-fluid roboto-condensed-regular">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body bg-gradient-primary text-white p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <a href="{% url 'apps.hrm:payment_dashboard' %}" class="btn btn-light btn-sm rounded-pill mr-3">
+                                        <i class="fas fa-arrow-left mr-2"></i>Volver
+                                    </a>
+                                    <h2 class="mb-0">
+                                        <i class="fas fa-calendar-week mr-3"></i>
+                                        Períodos de Pago
+                                    </h2>
+                                </div>
+                                <p class="mb-0 opacity-75">Gestiona todos los períodos de pago de tus empleados</p>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <button type="button" onclick="showModalView('modal_payment_period_create')" 
+                                        class="btn btn-light btn-lg rounded-pill">
+                                    <i class="fas fa-plus mr-2"></i>Nuevo Período
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <form method="GET" id="filter-form">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="employee" class="form-label">
+                                        <i class="fas fa-user mr-2"></i>Empleado
+                                    </label>
+                                    <select class="form-control select2" id="employee" name="employee">
+                                        <option value="">Todos los empleados</option>
+                                        {% for employee in employees %}
+                                            <option value="{{ employee.id }}" {% if request.GET.employee == employee.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ employee.first_name }} {{ employee.last_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="status" class="form-label">
+                                        <i class="fas fa-toggle-on mr-2"></i>Estado
+                                    </label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">Todos los estados</option>
+                                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pendientes</option>
+                                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Pagados</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-2 mb-3">
+                                    <label for="date_from" class="form-label">
+                                        <i class="fas fa-calendar-day mr-2"></i>Desde
+                                    </label>
+                                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                                           value="{{ request.GET.date_from }}">
+                                </div>
+                                
+                                <div class="col-md-2 mb-3">
+                                    <label for="date_to" class="form-label">
+                                        <i class="fas fa-calendar-day mr-2"></i>Hasta
+                                    </label>
+                                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                                           value="{{ request.GET.date_to }}">
+                                </div>
+                                
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="submit" class="btn btn-primary rounded-pill">
+                                            <i class="fas fa-search mr-2"></i>Filtrar
+                                        </button>
+                                        <button type="button" onclick="clearFilters()" class="btn btn-outline-secondary rounded-pill">
+                                            <i class="fas fa-times mr-2"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Períodos -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0 text-primary">
+                                <i class="fas fa-list mr-2"></i>Períodos de Pago
+                                <span class="badge badge-primary ml-2">{{ page_obj.paginator.count }}</span>
+                            </h5>
+                            <div class="d-flex align-items-center">
+                                <span class="text-muted mr-3">
+                                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if page_obj %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th class="border-0 text-white">Empleado</th>
+                                            <th class="border-0 text-white">Período</th>
+                                            <th class="border-0 text-white text-center">Días Trabajados</th>
+                                            <th class="border-0 text-white text-center">Total</th>
+                                            <th class="border-0 text-white text-center">Estado</th>
+                                            <th class="border-0 text-white text-center">Fecha Creación</th>
+                                            <th class="border-0 text-white text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for period in page_obj %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        {% if period.employee.photo %}
+                                                            <img src="{{ period.employee.photo.url }}" 
+                                                                 class="rounded-circle mr-3" width="40" height="40" 
+                                                                 alt="Foto">
+                                                        {% else %}
+                                                            <img src="{% static 'dist/img/user1-128x128.jpg' %}" 
+                                                                 class="rounded-circle mr-3" width="40" height="40" 
+                                                                 alt="Foto">
+                                                        {% endif %}
+                                                        <div>
+                                                            <h6 class="mb-0">{{ period.employee.first_name }} {{ period.employee.last_name }}</h6>
+                                                            <small class="text-muted">{{ period.employee.document|default:"Sin documento" }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong>{{ period.start_date|date:'d/m/Y' }} - {{ period.end_date|date:'d/m/Y' }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ period.start_date|date:'l'|title }} a {{ period.end_date|date:'l'|title }}</small>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <div class="text-center mr-3">
+                                                            <span class="badge badge-primary badge-pill d-block mb-1">{{ period.get_working_days_count }}</span>
+                                                            <small class="text-muted">Trabajados</small>
+                                                        </div>
+                                                        {% if period.get_permission_days_count > 0 %}
+                                                            <div class="text-center">
+                                                                <span class="badge badge-warning badge-pill d-block mb-1">{{ period.get_permission_days_count }}</span>
+                                                                <small class="text-muted">Permisos</small>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <h5 class="mb-0 text-success">S/ {{ period.total_amount|floatformat:2 }}</h5>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if period.is_paid %}
+                                                        <span class="badge badge-success badge-pill">
+                                                            <i class="fas fa-check mr-1"></i>Pagado
+                                                        </span>
+                                                        {% if period.payment_date %}
+                                                            <br>
+                                                            <small class="text-muted">{{ period.payment_date|date:'d/m/Y' }}</small>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge badge-warning badge-pill">
+                                                            <i class="fas fa-clock mr-1"></i>Pendiente
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <small class="text-muted">{{ period.created_at|date:'d/m/Y H:i' }}</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'apps.hrm:payment_period_detail' period.id %}" 
+                                                           class="btn btn-outline-primary btn-sm rounded-pill" title="Ver Detalle">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        {% if not period.is_paid %}
+                                                            <button type="button" onclick="markAsPaid({{ period.id }})" 
+                                                                    class="btn btn-outline-success btn-sm rounded-pill" title="Marcar como Pagado">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Paginación -->
+                            {% if page_obj.has_other_pages %}
+                                <div class="card-footer bg-white border-0">
+                                    <nav aria-label="Navegación de páginas">
+                                        <ul class="pagination justify-content-center mb-0">
+                                            {% if page_obj.has_previous %}
+                                                <li class="page-item">
+                                                    <a class="page-link rounded-pill mr-2" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                        <i class="fas fa-angle-double-left"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link rounded-pill" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                        <i class="fas fa-angle-left"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            
+                                            {% for num in page_obj.paginator.page_range %}
+                                                {% if page_obj.number == num %}
+                                                    <li class="page-item active">
+                                                        <span class="page-link rounded-pill">{{ num }}</span>
+                                                    </li>
+                                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                    <li class="page-item">
+                                                        <a class="page-link rounded-pill" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            
+                                            {% if page_obj.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link rounded-pill ml-2" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                        <i class="fas fa-angle-right"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link rounded-pill" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                        <i class="fas fa-angle-double-right"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </nav>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                                <h4 class="text-muted">No hay períodos de pago</h4>
+                                <p class="text-muted">Comienza creando el primer período de pago para tus empleados.</p>
+                                <button type="button" onclick="showModalView('modal_payment_period_create')" 
+                                        class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus mr-2"></i>Crear Primer Período
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear período de pago -->
+    <div class="modal fade" id="modal-payment-period-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <style>
+        /* Reducir tamaño de letra general */
+        body {
+            font-size: 0.9rem;
+        }
+        
+        /* Reducir tamaños de encabezados */
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+        h5 { font-size: 1rem; }
+        h6 { font-size: 0.9rem; }
+        
+        /* Reducir tamaño de párrafos y texto general */
+        p, .card-body, .table {
+            font-size: 0.85rem;
+        }
+        
+        /* Reducir tamaño de botones */
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 25px !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+        
+        .btn-lg {
+            font-size: 0.9rem;
+            padding: 0.6rem 1.2rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Reducir tamaño de tabla */
+        .table th, .table td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .table th {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Reducir tamaño de badges */
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        /* Reducir padding de cards */
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Reducir tamaño de formularios */
+        .form-control, .select2-container--default .select2-selection--single {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .form-label {
+            font-size: 0.85rem;
+        }
+        
+        /* Reducir tamaño de paginación */
+        .pagination .page-link {
+            font-size: 0.8rem;
+            border-radius: 25px;
+            margin: 0 2px;
+            border: none;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: #f8f9fa;
+            color: #667eea;
+        }
+        
+        /* Reducir tamaño de select2 */
+        .select2-container--default .select2-selection--single {
+            height: 36px;
+            line-height: 36px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 34px;
+            padding-left: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 34px;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+{% endblock body %}
+
+{% block extrajs %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            console.log('Lista de períodos de pago cargada');
+            
+            // Inicializar Select2
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                width: '100%'
+            });
+        });
+
+        function showModalView(route) {
+            console.log('showModalView called with route:', route);
+            var url;
+            if (route === 'modal_payment_period_create') {
+                url = "{% url 'apps.hrm:modal_payment_period_create' %}";
+            } else {
+                console.error('Ruta no válida:', route);
+                return;
+            }
+            
+            $.ajax({
+                url: url,
+                dataType: 'json',
+                type: 'GET',
+                success: function (response) {
+                    console.log('Modal response:', response);
+                    $('#modal-payment-period-create').html(response.form);
+                    $('#modal-payment-period-create').modal('show');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    toastr.error('Error en la petición', '¡Mensaje!');
+                }
+            });
+        }
+
+        function clearFilters() {
+            $('#employee').val('').trigger('change');
+            $('#status').val('');
+            $('#date_from').val('');
+            $('#date_to').val('');
+            $('#filter-form').submit();
+        }
+
+        function markAsPaid(periodId) {
+            if (confirm('¿Estás seguro de que quieres marcar este período como pagado? Esta acción no se puede deshacer.')) {
+                let formData = new FormData();
+                formData.append('period_id', periodId);
+                formData.append('payment_date', new Date().toISOString().split('T')[0]);
+                
+                $.ajax({
+                    url: '{% url "apps.hrm:mark_payment_as_paid" %}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message, '¡Éxito!');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message, 'Error');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Error al marcar como pagado';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        toastr.error(message, 'Error');
+                    }
+                });
+            }
+        }
+    </script>
+{% endblock extrajs %}

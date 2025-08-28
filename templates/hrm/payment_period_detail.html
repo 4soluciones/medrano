@@ -1,0 +1,635 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    Detalle del Período de Pago
+{% endblock title %}
+
+{% block body %}
+    <div class="container-fluid roboto-condensed-regular">
+        <!-- Header del Período -->
+        <div class="row mb-0">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body bg-gradient-primary text-white p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <a href="{% url 'apps.hrm:payment_periods_list' %}" class="btn btn-light btn-sm rounded-pill mr-3">
+                                        <i class="fas fa-arrow-left mr-2"></i>Volver
+                                    </a>
+                                    <h2 class="mb-0">
+                                        <i class="fas fa-calendar-week mr-3"></i>
+                                        Período de Pago
+                                    </h2>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <strong>Empleado:</strong> {{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Documento:</strong> {{ payment_period.employee.document|default:"Sin documento" }}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <strong>Período:</strong> {{ payment_period.start_date|date:'d/m/Y' }} - {{ payment_period.end_date|date:'d/m/Y' }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Estado:</strong> 
+                                            {% if payment_period.is_paid %}
+                                                <span class="badge badge-success badge-pill">Pagado</span>
+                                            {% else %}
+                                                <span class="badge badge-warning badge-pill">Pendiente</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                {% if not payment_period.is_paid %}
+                                    <button type="button" onclick="markAsPaid()" class="btn btn-success btn-lg rounded-pill">
+                                        <i class="fas fa-check mr-2"></i>Marcar como Pagado
+                                    </button>
+                                {% else %}
+                                    <div class="text-center">
+                                        <p class="mb-1"><strong>Fecha de Pago:</strong></p>
+                                        <p class="mb-0">{{ payment_period.payment_date|date:'d/m/Y' }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Pagos Diarios -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-list mr-2"></i>Pagos Diarios del Período
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if daily_payments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th class="border-0 text-white">Día</th>
+                                            <th class="border-0 text-white">Fecha</th>
+                                            <th class="border-0 text-white text-center">Estado</th>
+                                            <th class="border-0 text-white text-center">Tarifa Diaria</th>
+                                            <th class="border-0 text-white text-center">Monto</th>
+                                            <th class="border-0 text-white text-center">Observaciones</th>
+                                            <th class="border-0 text-white text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for daily in daily_payments %}
+                                            <tr data-daily-id="{{ daily.id }}">
+                                                <td>
+                                                    <span class="badge badge-primary badge-pill">{{ daily.day_of_week }}</span>
+                                                </td>
+                                                <td>
+                                                    <strong>{{ daily.date|date:'d/m/Y' }}</strong>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="status-badge status-{{ daily.status|lower }}">
+                                                        {% if daily.status == 'COMPLETO' %}
+                                                            <i class="fas fa-check-circle mr-1"></i>Completo
+                                                        {% elif daily.status == 'PERMISO' %}
+                                                            <i class="fas fa-clock mr-1"></i>Permiso
+                                                        {% elif daily.status == 'FALTA' %}
+                                                            <i class="fas fa-times-circle mr-1"></i>Falta
+                                                        {% elif daily.status == 'VACACIONES' %}
+                                                            <i class="fas fa-umbrella-beach mr-1"></i>Vacaciones
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <strong>S/ {{ daily.daily_rate|safe }}</strong>
+                                                </td>
+                                                <td class="text-center">
+                                                    <h5 class="mb-0 {% if daily.amount > 0 %}text-success{% else %}text-muted{% endif %}">
+                                                        S/ {{ daily.amount|safe }}
+                                                    </h5>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if daily.notes %}
+                                                        <small class="text-muted">{{ daily.notes|truncatechars:30|upper }}</small>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if not payment_period.is_paid %}
+                                                        <button type="button" onclick="editDailyPayment({{ daily.id }})" 
+                                                                class="btn btn-outline-primary btn-sm rounded-pill">
+                                                            <i class="fas fa-edit mr-1"></i>Editar
+                                                        </button>
+                                                    {% else %}
+                                                        <span class="text-muted">No editable</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="thead-light">
+                                        <tr>
+                                            <td colspan="4" class="text-right">
+                                                <h5 class="mb-0 text-primary">Total del Período:</h5>
+                                            </td>
+                                            <td class="text-center">
+                                                <h4 class="mb-0 text-success">S/ {{ payment_period.total_amount|safe }}</h4>
+                                            </td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No hay pagos diarios registrados</h5>
+                                <p class="text-muted">Este período no tiene pagos diarios configurados</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen del Período -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-primary">
+                                <i class="fas fa-calendar-check text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-primary mb-1">{{ payment_period.get_working_days_count }}</h4>
+                        <p class="text-muted mb-0">Días Trabajados</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-warning">
+                                <i class="fas fa-clock text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-warning mb-1">{{ payment_period.get_permission_days_count }}</h4>
+                        <p class="text-muted mb-0">Días de Permiso</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-success">
+                                <i class="fas fa-money-bill-wave text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-success mb-1">S/ {{ payment_period.total_amount|safe }}</h4>
+                        <p class="text-muted mb-0">Total a Pagar</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-info">
+                                <i class="fas fa-calendar-alt text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-info mb-1">{{ daily_payments.count }}</h4>
+                        <p class="text-muted mb-0">Días Registrados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones del Período -->
+        {% if payment_period.notes %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="mb-0 text-primary">
+                                <i class="fas fa-sticky-note mr-2"></i>Observaciones del Período
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ payment_period.notes }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal para editar pago diario -->
+    <div class="modal fade" id="modal-edit-daily-payment" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-gradient-primary text-white border-0">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit mr-2"></i>Editar Pago Diario
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                
+                <form id="form-edit-daily-payment">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="daily_payment_id" name="daily_payment_id">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_status" class="form-label">
+                                    <i class="fas fa-toggle-on mr-2"></i>Estado <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="edit_status" name="status" required>
+                                    <option value="COMPLETO">Completo</option>
+                                    <option value="PERMISO">Permiso</option>
+                                    <option value="FALTA">Falta</option>
+                                    <option value="VACACIONES">Vacaciones</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_notes" class="form-label">
+                                    <i class="fas fa-sticky-note mr-2"></i>Observaciones
+                                </label>
+                                <textarea class="form-control" id="edit_notes" name="notes" rows="3" 
+                                          placeholder="Observaciones sobre este día..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info border-0">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle text-info mr-2"></i>
+                                <div>
+                                    <small class="mb-0">
+                                        <strong>Completo:</strong> Se paga la tarifa completa<br>
+                                        <strong>Permiso:</strong> No se paga (S/ 0.00)<br>
+                                        <strong>Falta:</strong> No se paga (S/ 0.00)<br>
+                                        <strong>Vacaciones:</strong> Se paga la tarifa completa
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 bg-light">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill" id="btn-update-daily">
+                            <i class="fas fa-save mr-2"></i>Actualizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Reducir tamaño de letra general */
+        body {
+            font-size: 0.9rem;
+        }
+        
+        /* Reducir tamaños de encabezados */
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+        h5 { font-size: 1rem; }
+        h6 { font-size: 0.9rem; }
+        
+        /* Reducir tamaño de párrafos y texto general */
+        p, .card-body, .table {
+            font-size: 0.85rem;
+        }
+        
+        /* Reducir tamaño de botones */
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 25px !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+        
+        .btn-lg {
+            font-size: 0.9rem;
+            padding: 0.6rem 1.2rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Reducir tamaño de tabla */
+        .table th, .table td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .table th {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Reducir tamaño de badges */
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        /* Reducir tamaño de status badges */
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+        
+        .status-completo {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-permiso {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-falta {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-vacaciones {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        /* Reducir tamaño de iconos */
+        .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        /* Reducir padding de cards */
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Reducir padding de modal */
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        .modal-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .modal-footer {
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Reducir tamaño de formularios */
+        .form-control {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .form-label {
+            font-size: 0.85rem;
+        }
+        
+        /* Reducir tamaño de alertas */
+        .alert {
+            font-size: 0.8rem;
+            padding: 0.75rem;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+    </style>
+{% endblock body %}
+
+{% block extrajs %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            console.log('Detalle del período de pago cargado');
+        });
+
+        function editDailyPayment(dailyId) {
+            // Obtener datos del pago diario
+            let row = $(`tr[data-daily-id="${dailyId}"]`);
+            let status = row.find('.status-badge').text().trim();
+            let notes = row.find('td:eq(5) small').text().trim();
+            
+            // Mapear estado a valor del select
+            let statusValue = 'COMPLETO';
+            if (status.includes('Permiso')) statusValue = 'PERMISO';
+            else if (status.includes('Falta')) statusValue = 'FALTA';
+            else if (status.includes('Vacaciones')) statusValue = 'VACACIONES';
+            
+            // Llenar modal
+            $('#daily_payment_id').val(dailyId);
+            $('#edit_status').val(statusValue);
+            $('#edit_notes').val(notes === '-' ? '' : notes);
+            
+            // Mostrar modal
+            $('#modal-edit-daily-payment').modal('show');
+        }
+
+        function markAsPaid() {
+            if (confirm('¿Estás seguro de que quieres marcar este período como pagado? Esta acción no se puede deshacer.')) {
+                let formData = new FormData();
+                formData.append('period_id', '{{ payment_period.id }}');
+                formData.append('payment_date', new Date().toISOString().split('T')[0]);
+                
+                $.ajax({
+                    url: '{% url "apps.hrm:mark_payment_as_paid" %}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: function() {
+                        // Mostrar loading
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message, '¡Éxito!');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message, 'Error');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Error al marcar como pagado';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        toastr.error(message, 'Error');
+                    }
+                });
+            }
+        }
+
+        // Actualizar pago diario
+        $('#form-edit-daily-payment').on('submit', function(e) {
+            e.preventDefault();
+            
+            let formData = new FormData(this);
+            
+            $.ajax({
+                url: '{% url "apps.hrm:update_daily_payment_status" %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('#btn-update-daily').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Actualizando...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#modal-edit-daily-payment').modal('hide');
+                        
+                        // Actualizar la fila en la tabla
+                        let dailyId = $('#daily_payment_id').val();
+                        let newStatus = $('#edit_status').val();
+                        let newAmount = response.new_amount;
+                        let newTotal = response.new_total;
+                        
+                        updateTableRow(dailyId, newStatus, newAmount, newTotal);
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error al actualizar el pago diario';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    toastr.error(message, 'Error');
+                },
+                complete: function() {
+                    $('#btn-update-daily').prop('disabled', false).html('<i class="fas fa-save mr-2"></i>Actualizar');
+                }
+            });
+        });
+
+        function updateTableRow(dailyId, newStatus, newAmount, newTotal) {
+            let row = $(`tr[data-daily-id="${dailyId}"]`);
+            
+            // Actualizar estado
+            let statusBadge = row.find('.status-badge');
+            let statusText = '';
+            let statusClass = '';
+            
+            if (newStatus === 'COMPLETO') {
+                statusText = '<i class="fas fa-check-circle mr-1"></i>Completo';
+                statusClass = 'status-completo';
+            } else if (newStatus === 'PERMISO') {
+                statusText = '<i class="fas fa-clock mr-1"></i>Permiso';
+                statusClass = 'status-permiso';
+            } else if (newStatus === 'FALTA') {
+                statusText = '<i class="fas fa-times-circle mr-1"></i>Falta';
+                statusClass = 'status-falta';
+            } else if (newStatus === 'VACACIONES') {
+                statusText = '<i class="fas fa-umbrella-beach mr-1"></i>Vacaciones';
+                statusClass = 'status-vacaciones';
+            }
+            
+            statusBadge.removeClass().addClass(`status-badge ${statusClass}`).html(statusText);
+            
+            // Actualizar monto
+            let amountCell = row.find('td:eq(4) h5');
+            if (parseFloat(newAmount) > 0) {
+                amountCell.removeClass('text-muted').addClass('text-success');
+            } else {
+                amountCell.removeClass('text-success').addClass('text-muted');
+            }
+            amountCell.text(`S/ ${newAmount}`);
+            
+            // Actualizar total del período
+            $('tfoot h4').text(`S/ ${newTotal}`);
+            
+            // Actualizar estadísticas
+            updateStatistics();
+        }
+
+        function updateStatistics() {
+            // Recalcular estadísticas basadas en la tabla
+            let workingDays = $('.status-completo').length;
+            let permissionDays = $('.status-permiso').length;
+            let totalAmount = parseFloat($('tfoot h4').text().replace('S/ ', ''));
+            
+            // Actualizar tarjetas de estadísticas
+            $('.icon-circle.bg-primary + h4').text(workingDays);
+            $('.icon-circle.bg-warning + h4').text(permissionDays);
+            $('.icon-circle.bg-success + h4').text(`S/ ${totalAmount.toFixed(2)}`);
+        }
+    </script>
+{% endblock extrajs %}

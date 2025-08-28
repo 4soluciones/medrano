@@ -1,0 +1,488 @@
+{% load static %}
+<div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-content border-0 shadow roboto-condensed-regular">
+        <div id="modal-loader" class="overlay" style="display: none">
+            <i class="fas fa-3x fa-sync fa-spin text-warning"></i>
+        </div>
+        
+        <div class="modal-header bg-warning text-white border-0">
+            <h5 class="modal-title font-weight-bold">
+                <i class="fas fa-user-edit mr-2"></i>Actualización de Cliente
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <form id="form-edit-client" action="{% url 'apps.sales:update_client' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" class="form-control" id="client-id" name="client-id" value="{{ client_obj.id }}">
+
+            <div class="modal-body p-4">
+                <!-- Información del Documento -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h6 class="card-title text-primary mb-0">
+                                    <i class="fas fa-id-card mr-2"></i>Información del Documento
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="type_client">
+                                                <i class="fas fa-tag mr-1"></i>Tipo de Documento <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="type_client" name="type-client">
+                                                {% if client_obj.document == '01' %}
+                                                    <option selected value="01">DNI</option>
+                                                    <option value="06">RUC</option>
+                                                {% elif client_obj.document == '06' %}
+                                                    <option selected value="06">RUC</option>
+                                                    <option value="01">DNI</option>
+                                                {% else %}
+                                                    <option value="01">DNI</option>
+                                                    <option value="06">RUC</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="client_number">
+                                                <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="client_number"
+                                                   name="client-number" value="{{ client_obj.number }}" required
+                                                   placeholder="Ingrese el número de documento">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Personal (DNI) -->
+                <div class="row mb-4 dni {% if client_obj.document == '06' %}d-none{% endif %}">
+                    <div class="col-12">
+                        <div class="card card-outline card-info">
+                            <div class="card-header">
+                                <h6 class="card-title text-info mb-0">
+                                    <i class="fas fa-user mr-2"></i>Información Personal
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="first_name">
+                                                <i class="fas fa-user mr-1"></i>Primer Nombre <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="first_name" 
+                                                   name="first-name" value="{{ client_obj.first_name|default_if_none:'' }}"
+                                                   {% if client_obj.document == '01' %}required{% endif %}>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="second_name">
+                                                <i class="fas fa-user mr-1"></i>Segundo Nombre
+                                            </label>
+                                            <input type="text" class="form-control" id="second_name" 
+                                                   name="second-name" value="{{ client_obj.second_name|default_if_none:'' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="surname">
+                                                <i class="fas fa-user mr-1"></i>Primer Apellido <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="surname" 
+                                                   name="surname" value="{{ client_obj.surname|default_if_none:'' }}"
+                                                   {% if client_obj.document == '01' %}required{% endif %}>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="second_surname">
+                                                <i class="fas fa-user mr-1"></i>Segundo Apellido
+                                            </label>
+                                            <input type="text" class="form-control" id="second_surname" 
+                                                   name="second-surname" value="{{ client_obj.second_surname|default_if_none:'' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Empresarial (RUC) -->
+                <div class="row mb-4 ruc {% if client_obj.document == '01' %}d-none{% endif %}">
+                    <div class="col-12">
+                        <div class="card card-outline card-success">
+                            <div class="card-header">
+                                <h6 class="card-title text-success mb-0">
+                                    <i class="fas fa-building mr-2"></i>Información Empresarial
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="business_name">
+                                                <i class="fas fa-building mr-1"></i>Razón Social <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="business_name"
+                                                   name="business-name" value="{{ client_obj.full_name|default_if_none:'' }}"
+                                                   placeholder="Ingrese la razón social"
+                                                   {% if client_obj.document == '06' %}required{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Contacto -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card card-outline card-warning">
+                            <div class="card-header">
+                                <h6 class="card-title text-warning mb-0">
+                                    <i class="fas fa-address-book mr-2"></i>Información de Contacto
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="address_id">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                                            </label>
+                                            <input type="text" class="form-control" id="address_id"
+                                                   name="client-address" value="{{ client_obj.address|default_if_none:'' }}"
+                                                   placeholder="Ingrese la dirección completa">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="occupation_id">
+                                                <i class="fas fa-briefcase mr-1"></i>Ocupación
+                                            </label>
+                                            <input type="text" class="form-control" id="occupation_id"
+                                                   name="client-occupation" value="{{ client_obj.occupation|default_if_none:'' }}"
+                                                   placeholder="Ingrese la ocupación">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-3">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="email_id">
+                                                <i class="fas fa-envelope mr-1"></i>Correo Electrónico
+                                            </label>
+                                            <input type="email" class="form-control" id="email_id" 
+                                                   name="client-email" value="{{ client_obj.email|default_if_none:'' }}"
+                                                   placeholder="ejemplo@correo.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="phone_id_1">
+                                                <i class="fas fa-phone mr-1"></i>Teléfono Principal
+                                            </label>
+                                            <input type="tel" class="form-control" id="phone_id_1" 
+                                                   name="client-phone1" value="{{ client_obj.phone1|default_if_none:'' }}"
+                                                   placeholder="Número de teléfono">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="phone_id_2">
+                                                <i class="fas fa-phone mr-1"></i>Teléfono Secundario
+                                            </label>
+                                            <input type="tel" class="form-control" id="phone_id_2" 
+                                                   name="client-phone2" value="{{ client_obj.phone2|default_if_none:'' }}"
+                                                   placeholder="Teléfono alternativo">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light border-0 p-3">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button id="btn-edit-client" type="submit" class="btn btn-warning">
+                    <i class="fas fa-save mr-2"></i>Actualizar Cliente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Estilos modernos inspirados en order_list */
+    .modal-xl .modal-content {
+        border-radius: 12px;
+    }
+    
+    .card {
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .card-outline.card-primary {
+        border-top: 3px solid #007bff;
+    }
+    
+    .card-outline.card-info {
+        border-top: 3px solid #17a2b8;
+    }
+    
+    .card-outline.card-success {
+        border-top: 3px solid #28a745;
+    }
+    
+    .card-outline.card-warning {
+        border-top: 3px solid #ffc107;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        transform: translateY(-1px);
+    }
+    
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        transition: all 0.2s ease;
+        padding: 0.5rem 1rem;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        border: none;
+        color: #212529;
+    }
+    
+    .text-danger {
+        font-weight: bold;
+    }
+    
+    /* Espaciado mejorado */
+    .g-3 > * {
+        padding: 0.75rem;
+    }
+    
+    .mb-4 {
+        margin-bottom: 2rem !important;
+    }
+    
+    .p-4 {
+        padding: 2rem !important;
+    }
+    
+    /* Mejoras en el header */
+    .modal-header {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+        border-radius: 12px 12px 0 0;
+        padding: 1.5rem;
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .g-3 > * {
+            padding: 0.5rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .modal-body {
+            padding: 1rem !important;
+        }
+    }
+    
+    /* Animaciones suaves */
+    .d-none {
+        transition: opacity 0.3s ease;
+    }
+    
+    .form-control, .form-select {
+        transition: all 0.2s ease;
+    }
+    
+    /* Overlay de carga */
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        border-radius: 12px;
+    }
+</style>
+
+<script type="text/javascript">
+    // Función para inicializar el formulario cuando jQuery esté disponible
+    function initializeClientUpdate() {
+        // Función para mostrar/ocultar campos según tipo de documento
+        $(document).on('change', '#type_client', function (e) {
+            let _type = $(this).val();
+            if (_type === "01") {
+                $('.ruc').addClass('d-none');
+                $('.dni').removeClass('d-none');
+                // Remover required de campos RUC y agregar a campos DNI
+                $('#business_name').removeAttr('required');
+                $('#first_name, #surname').attr('required', 'required');
+            } else if (_type === '06') {
+                $('.dni').addClass('d-none');
+                $('.ruc').removeClass('d-none');
+                // Remover required de campos DNI y agregar a campos RUC
+                $('#first_name, #surname').removeAttr('required');
+                $('#business_name').attr('required', 'required');
+            }
+        });
+
+        // Envío del formulario de actualización
+        $('#form-edit-client').submit(function (event) {
+            event.preventDefault();
+            let data = new FormData($('#form-edit-client').get(0));
+            $('#btn-edit-client').attr("disabled", "true");
+            $('#modal-loader').show();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: $(this).attr('method'),
+                data: data,
+                cache: false,
+                processData: false,
+                contentType: false,
+                headers: {"X-CSRFToken": '{{ csrf_token }}'},
+                success: function (response) {
+                    if (response.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(response.message, 'Éxito');
+                        } else {
+                            alert('Éxito: ' + response.message);
+                        }
+                        $('#modal-loader').hide();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(response.message, 'Error');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                        $('#modal-loader').hide();
+                    }
+                },
+                error: function (response) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('Ocurrió un problema al actualizar el cliente', 'Error');
+                    } else {
+                        alert('Ocurrió un problema al actualizar el cliente');
+                    }
+                    $('#modal-loader').hide();
+                }
+            });
+            $('#btn-edit-client').removeAttr("disabled");
+        });
+
+        // Configurar required según el tipo de documento inicial
+        let initialDocType = $('#type_client').val();
+        if (initialDocType === '01') {
+            $('#business_name').removeAttr('required');
+            $('#first_name, #surname').attr('required', 'required');
+        } else if (initialDocType === '06') {
+            $('#first_name, #surname').removeAttr('required');
+            $('#business_name').attr('required', 'required');
+        }
+    }
+
+    // Verificar que jQuery esté disponible
+    if (typeof jQuery === 'undefined') {
+        // Esperar a que jQuery se cargue
+        window.addEventListener('load', function() {
+            if (typeof jQuery !== 'undefined') {
+                initializeClientUpdate();
+            } else {
+                console.error('jQuery no está disponible después de cargar la página');
+            }
+        });
+    } else {
+        // jQuery ya está disponible, inicializar inmediatamente
+        $(document).ready(function() {
+            initializeClientUpdate();
+        });
+    }
+</script>

@@ -1,0 +1,563 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+    Nuevo Gasto/Transacción
+{% endblock title %}
+
+{% block body %}
+<div class="content-fluid roboto-condensed-regular">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">
+                        <i class="fas fa-plus-circle mr-2"></i>Nuevo Gasto/Transacción
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Registre un nuevo gasto o transacción en el sistema
+                        </small>
+                    </h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'apps.accounting:cashflow_list' %}">
+                                <i class="fas fa-chart-line mr-1"></i>Gastos
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Nuevo</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-edit mr-2"></i>Formulario de Registro
+                            </h3>
+                            <div class="card-tools">
+                                <a href="{% url 'apps.accounting:cashflow_list' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-arrow-left mr-1"></i>Volver al Listado
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form id="cashflow-form" method="POST">
+                                {% csrf_token %}
+                                
+                                <!-- Información General -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary border-bottom pb-2">
+                                            <i class="fas fa-info-circle mr-2"></i>Información General
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="transaction_date" class="form-label">
+                                                <i class="fas fa-calendar mr-1"></i>Fecha de Transacción <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" class="form-control" id="transaction_date" name="transaction_date"
+                                                   value="{{ date_now }}" required>
+                                            <small class="form-text text-muted">Seleccione la fecha en que ocurrió la transacción</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="transaction_type" class="form-label">
+                                                <i class="fas fa-exchange-alt mr-1"></i>Tipo de Transacción <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="transaction_type" name="transaction_type" required>
+                                                <option value="">Seleccione tipo</option>
+                                                {% for code, name in transaction_types %}
+                                                    <option value="{{ code }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">Defina si es una entrada, salida, apertura, cierre o depósito</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="cash_id" class="form-label">
+                                                <i class="fas fa-university mr-1"></i>Cuenta/Caja <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="cash_id" name="cash_id" required>
+                                                <option value="">Seleccione cuenta</option>
+                                                {% for cash in cash_accounts %}
+                                                    <option value="{{ cash.id }}">
+                                                        {{ cash.name }} - {{ cash.get_currency_type_display }} ({{ cash.subsidiary.name }})
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">Seleccione la cuenta o caja donde se registrará la transacción</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="user_id" class="form-label">
+                                                <i class="fas fa-user mr-1"></i>Usuario <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="user_id" name="user_id" required>
+                                                <option value="">Seleccione usuario</option>
+                                                {% for user in user_set %}
+                                                    <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">Usuario responsable de la transacción</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="expense_type" class="form-label">
+                                                <i class="fas fa-tags mr-1"></i>Tipo de Gasto
+                                            </label>
+                                            <select class="form-control" id="expense_type" name="expense_type">
+                                                <option value="">Seleccione tipo</option>
+                                                {% for code, name in expense_types %}
+                                                    <option value="{{ code }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">Clasifique el gasto para mejor control y reportes</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <!-- Información del Documento -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-success border-bottom pb-2">
+                                            <i class="fas fa-file-alt mr-2"></i>Información del Documento
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="description" class="form-label">
+                                                <i class="fas fa-comment mr-1"></i>Descripción <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea class="form-control" id="description" name="description" rows="3"
+                                                      placeholder="Descripción detallada del gasto o transacción" required></textarea>
+                                            <small class="form-text text-muted">Describa claramente el propósito o motivo de la transacción</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="document_type" class="form-label">
+                                                <i class="fas fa-receipt mr-1"></i>Tipo de Documento
+                                            </label>
+                                            <select class="form-control" id="document_type" name="document_type">
+                                                <option value="O" selected>Otro</option>
+                                                {% for code, name in document_types %}
+                                                    {% if code != 'O' %}
+                                                        <option value="{{ code }}">{{ name }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">Tipo de comprobante asociado</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="serial" class="form-label">
+                                                <i class="fas fa-hashtag mr-1"></i>Serie
+                                            </label>
+                                            <input type="text" class="form-control" id="serial" name="serial" 
+                                                   placeholder="Serie del documento" maxlength="5">
+                                            <small class="form-text text-muted">Serie del comprobante (ej: F001)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="n_receipt" class="form-label">
+                                                <i class="fas fa-sort-numeric-up mr-1"></i>N° Comprobante
+                                            </label>
+                                            <input type="number" class="form-control" id="n_receipt" name="n_receipt" 
+                                                   placeholder="Número de comprobante" min="0">
+                                            <small class="form-text text-muted">Número secuencial del comprobante</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="operation_code" class="form-label">
+                                                <i class="fas fa-barcode mr-1"></i>Código de Operación
+                                            </label>
+                                            <input type="text" class="form-control" id="operation_code" name="operation_code" 
+                                                   placeholder="Código de operación" maxlength="45">
+                                            <small class="form-text text-muted">Código interno o de referencia</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Información Financiera -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-warning border-bottom pb-2">
+                                            <i class="fas fa-calculator mr-2"></i>Información Financiera
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="subtotal" class="form-label">
+                                                <i class="fas fa-calculator mr-1"></i>Subtotal
+                                            </label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">S/</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="subtotal" name="subtotal" 
+                                                       min="0" step="0.01" value="0.00" placeholder="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">Monto sin impuestos</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="igv" class="form-label">
+                                                <i class="fas fa-percentage mr-1"></i>IGV
+                                            </label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">S/</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="igv" name="igv" 
+                                                       min="0" step="0.01" value="0.00" placeholder="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">Impuesto General a las Ventas</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="total" class="form-label">
+                                                <i class="fas fa-money-bill-wave mr-1"></i>Total <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">S/</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="total" name="total" 
+                                                       min="0" step="0.01" value="0.00" placeholder="0.00" required>
+                                            </div>
+                                            <small class="form-text text-muted">Monto total de la transacción</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Información Adicional -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info border-bottom pb-2">
+                                            <i class="fas fa-lightbulb mr-2"></i>Información Adicional
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-info-circle fa-2x text-info mr-3 mt-1"></i>
+                                                <div>
+                                                    <h6 class="alert-heading">Recomendaciones para el registro:</h6>
+                                                    <ul class="mb-0">
+                                                        <li><strong>Descripción clara:</strong> Use descripciones específicas que faciliten la identificación del gasto</li>
+                                                        <li><strong>Documentos:</strong> Complete la información del documento cuando esté disponible</li>
+                                                        <li><strong>Montos:</strong> Verifique que los montos sean correctos antes de guardar</li>
+                                                        <li><strong>Clasificación:</strong> Seleccione el tipo de gasto apropiado para mejor control</li>
+                                                        <li><strong>Fechas:</strong> Asegúrese de registrar la fecha correcta de la transacción</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botones de Acción -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a href="{% url 'apps.accounting:cashflow_list' %}" class="btn btn-secondary">
+                                                <i class="fas fa-times mr-1"></i>Cancelar
+                                            </a>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save mr-1"></i>Guardar Gasto
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Cargando...</span>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // Calcular total automáticamente
+    $('#subtotal, #igv').on('input', function() {
+        calculateTotal();
+    });
+
+    // Manejar cambio en tipo de documento
+    $('#document_type').on('change', function() {
+        toggleDocumentFields();
+    });
+
+    // Manejar envío del formulario
+    $('#cashflow-form').on('submit', function(e) {
+        e.preventDefault();
+        saveCashflow();
+    });
+
+    // Inicializar estado de campos de documento
+    toggleDocumentFields();
+});
+
+function toggleDocumentFields() {
+    const documentType = $('#document_type').val();
+    const documentFields = $('#serial, #n_receipt, #operation_code');
+    
+    if (documentType === 'F' || documentType === 'B') {
+        // Mostrar campos para Factura o Boleta
+        documentFields.closest('.form-group').show();
+        $('#serial, #n_receipt').prop('required', true);
+    } else {
+        // Ocultar campos para otros tipos
+        documentFields.closest('.form-group').hide();
+        $('#serial, #n_receipt').prop('required', false);
+        // Limpiar valores
+        $('#serial, #n_receipt').val('');
+    }
+}
+
+function calculateTotal() {
+    const subtotal = parseFloat($('#subtotal').val()) || 0;
+    const igv = parseFloat($('#igv').val()) || 0;
+    const total = subtotal + igv;
+    
+    $('#total').val(total.toFixed(2));
+}
+
+function saveCashflow() {
+    // Validar formulario
+    if (!validateCashflowForm()) {
+        return;
+    }
+
+    // Mostrar loading
+    $('#loading-overlay').show();
+
+    // Preparar datos
+    const formData = new FormData($('#cashflow-form')[0]);
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cashflow_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            $('#loading-overlay').hide();
+            
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    // Redirigir al listado
+                    window.location.href = '{% url "apps.accounting:cashflow_list" %}';
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            $('#loading-overlay').hide();
+            Swal.fire('Error', 'Error al guardar el gasto', 'error');
+        }
+    });
+}
+
+function validateCashflowForm() {
+    const requiredFields = ['transaction_date', 'transaction_type', 'cash_id', 'user_id', 'description', 'total'];
+
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    // Validar que el total sea mayor a 0
+    const total = parseFloat($('#total').val());
+    if (total <= 0) {
+        Swal.fire('Error', 'El total debe ser mayor a 0', 'error');
+        $('#total').focus();
+        return false;
+    }
+
+    return true;
+}
+</script>
+
+<style>
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 1rem;
+    border-radius: 15px !important;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn {
+    border-radius: 25px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-control {
+    border-radius: 10px !important;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.alert {
+    border-radius: 15px;
+    border: none;
+}
+
+.alert-info {
+    background-color: rgba(23, 162, 184, 0.1);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock extrajs %}

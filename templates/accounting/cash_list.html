@@ -1,0 +1,731 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+    Gestión de Cuentas y Cajas
+{% endblock title %}
+
+{% block body %}
+<div class="content-fluid roboto-condensed-regular">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">
+                        <i class="fas fa-university mr-2"></i>Gestión de Cuentas y Cajas
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-chart-pie mr-1"></i>
+                            <span id="accounts-indicator">Administración de cuentas bancarias y cajas registradoras</span>
+                        </small>
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <!-- Filtros de búsqueda -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-primary card-outline compact-filters">
+                        <div class="card-header compact-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-search mr-2"></i>Filtros de Búsqueda
+                                    </h6>
+                                    <button type="button" class="btn btn-success ml-3" onclick="openCreateCashModal()">
+                                        <i class="fas fa-plus mr-1"></i>Nueva Cuenta
+                                    </button>
+                                </div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-filters" title="Colapsar/Expandir filtros">
+                                        <i class="fas fa-chevron-up" id="toggle-icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body compact-body">
+                            <!-- Mensaje informativo compacto -->
+                            <div class="alert alert-info alert-sm mb-2" role="alert">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <small><strong>Filtre las cuentas por sucursal y tipo de moneda para obtener información específica.</strong></small>
+                            </div>
+                            
+                            <form id="search-form">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-1">
+                                            <label for="subsidiary-filter" class="form-label-sm">Sucursal</label>
+                                            <select class="form-control form-control-sm" id="subsidiary-filter" name="subsidiary">
+                                                <option value="0">Todas las sucursales</option>
+                                                {% for subsidiary in subsidiary_set %}
+                                                    <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-1">
+                                            <label for="currency-filter" class="form-label-sm">Tipo de Moneda</label>
+                                            <select class="form-control form-control-sm" id="currency-filter" name="currency_type">
+                                                <option value="0">Todas las monedas</option>
+                                                {% for currency_code, currency_name in currency_types %}
+                                                    <option value="{{ currency_code }}">{{ currency_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-1">
+                                            <label class="form-label-sm">&nbsp;</label>
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                                    <i class="fas fa-search mr-1"></i>Buscar
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm" id="clear-filters">
+                                                    <i class="fas fa-times mr-1"></i>Limpiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-list mr-2"></i>Listado de Cuentas y Cajas
+                                    <small class="text-muted ml-2" id="accounts-count">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <span id="accounts-count-text">Cargando...</span>
+                                    </small>
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadCashAccounts()" title="Actualizar listado">
+                                        <i class="fas fa-refresh"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="cash-accounts-grid" class="w-100">
+                                <!-- Aquí se cargará la grilla de cuentas -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nueva cuenta -->
+<div class="modal fade" id="createCashModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content roboto-condensed-regular">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle mr-2"></i>Nueva Cuenta/Caja
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cash-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="cash_name" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Nombre de la Cuenta <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="cash_name" name="cash_name" 
+                                       required placeholder="Ej: Caja Principal, Banco BCP, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="subsidiary_id" class="form-label">
+                                    <i class="fas fa-building mr-1"></i>Sucursal <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="subsidiary_id" name="subsidiary_id" required>
+                                    <option value="">Seleccione sucursal</option>
+                                    {% for subsidiary in subsidiary_set %}
+                                        <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="account_number" class="form-label">
+                                    <i class="fas fa-hashtag mr-1"></i>Número de Cuenta
+                                </label>
+                                <input type="text" class="form-control" id="account_number" name="account_number" 
+                                       placeholder="Número de cuenta bancaria (opcional)">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="currency_type" class="form-label">
+                                    <i class="fas fa-coins mr-1"></i>Tipo de Moneda <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="currency_type" name="currency_type" required>
+                                    <option value="">Seleccione moneda</option>
+                                    {% for currency_code, currency_name in currency_types %}
+                                        <option value="{{ currency_code }}">{{ currency_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="initial_balance" class="form-label">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                </label>
+                                <input type="number" class="form-control" id="initial_balance" name="initial_balance" 
+                                       min="0" step="0.01" value="0.00" placeholder="0.00">
+                                <small class="form-text text-muted">Saldo inicial de la cuenta o caja</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Espacio para futuras expansiones -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCash()">
+                    <i class="fas fa-save mr-1"></i>Guardar Cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar cuenta -->
+<div class="modal fade" id="editCashModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content roboto-condensed-regular">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit mr-2"></i>Editar Cuenta/Caja
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-cash-form">
+                    <input type="hidden" id="edit_cash_id" name="cash_id" value="">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_cash_name" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Nombre de la Cuenta <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="edit_cash_name" name="cash_name" 
+                                       required placeholder="Ej: Caja Principal, Banco BCP, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_subsidiary_id" class="form-label">
+                                    <i class="fas fa-building mr-1"></i>Sucursal <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="edit_subsidiary_id" name="subsidiary_id" required>
+                                    <option value="">Seleccione sucursal</option>
+                                    {% for subsidiary in subsidiary_set %}
+                                        <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_account_number" class="form-label">
+                                    <i class="fas fa-hashtag mr-1"></i>Número de Cuenta
+                                </label>
+                                <input type="text" class="form-control" id="edit_account_number" name="account_number" 
+                                       placeholder="Número de cuenta bancaria (opcional)">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_currency_type" class="form-label">
+                                    <i class="fas fa-coins mr-1"></i>Tipo de Moneda <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="edit_currency_type" name="currency_type" required>
+                                    <option value="">Seleccione moneda</option>
+                                    {% for currency_code, currency_name in currency_types %}
+                                        <option value="{{ currency_code }}">{{ currency_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_initial_balance" class="form-label">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                </label>
+                                <input type="number" class="form-control" id="edit_initial_balance" name="initial_balance" 
+                                       min="0" step="0.01" value="0.00" placeholder="0.00">
+                                <small class="form-text text-muted">Saldo inicial de la cuenta o caja</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Espacio para futuras expansiones -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="updateCash()">
+                    <i class="fas fa-save mr-1"></i>Actualizar Cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Cargando...</span>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // Cargar cuentas al iniciar
+    loadCashAccounts();
+    
+    // Manejar envío del formulario de búsqueda
+    $('#search-form').on('submit', function(e) {
+        e.preventDefault();
+        loadCashAccounts();
+    });
+
+    // Limpiar filtros
+    $('#clear-filters').on('click', function() {
+        $('#search-form')[0].reset();
+        loadCashAccounts();
+    });
+
+    // Toggle para colapsar/expandir filtros
+    $('#toggle-filters').on('click', function() {
+        const filtersBody = $('.compact-body');
+        const toggleIcon = $('#toggle-icon');
+        
+        if (filtersBody.is(':visible')) {
+            filtersBody.slideUp(300);
+            toggleIcon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $(this).attr('title', 'Expandir filtros');
+            localStorage.setItem('cashFiltersCollapsed', 'true');
+        } else {
+            filtersBody.slideDown(300);
+            toggleIcon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            $(this).attr('title', 'Colapsar filtros');
+            localStorage.setItem('cashFiltersCollapsed', 'false');
+        }
+    });
+
+    // Restaurar estado de los filtros al cargar la página
+    const filtersCollapsed = localStorage.getItem('cashFiltersCollapsed');
+    if (filtersCollapsed === 'true') {
+        $('.compact-body').hide();
+        $('#toggle-icon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        $('#toggle-filters').attr('title', 'Expandir filtros');
+    }
+});
+
+function openCreateCashModal() {
+    // Limpiar formulario
+    $('#cash-form')[0].reset();
+    
+    // Mostrar modal
+    $('#createCashModal').modal('show');
+}
+
+function saveCash() {
+    // Validar formulario
+    if (!validateCashForm()) {
+        return;
+    }
+
+    // Preparar datos
+    const formData = new FormData($('#cash-form')[0]);
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cash_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    $('#createCashModal').modal('hide');
+                    loadCashAccounts();
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al guardar la cuenta', 'error');
+        }
+    });
+}
+
+function validateCashForm() {
+    const requiredFields = ['cash_name', 'subsidiary_id', 'currency_type'];
+
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function loadCashAccounts() {
+    $('#loading-overlay').show();
+    $('#accounts-count-text').text('Cargando...');
+
+    $.ajax({
+        url: '{% url "apps.accounting:cash_list" %}',
+        type: 'POST',
+        data: $('#search-form').serialize(),
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            $('#cash-accounts-grid').html(response.grid);
+            $('#loading-overlay').hide();
+            
+            // Actualizar conteo de cuentas
+            updateAccountsCount();
+        },
+        error: function(xhr, status, error) {
+            $('#loading-overlay').hide();
+            $('#accounts-count-text').text('Error al cargar');
+            console.error('Error al cargar las cuentas:', error);
+        }
+    });
+}
+
+function updateAccountsCount() {
+    const accountsCount = $('#cash-accounts-grid .table tbody tr').length;
+    
+    if (accountsCount === 0) {
+        $('#accounts-count-text').text('No hay cuentas');
+    } else {
+        $('#accounts-count-text').text(`${accountsCount} cuenta${accountsCount !== 1 ? 's' : ''} encontrada${accountsCount !== 1 ? 's' : ''}`);
+    }
+}
+
+function editCash(cashId) {
+    // Cargar datos de la cuenta para editar
+    loadCashDataForEdit(cashId);
+    
+    // Mostrar modal de edición
+    $('#editCashModal').modal('show');
+}
+
+function loadCashDataForEdit(cashId) {
+    // Mostrar loading
+    $('#loading-overlay').show();
+    
+    // Obtener datos de la cuenta
+    $.ajax({
+        url: '{% url "apps.accounting:cash_get" %}',
+        type: 'POST',
+        data: {
+            cash_id: cashId,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                const cash = response.cash;
+                
+                // Llenar formulario de edición
+                $('#edit_cash_id').val(cash.id);
+                $('#edit_cash_name').val(cash.name);
+                $('#edit_subsidiary_id').val(cash.subsidiary_id);
+                $('#edit_account_number').val(cash.account_number || '');
+                $('#edit_currency_type').val(cash.currency_type);
+                $('#edit_initial_balance').val(cash.initial);
+                
+                $('#loading-overlay').hide();
+            } else {
+                $('#loading-overlay').hide();
+                Swal.fire('Error', response.message || 'Error al cargar los datos de la cuenta', 'error');
+            }
+        },
+        error: function(xhr) {
+            $('#loading-overlay').hide();
+            Swal.fire('Error', 'Error al cargar los datos de la cuenta', 'error');
+        }
+    });
+}
+
+function updateCash() {
+    // Validar formulario de edición
+    if (!validateEditCashForm()) {
+        return;
+    }
+
+    // Preparar datos
+    const formData = new FormData($('#edit-cash-form')[0]);
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cash_update" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    $('#editCashModal').modal('hide');
+                    loadCashAccounts();
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al actualizar la cuenta', 'error');
+        }
+    });
+}
+
+function validateEditCashForm() {
+    const requiredFields = ['edit_cash_name', 'edit_subsidiary_id', 'edit_currency_type'];
+
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function deleteCash(cashId, cashName) {
+    Swal.fire({
+        title: '¿Confirmar eliminación?',
+        text: `¿Está seguro que desea eliminar la cuenta "${cashName}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Aquí implementar la lógica de eliminación
+            Swal.fire('Eliminado', 'La cuenta ha sido eliminada', 'success');
+            loadCashAccounts();
+        }
+    });
+}
+</script>
+
+<style>
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 1rem;
+    border-radius: 15px !important;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn {
+    border-radius: 25px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-control {
+    border-radius: 10px !important;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.modal-content {
+    border-radius: 20px !important;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-radius: 20px 20px 0 0 !important;
+}
+
+.modal-footer {
+    border-radius: 0 0 20px 20px !important;
+}
+
+/* Estilos para filtros compactos */
+.compact-filters {
+    margin-bottom: 1rem !important;
+    border-radius: 12px !important;
+}
+
+.compact-header {
+    padding: 0.75rem 1rem !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+
+.compact-body {
+    padding: 0.75rem 1rem !important;
+}
+
+.form-label-sm {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.25rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control-sm {
+    height: 32px !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 8px !important;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 20px !important;
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 8px !important;
+    font-size: 0.8rem !important;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .compact-body {
+        padding: 0.5rem !important;
+    }
+    
+    .compact-header {
+        padding: 0.5rem !important;
+    }
+    
+    .form-control-sm {
+        height: 36px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .gap-2 .btn {
+        margin-bottom: 0.5rem;
+        width: 100%;
+        max-width: 250px;
+    }
+}
+</style>
+{% endblock extrajs %}

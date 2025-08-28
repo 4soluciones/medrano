@@ -1,0 +1,360 @@
+<form id="productUpdateForm" method="post">
+    {% csrf_token %}
+    <input type="hidden" id="product-id" name="product-id" value="{{ product_obj.id }}">
+    
+    <div class="row">
+        <!-- Información básica del producto -->
+        <div class="col-md-6">
+            <div class="form-group mb-3 mb-3">
+                <label for="product-name" class="form-label">
+                    <i class="fas fa-tag text-primary mr-2"></i>Nombre del Producto <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="product-name" name="product-name" 
+                       placeholder="Ingrese el nombre del producto" required 
+                       value="{{ product_obj.name|default:'' }}">
+                <small class="form-text text-muted">Nombre descriptivo del producto o servicio</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="product-code" class="form-label">
+                    <i class="fas fa-barcode text-primary mr-2"></i>Código del Producto
+                </label>
+                <input type="text" class="form-control" id="product-code" name="product-code" 
+                       placeholder="Código interno (opcional)" 
+                       value="{{ product_obj.code|default:'' }}">
+                <small class="form-text text-muted">Código único para identificación interna</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="product-category" class="form-label">
+                    <i class="fas fa-layer-group text-primary mr-2"></i>Categoría <span class="text-danger">*</span>
+                </label>
+                <select class="form-control" id="product-category" name="product-category" required>
+                    <option value="">Seleccione una categoría</option>
+                    {% for category in category_set %}
+                    <option value="{{ category.id }}" {% if product_obj.product_category.id == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted">Categoría a la que pertenece el producto</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="product-type" class="form-label">
+                    <i class="fas fa-cube text-primary mr-2"></i>Tipo de Producto
+                </label>
+                <select class="form-control" id="product-type" name="product-type">
+                    <option value="P" {% if product_obj.type_product == 'P' %}selected{% endif %}>PRODUCTO</option>
+                    <option value="S" {% if product_obj.type_product == 'S' %}selected{% endif %}>SERVICIO</option>
+                </select>
+                <small class="form-text text-muted">Tipo de item que representa</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="product-stock-min" class="form-label">
+                    <i class="fas fa-exclamation-triangle text-warning mr-2"></i>Stock Mínimo
+                </label>
+                <input type="number" class="form-control" id="product-stock-min" name="product-stock-min" 
+                       placeholder="0" min="0" value="{{ product_obj.stock_min|default:0 }}">
+                <small class="form-text text-muted">Cantidad mínima antes de alertar</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="product-stock-max" class="form-label">
+                    <i class="fas fa-warehouse text-info mr-2"></i>Stock Máximo
+                </label>
+                <input type="number" class="form-control" id="product-stock-max" name="product-stock-max" 
+                       placeholder="0" min="0" value="{{ product_obj.stock_max|default:0 }}">
+                <small class="form-text text-muted">Cantidad máxima recomendada</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="form-group mb-0">
+                <label for="product-observation" class="form-label">
+                    <i class="fas fa-comment text-primary mr-2"></i>Observaciones
+                </label>
+                <textarea class="form-control" id="product-observation" name="product-observation" 
+                          rows="3" placeholder="Observaciones adicionales del producto">{{ product_obj.observation|default:'' }}</textarea>
+                <small class="form-text text-muted">Información adicional relevante</small>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-3">
+    <h6 class="text-primary mb-3">
+        <i class="fas fa-dollar-sign mr-2"></i>Información de Precios y Unidades
+    </h6>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="product-unit" class="form-label">
+                    <i class="fas fa-ruler text-primary mr-2"></i>Unidad de Medida
+                </label>
+                <select class="form-control" id="product-unit" name="product-unit">
+                    <option value="">Seleccione una unidad</option>
+                    {% for unit in unit_set %}
+                    <option value="{{ unit.id }}" 
+                            {% for detail in product_obj.productdetail_set.all %}
+                                {% if detail.unit.id == unit.id and detail.is_enabled %}selected{% endif %}
+                            {% endfor %}>
+                        {{ unit.name }} - {{ unit.description }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted">Unidad de medida del producto</small>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="product-price-sale" class="form-label">
+                    <i class="fas fa-tags text-success mr-2"></i>Precio de Venta
+                </label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">S/</span>
+                    </div>
+                    <input type="number" class="form-control" id="product-price-sale" name="product-price-sale" 
+                           placeholder="0.00"
+                           min="0" step="0.01"
+                           value="{% for detail in product_obj.productdetail_set.all %}{% if detail.is_enabled %}{{ detail.price_sale|safe }}{% endif %}{% endfor %}">
+                </div>
+                <small class="form-text text-muted">Precio al que se vende el producto</small>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="product-price-purchase" class="form-label">
+                    <i class="fas fa-shopping-cart text-info mr-2"></i>Precio de Compra
+                </label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">S/</span>
+                    </div>
+                    <input type="number" class="form-control" id="product-price-purchase" name="product-price-purchase" 
+                           placeholder="0.00" min="0" step="0.01" 
+                           value="{% for detail in product_obj.productdetail_set.all %}{% if detail.is_enabled %}{{ detail.price_purchase|safe }}{% endif %}{% endfor %}">
+                </div>
+                <small class="form-text text-muted">Precio al que se compra el producto</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle mr-2"></i>
+        <strong>Nota:</strong> Los campos marcados con <span class="text-danger">*</span> son obligatorios. 
+        Los precios y unidades se pueden configurar después de crear el producto.
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times mr-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" onclick="updateProduct()">
+            <i class="fas fa-save mr-2"></i>Actualizar Producto
+        </button>
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    // Validación del formulario
+    $('#productUpdateForm').on('submit', function(e) {
+        e.preventDefault();
+        updateProduct();
+    });
+
+    // Formatear campos numéricos
+    $('#product-price-sale, #product-price-purchase').on('blur', function() {
+        var value = parseFloat($(this).val()) || 0;
+        $(this).val(value.toFixed(2));
+    });
+
+    // Validación en tiempo real
+    $('#product-name').on('input', function() {
+        var value = $(this).val();
+        if (value.length > 0) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        }
+    });
+
+    $('#product-category').on('change', function() {
+        var value = $(this).val();
+        if (value) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        }
+    });
+});
+</script>
+
+<style>
+    /* Estilos consistentes con order_list */
+    .card {
+        box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
+        margin-bottom: 1rem;
+        border-radius: 1.5rem !important;
+        overflow: hidden;
+    }
+
+    .btn {
+        border-radius: 1rem !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-control {
+        border-radius: 1rem !important;
+        border: 2px solid #e9ecef;
+        border-radius: 1rem !important;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        transform: translateY(-1px);
+    }
+
+    select.form-control {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        border-radius: 1rem !important;
+    }
+
+    .input-group-text {
+        border-radius: 1rem 0 0 1rem !important;
+        border: 2px solid #e9ecef;
+        border-right: none;
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 1rem 1rem 0 !important;
+        border-left: none;
+    }
+
+    .input-group .form-control:focus {
+        border-left: 1px solid #007bff;
+    }
+
+    .alert {
+        border-radius: 1rem !important;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        border: none;
+        color: #0c5460;
+        font-weight: 500;
+    }
+
+    .alert-info .fas {
+        color: #17a2b8;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        display: block;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-control::placeholder {
+        color: #6c757d;
+        opacity: 0.7;
+        font-style: italic;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
+
+    .text-primary {
+        color: #007bff !important;
+    }
+
+    .text-success {
+        color: #28a745 !important;
+    }
+
+    .text-info {
+        color: #17a2b8 !important;
+    }
+
+    .text-warning {
+        color: #ffc107 !important;
+    }
+
+    .text-muted {
+        color: #6c757d !important;
+        font-size: 0.8rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card {
+            border-radius: 1rem !important;
+        }
+
+        .btn {
+            border-radius: 1rem !important;
+        }
+
+        .form-control {
+            border-radius: 1rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    }
+</style>

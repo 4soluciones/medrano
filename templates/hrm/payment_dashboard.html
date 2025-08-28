@@ -1,0 +1,374 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    Dashboard de Pagos
+{% endblock title %}
+
+{% block body %}
+    <div class="container-fluid roboto-condensed-regular">
+        <!-- Header del Dashboard -->
+        <div class="row mb-0">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body bg-gradient-primary text-white p-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h3 class="mb-1">
+                                    <i class="fas fa-money-bill-wave mr-2"></i>
+                                    Sistema de Control de Pagos
+                                </h3>
+                                <p class="mb-0 opacity-75 small">Gestiona y controla los pagos semanales de tus empleados</p>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <button type="button" onclick="showModalView('modal_payment_period_create')" 
+                                        class="btn btn-light btn-md rounded-pill">
+                                    <i class="fas fa-plus mr-1"></i>Nuevo Período
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+                <!-- Contenido Principal -->
+        <div class="row">
+            <!-- Períodos de Pago Recientes -->
+            <div class="col-lg-8 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h6 class="mb-0 text-primary">
+                                <i class="fas fa-history mr-2"></i>Períodos de Pago Recientes
+                            </h6>
+                            <a href="{% url 'apps.hrm:payment_periods_list' %}" class="btn btn-outline-primary btn-sm rounded-pill">
+                                Ver Todos
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_payments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 small">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th class="border-0 text-white">Empleado</th>
+                                            <th class="border-0 text-white">Período</th>
+                                            <th class="border-0 text-white text-center">Total</th>
+                                            <th class="border-0 text-white text-center">Estado</th>
+                                            <th class="border-0 text-white text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in recent_payments %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        {% if payment.employee.photo %}
+                                                            <img src="{{ payment.employee.photo.url }}" 
+                                                                 class="rounded-circle mr-2" width="32" height="32" 
+                                                                 alt="Foto">
+                                                        {% else %}
+                                                            <img src="{% static 'dist/img/user1-128x128.jpg' %}" 
+                                                                 class="rounded-circle mr-2" width="32" height="32" 
+                                                                 alt="Foto">
+                                                        {% endif %}
+                                                        <div>
+                                                            <h6 class="mb-0 small">{{ payment.employee.first_name }} {{ payment.employee.last_name }}</h6>
+                                                            <small class="text-muted">{{ payment.employee.document|default:"Sin documento" }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong>{{ payment.start_date|date:'d/m/Y' }} - {{ payment.end_date|date:'d/m/Y' }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ payment.get_working_days_count }} días trabajados</small>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <h5 class="mb-0 text-success">S/ {{ payment.total_amount|floatformat:2 }}</h5>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if payment.is_paid %}
+                                                        <span class="badge badge-success badge-pill">
+                                                            <i class="fas fa-check mr-1"></i>Pagado
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge badge-warning badge-pill">
+                                                            <i class="fas fa-clock mr-1"></i>Pendiente
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{% url 'apps.hrm:payment_period_detail' payment.id %}" 
+                                                       class="btn btn-outline-primary btn-sm rounded-pill">
+                                                        <i class="fas fa-eye mr-1"></i>Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No hay períodos de pago</h5>
+                                <p class="text-muted">Comienza creando el primer período de pago</p>
+                                <button type="button" onclick="showModalView('modal_payment_period_create')" 
+                                        class="btn btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Crear Período
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empleados Activos -->
+            <div class="col-lg-4 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h6 class="mb-0 text-primary">
+                                <i class="fas fa-user-tie mr-2"></i>Empleados Activos
+                            </h6>
+                            <button type="button" onclick="showModalView('modal_payment_template_create')" 
+                                    class="btn btn-outline-success btn-sm rounded-pill">
+                                <i class="fas fa-plus mr-1"></i>Agregar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if employees_with_templates %}
+                            <div class="list-group list-group-flush">
+                                {% for employee in employees_with_templates %}
+                                    <div class="list-group-item border-0 d-flex justify-content-between align-items-center py-2">
+                                        <div class="d-flex align-items-center">
+                                            {% if employee.photo %}
+                                                <img src="{{ employee.photo.url }}" 
+                                                     class="rounded-circle mr-2" width="28" height="28" alt="Foto">
+                                            {% else %}
+                                                <img src="{% static 'dist/img/user1-128x128.jpg' %}" 
+                                                     class="rounded-circle mr-2" width="28" height="28" alt="Foto">
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0 small">{{ employee.first_name }} {{ employee.last_name }}</h6>
+                                                <small class="text-muted">
+                                                    {% if employee.document %}{{ employee.document }}{% else %}Sin documento{% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-success badge-pill small">Activo</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-user-plus fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-2 small">No hay empleados activos</p>
+                                <button type="button" onclick="showModalView('modal_payment_template_create')" 
+                                        class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus mr-1"></i>Agregar Empleado
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-primary mb-2">
+                            <i class="fas fa-bolt mr-2"></i>Acciones Rápidas
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <a href="{% url 'apps.hrm:payment_periods_list' %}" class="btn btn-outline-primary btn-sm btn-block rounded-pill">
+                                    <i class="fas fa-list mr-1"></i>Ver Períodos
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="{% url 'apps.hrm:payment_templates_list' %}" class="btn btn-outline-success btn-sm btn-block rounded-pill">
+                                    <i class="fas fa-cogs mr-1"></i>Gestionar Tarifas
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="{% url 'apps.hrm:payment_reports' %}" class="btn btn-outline-info btn-sm btn-block rounded-pill">
+                                    <i class="fas fa-chart-bar mr-1"></i>Reportes
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button type="button" onclick="showModalView('modal_payment_period_create')" 
+                                        class="btn btn-primary btn-sm btn-block rounded-pill">
+                                    <i class="fas fa-plus mr-1"></i>Nuevo Pago
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear período de pago -->
+    <div class="modal fade" id="modal-payment-period-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <!-- Modal para crear plantilla de pago -->
+    <div class="modal fade" id="modal-payment-template-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <style>
+        /* Reducir tamaño de letra general */
+        body {
+            font-size: 0.9rem;
+        }
+        
+        /* Reducir tamaños de encabezados */
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.3rem; }
+        h4 { font-size: 1.1rem; }
+        h5 { font-size: 1rem; }
+        h6 { font-size: 0.9rem; }
+        
+        /* Reducir tamaño de párrafos y texto general */
+        p, .card-body, .table {
+            font-size: 0.85rem;
+        }
+        
+        /* Reducir tamaño de botones */
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+        
+        .btn-md {
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+        
+        /* Reducir tamaño de tabla */
+        .table th, .table td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .table th {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Reducir tamaño de badges */
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        /* Reducir padding de cards */
+        .card {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Reducir tamaño de listas */
+        .list-group-item {
+            border: none;
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+        
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Reducir tamaño de texto pequeño */
+        .small {
+            font-size: 0.8rem;
+        }
+        
+        /* Reducir tamaño de imágenes */
+        .rounded-circle {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+{% endblock body %}
+
+{% block extrajs %}
+    <script type="text/javascript">
+        /*$(document).ready(function() {
+            console.log('Dashboard de pagos cargado');
+        });*/
+
+        window.showModalView = function(route) {
+            //console.log('showModalView called with route:', route);
+            var url;
+            if (route === 'modal_payment_period_create') {
+                url = "{% url 'apps.hrm:modal_payment_period_create' %}";
+            } else if (route === 'modal_payment_template_create') {
+                url = "{% url 'apps.hrm:modal_payment_template_create' %}";
+            } else {
+                console.error('Ruta no válida:', route);
+                return;
+            }
+            
+            $.ajax({
+                url: url,
+                dataType: 'json',
+                type: 'GET',
+                success: function (response) {
+                    console.log('Modal response:', response);
+                    if (route === 'modal_payment_period_create') {
+                        $('#modal-payment-period-create').html(response.form);
+                        $('#modal-payment-period-create').modal('show');
+                    } else if (route === 'modal_payment_template_create') {
+                        $('#modal-payment-template-create').html(response.form);
+                        $('#modal-payment-template-create').modal('show');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    toastr.error('Error en la petición', '¡Mensaje!');
+                }
+            });
+        }
+    </script>
+{% endblock extrajs %}

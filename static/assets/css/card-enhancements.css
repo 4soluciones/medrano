@@ -1,0 +1,271 @@
+/* ===== MEJORAS AVANZADAS PARA TARJETAS ===== */
+
+/* Efectos de profundidad y sombras */
+.small-box {
+    position: relative;
+    background-attachment: fixed;
+    perspective: 1000px;
+}
+
+/* Efecto de profundidad 3D */
+.small-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        rgba(255,255,255,0.2) 0%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0.05) 100%);
+    opacity: 0;
+    transition: all 0.4s ease;
+    transform: translateZ(20px);
+}
+
+.small-box:hover::before {
+    opacity: 1;
+    transform: translateZ(0);
+}
+
+/* Efecto de borde luminoso */
+.small-box::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff, #5f27cd);
+    background-size: 400% 400%;
+    border-radius: calc(var(--border-radius) + 2px);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    animation: borderGlow 3s ease-in-out infinite;
+}
+
+.small-box:hover::after {
+    opacity: 1;
+}
+
+@keyframes borderGlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Mejoras en el contenido de las tarjetas */
+.small-box .inner {
+    position: relative;
+    z-index: 3;
+}
+
+.small-box .inner h3 {
+    background: linear-gradient(45deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.small-box .inner p {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+/* Efectos especiales para los iconos */
+.small-box .icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 4.5rem;
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.small-box:hover .icon {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 1;
+    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.4));
+}
+
+/* Efectos de hover para el footer */
+.small-box .small-box-footer {
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.small-box .small-box-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255,255,255,0.2), 
+        transparent);
+    transition: left 0.6s ease;
+}
+
+.small-box .small-box-footer:hover::before {
+    left: 100%;
+}
+
+.small-box .small-box-footer:hover {
+    background: rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Efectos de partículas flotantes */
+.small-box {
+    overflow: hidden;
+}
+
+.small-box::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.small-box:hover::before {
+    opacity: 1;
+}
+
+/* Mejoras en la responsividad */
+@media (max-width: 1200px) {
+    .small-box .icon {
+        font-size: 3.5rem;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .small-box {
+        margin-bottom: 15px;
+    }
+    
+    .small-box .icon {
+        font-size: 3rem;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .small-box .inner {
+        padding: 20px;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 1.8rem;
+    }
+    
+    .small-box .inner p {
+        font-size: 0.8rem;
+    }
+}
+
+/* Efectos de entrada mejorados */
+.small-box {
+    animation: cardEntrance 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Efectos de hover para enlaces internos */
+.small-box a {
+    position: relative;
+    z-index: 4;
+}
+
+.small-box a:hover {
+    text-decoration: none;
+}
+
+/* Efectos de sombra dinámica */
+.small-box {
+    box-shadow: 
+        0 4px 20px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.1);
+}
+
+.small-box:hover {
+    box-shadow: 
+        0 8px 30px rgba(0,0,0,0.2),
+        0 4px 10px rgba(0,0,0,0.15),
+        0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Efectos de texto flotante */
+.small-box .inner h3,
+.small-box .inner p {
+    transition: all 0.3s ease;
+}
+
+.small-box:hover .inner h3 {
+    transform: translateY(-5px);
+}
+
+.small-box:hover .inner p {
+    transform: translateY(-3px);
+}
+
+/* Efectos de brillo en los bordes */
+.small-box.bg-warning:hover {
+    box-shadow: 
+        0 8px 30px rgba(0,0,0,0.2),
+        0 0 0 3px rgba(243, 156, 18, 0.3);
+}
+
+.small-box.bg-info:hover {
+    box-shadow: 
+        0 8px 30px rgba(0,0,0,0.2),
+        0 0 0 3px rgba(23, 162, 184, 0.3);
+}
+
+.small-box.bg-success:hover {
+    box-shadow: 
+        0 8px 30px rgba(0,0,0,0.2),
+        0 0 0 3px rgba(39, 174, 96, 0.3);
+}
+
+.small-box.bg-danger:hover {
+    box-shadow: 
+        0 8px 30px rgba(0,0,0,0.2),
+        0 0 0 3px rgba(231, 76, 60, 0.3);
+}

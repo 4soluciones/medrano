@@ -1,0 +1,395 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="{% static 'plugins/fontawesome-free/css/all.min.css' %}" rel="stylesheet"/>
+    <!-- icheck bootstrap -->
+    <link href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{% static 'fonts/bankgothick/font-bankgothick.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/stylazos.css' %}">
+    <!-- Theme style -->
+    <link href="{% static 'assets/css/adminlte.min.css' %}" rel="stylesheet"/>
+
+    <link rel="icon" href="{% static 'assets/img/log_medrano_no_bg.ico' %}" type="image/ico"/>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="logo-container">
+                <img src="{% static 'assets/img/log_medrano_no_bg.png' %}" alt="logo" class="img-fluid" width="400">
+            </div>
+            <p class="company-tagline">Sistema de Gestión de Paneles Publicitarios</p>
+        </div>
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+
+            {% if form.errors %}
+                <div class="error-message">
+                    <span class="material-icons">error</span>
+                    Usuario o contraseña incorrectos
+                </div>
+            {% endif %}
+
+            <div class="form-field">
+                <div class="mdc-text-field mdc-text-field--outlined mdc-text-field--with-leading-icon">
+                    <span class="material-icons mdc-text-field__icon mdc-text-field__icon--leading">person</span>
+                    <input type="text" name="username" class="mdc-text-field__input" id="id_username"
+                           placeholder="Usuario" required>
+                    <div class="mdc-notched-outline">
+                        <div class="mdc-notched-outline__leading"></div>
+                        <div class="mdc-notched-outline__notch">
+                            <label class="mdc-floating-label" for="id_username">Usuario</label>
+                        </div>
+                        <div class="mdc-notched-outline__trailing"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <div class="mdc-text-field mdc-text-field--outlined mdc-text-field--with-leading-icon">
+                    <span class="material-icons mdc-text-field__icon mdc-text-field__icon--leading">lock</span>
+                    <input type="password" name="password" class="mdc-text-field__input" id="id_password"
+                           placeholder="Contraseña" required>
+                    <div class="mdc-notched-outline">
+                        <div class="mdc-notched-outline__leading"></div>
+                        <div class="mdc-notched-outline__notch">
+                            <label class="mdc-floating-label" for="id_password">Contraseña</label>
+                        </div>
+                        <div class="mdc-notched-outline__trailing"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="mdc-checkbox">
+                    <input type="checkbox" class="mdc-checkbox__native-control" id="remember-me">
+                    <div class="mdc-checkbox__background">
+                        <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                            <path class="mdc-checkbox__checkmark-path" fill="none"
+                                  d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                        </svg>
+                        <div class="mdc-checkbox__mixedmark"></div>
+                    </div>
+                </label>
+                <span class="checkbox-label">Recordarme</span>
+            </div>
+
+            <button type="submit" class="mdc-button mdc-button--raised login-button">
+                <span class="mdc-button__ripple"></span>
+                <span class="mdc-button__label">Iniciar Sesión</span>
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+            <p class="support-text">Soporte técnico: soluciones@4soluciones.net</p>
+        </div>
+
+        <div class="text-center mt-3">
+            <div class="spinner-border border-0 text-danger" role="status" style="width: auto; height: auto">
+                <img class="animation__shake img-circle" src="{% static 'assets/img/log_medrano_no_bg.png' %}"
+                     alt="Logo"
+                     height="40"
+                     width="40">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-background">
+        <div class="background-pattern"></div>
+        <div class="floating-elements">
+            <div class="floating-panel panel-1"></div>
+            <div class="floating-panel panel-2"></div>
+            <div class="floating-panel panel-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+<!-- Bootstrap 4 -->
+<script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<!-- AdminLTE App -->
+<script src="{% static 'assets/js/adminlte.min.js' %}"></script>
+
+
+</body>
+</html>
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        position: relative;
+        z-index: 10;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .logo-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+
+    .company-name {
+        font-size: 32px;
+        font-weight: 700;
+        color: #333;
+        margin: 16px 0 0 0;
+    }
+
+    .company-tagline {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .form-field {
+        margin-bottom: 24px;
+    }
+
+    .mdc-text-field {
+        width: 100%;
+        position: relative;
+    }
+
+    .mdc-text-field__input {
+        width: 100%;
+        padding: 12px 16px 12px 48px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        background: transparent;
+        box-sizing: border-box;
+    }
+
+    .mdc-text-field__input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .mdc-text-field__input::placeholder {
+        color: #999;
+        opacity: 1;
+    }
+
+    .mdc-text-field__icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        z-index: 1;
+        font-size: 20px;
+    }
+
+    .mdc-notched-outline {
+        display: none;
+    }
+
+    .form-options {
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .mdc-checkbox {
+        position: relative;
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+    }
+
+    .mdc-checkbox__native-control {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .mdc-checkbox__background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #e0e0e0;
+        border-radius: 2px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .mdc-checkbox__native-control:checked + .mdc-checkbox__background {
+        background: #667eea;
+        border-color: #667eea;
+    }
+
+    .checkbox-label {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .login-button {
+        width: 100%;
+        height: 48px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        margin-bottom: 24px;
+    }
+
+    .login-button:hover {
+        transform: translateY(-2px);
+    }
+
+    .login-footer {
+        text-align: center;
+    }
+
+    .forgot-password {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .forgot-password:hover {
+        text-decoration: underline;
+    }
+
+    .support-text {
+        color: #999;
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .error-message {
+        background: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .error-message .material-icons {
+        margin-right: 8px;
+        font-size: 20px;
+    }
+
+    .background-pattern {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    .floating-panel {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .panel-1 {
+        width: 80px;
+        height: 120px;
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+    }
+
+    .panel-2 {
+        width: 60px;
+        height: 90px;
+        top: 60%;
+        right: 15%;
+        animation-delay: 2s;
+    }
+
+    .panel-3 {
+        width: 100px;
+        height: 60px;
+        bottom: 20%;
+        left: 20%;
+        animation-delay: 4s;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .login-card {
+            margin: 20px;
+            padding: 32px 24px;
+        }
+
+        .company-name {
+            font-size: 28px;
+        }
+    }
+</style>

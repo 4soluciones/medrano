@@ -1,0 +1,961 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+    Gestión de Gastos y Flujo de Caja
+{% endblock title %}
+
+{% block body %}
+<div class="content-fluid roboto-condensed-regular">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h5 class="m-0 text-dark">
+                        <i class="fas fa-chart-line mr-2"></i>Gestión de Gastos y Flujo de Caja
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-calendar-day mr-1"></i>
+                            <span id="expenses-indicator">Control y seguimiento de gastos diarios y flujo de efectivo</span>
+                        </small>
+                    </h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <!-- Filtros de búsqueda -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-primary card-outline compact-filters">
+                        <div class="card-header compact-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-search mr-2"></i>Filtros de Búsqueda
+                                    </h6>
+                                    <button type="button" class="btn btn-success ml-3" onclick="openCreateCashflowModal()">
+                                        <i class="fas fa-plus mr-1"></i>Nuevo Gasto
+                                    </button>
+                                </div>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-filters" title="Colapsar/Expandir filtros">
+                                        <i class="fas fa-chevron-up" id="toggle-icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body compact-body">
+                            <!-- Mensaje informativo compacto -->
+                            <div class="alert alert-info alert-sm mb-2" role="alert">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <small><strong>Filtre los gastos por sucursal, cuenta, tipo de transacción y fechas para obtener reportes específicos.</strong></small>
+                            </div>
+
+                            <form id="search-form">
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="date-from" class="form-label-sm">Fecha Desde</label>
+                                            <input type="date" class="form-control form-control-sm" value="{{ date_now }}"
+                                                   id="date-from" name="date_from">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="date-to" class="form-label-sm">Fecha Hasta</label>
+                                            <input type="date" class="form-control form-control-sm" value="{{ date_now }}"
+                                                   id="date-to" name="date_to">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="subsidiary-filter" class="form-label-sm">Sucursal</label>
+                                            <select class="form-control form-control-sm" id="subsidiary-filter" name="subsidiary">
+                                                <option value="0">Todas las sucursales</option>
+                                                {% for subsidiary in subsidiary_set %}
+                                                    <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="cash-account-filter" class="form-label-sm">Cuenta/Caja</label>
+                                            <select class="form-control form-control-sm" id="cash-account-filter" name="cash_account">
+                                                <option value="0">Todas las cuentas</option>
+                                                {% for cash in cash_accounts %}
+                                                    <option value="{{ cash.id }}">{{ cash.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="transaction-type-filter" class="form-label-sm">Tipo Transacción</label>
+                                            <select class="form-control form-control-sm" id="transaction-type-filter" name="transaction_type">
+                                                <option value="0">Todos los tipos</option>
+                                                {% for code, name in transaction_types %}
+                                                    <option value="{{ code }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="expense-type-filter" class="form-label-sm">Tipo de Gasto</label>
+                                            <select class="form-control form-control-sm" id="expense-type-filter" name="expense_type">
+                                                <option value="0">Todos los gastos</option>
+                                                {% for code, name in expense_types %}
+                                                    <option value="{{ code }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-1">
+                                            <label for="user-filter" class="form-label-sm">Usuario</label>
+                                            <select class="form-control form-control-sm" id="user-filter" name="user">
+                                                <option value="0">Todos los usuarios</option>
+                                                {% for user in user_set %}
+                                                    <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-1">
+                                            <label class="form-label-sm">&nbsp;</label>
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                                    <i class="fas fa-search mr-1"></i>Buscar
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm" id="clear-filters">
+                                                    <i class="fas fa-times mr-1"></i>Limpiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <!-- Espacio para futuras expansiones -->
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-list mr-2"></i>Listado de Gastos y Transacciones
+                                    <small class="text-muted ml-2" id="expenses-count">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <span id="expenses-count-text">Cargando...</span>
+                                    </small>
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadCashflows()" title="Actualizar listado">
+                                        <i class="fas fa-refresh"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="cashflows-grid" class="w-100">
+                                <!-- Aquí se cargará la grilla de gastos -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear nuevo gasto -->
+<div class="modal fade" id="createCashflowModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content roboto-condensed-regular">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle mr-2"></i>Nuevo Gasto/Transacción
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cashflow-form">
+                    <!-- Información General -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-info-circle mr-2"></i>Información General
+                            </h6>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="transaction_date" class="form-label">
+                                    <i class="fas fa-calendar mr-1"></i>Fecha de Transacción <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="transaction_date" name="transaction_date"
+                                       value="{{ date_now }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="transaction_type" class="form-label">
+                                    <i class="fas fa-exchange-alt mr-1"></i>Tipo de Transacción <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="transaction_type" name="transaction_type" required>
+                                    <option value="">Seleccione tipo</option>
+                                    {% for code, name in transaction_types %}
+                                        <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="cash_id" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Cuenta/Caja <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="cash_id" name="cash_id" required>
+                                    <option value="">Seleccione cuenta</option>
+                                    {% for cash in cash_accounts %}
+                                        <option value="{{ cash.id }}" data-subsidiary="{{ cash.subsidiary.id }}">
+                                            {{ cash.name }} - {{ cash.get_currency_type_display }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="expense_type" class="form-label">
+                                    <i class="fas fa-tags mr-1"></i>Tipo de Gasto
+                                </label>
+                                <select class="form-control" id="expense_type" name="expense_type">
+                                    <option value="">Seleccione tipo</option>
+                                    {% for code, name in expense_types %}
+                                        <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="user_id" class="form-label">
+                                    <i class="fas fa-user mr-1"></i>Usuario <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="user_id" name="user_id" required>
+                                    <option value="">Seleccione usuario</option>
+                                    {% for user in user_set %}
+                                        <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="document_type" class="form-label">
+                                    <i class="fas fa-receipt mr-1"></i>Tipo de Documento
+                                </label>
+                                <select class="form-control" id="document_type" name="document_type">
+                                    <option value="O" selected>Otro</option>
+                                    {% for code, name in document_types %}
+                                        {% if code != 'O' %}
+                                            <option value="{{ code }}">{{ name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del Documento -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-success border-bottom pb-2">
+                                <i class="fas fa-file-alt mr-2"></i>Información del Documento
+                            </h6>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-comment mr-1"></i>Descripción <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Descripción detallada del gasto o transacción" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos condicionales para Factura/Boleta -->
+                    <div id="document-fields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="serial" class="form-label">
+                                        <i class="fas fa-hashtag mr-1"></i>Serie
+                                    </label>
+                                    <input type="text" class="form-control" id="serial" name="serial"
+                                           placeholder="Serie del documento" maxlength="5">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="n_receipt" class="form-label">
+                                        <i class="fas fa-sort-numeric-up mr-1"></i>N° Comprobante
+                                    </label>
+                                    <input type="number" class="form-control" id="n_receipt" name="n_receipt"
+                                           placeholder="Número de comprobante" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="operation_code" class="form-label">
+                                        <i class="fas fa-barcode mr-1"></i>Código de Operación
+                                    </label>
+                                    <input type="text" class="form-control" id="operation_code" name="operation_code"
+                                           placeholder="Código de operación" maxlength="45">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Financiera -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-warning border-bottom pb-2">
+                                <i class="fas fa-calculator mr-2"></i>Información Financiera
+                            </h6>
+                        </div>
+                    </div>
+
+                    <!-- Campos condicionales para Factura/Boleta -->
+                    <div id="financial-fields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="subtotal" class="form-label">
+                                        <i class="fas fa-calculator mr-1"></i>Subtotal
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">S/</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="subtotal" name="subtotal"
+                                               min="0" step="0.01" value="0.00" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="igv" class="form-label">
+                                        <i class="fas fa-percentage mr-1"></i>IGV
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">S/</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="igv" name="igv"
+                                               min="0" step="0.01" value="0.00" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="total" class="form-label">
+                                        <i class="fas fa-money-bill-wave mr-1"></i>Total <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">S/</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="total" name="total"
+                                               min="0" step="0.01" value="0.00" placeholder="0.00" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campo total siempre visible para otros tipos -->
+                    <div id="simple-total-field">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="total_simple" class="form-label">
+                                        <i class="fas fa-money-bill-wave mr-1"></i>Total <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">S/</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="total_simple" name="total_simple"
+                                               min="0" step="0.01" value="0.00" placeholder="0.00" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-info border-bottom pb-2">
+                                <i class="fas fa-lightbulb mr-2"></i>Información Adicional
+                            </h6>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-info-circle fa-2x text-info mr-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="alert-heading">Recomendaciones para el registro:</h6>
+                                        <ul class="mb-0">
+                                            <li><strong>Descripción clara:</strong> Use descripciones específicas que faciliten la identificación del gasto</li>
+                                            <li><strong>Documentos:</strong> Complete la información del documento cuando esté disponible</li>
+                                            <li><strong>Montos:</strong> Verifique que los montos sean correctos antes de guardar</li>
+                                            <li><strong>Clasificación:</strong> Seleccione el tipo de gasto apropiado para mejor control</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCashflow()">
+                    <i class="fas fa-save mr-1"></i>Guardar Gasto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Cargando...</span>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // Cargar gastos al iniciar
+    loadCashflows();
+
+    // Establecer fecha actual en los filtros si están vacíos
+    if (!$('#date-from').val()) {
+        $('#date-from').val(new Date().toISOString().split('T')[0]);
+    }
+    if (!$('#date-to').val()) {
+        $('#date-to').val(new Date().toISOString().split('T')[0]);
+    }
+
+    // Manejar envío del formulario de búsqueda
+    $('#search-form').on('submit', function(e) {
+        e.preventDefault();
+        loadCashflows();
+    });
+
+    // Limpiar filtros
+    $('#clear-filters').on('click', function() {
+        $('#search-form')[0].reset();
+        // Establecer fechas del día actual después de limpiar
+        $('#date-from').val(new Date().toISOString().split('T')[0]);
+        $('#date-to').val(new Date().toISOString().split('T')[0]);
+        loadCashflows();
+    });
+
+    // Toggle para colapsar/expandir filtros
+    $('#toggle-filters').on('click', function() {
+        const filtersBody = $('.compact-body');
+        const toggleIcon = $('#toggle-icon');
+
+        if (filtersBody.is(':visible')) {
+            filtersBody.slideUp(300);
+            toggleIcon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $(this).attr('title', 'Expandir filtros');
+            localStorage.setItem('cashflowFiltersCollapsed', 'true');
+        } else {
+            filtersBody.slideDown(300);
+            toggleIcon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            $(this).attr('title', 'Colapsar filtros');
+            localStorage.setItem('cashflowFiltersCollapsed', 'false');
+        }
+    });
+
+    // Restaurar estado de los filtros al cargar la página
+    const filtersCollapsed = localStorage.getItem('cashflowFiltersCollapsed');
+    if (filtersCollapsed === 'true') {
+        $('.compact-body').hide();
+        $('#toggle-icon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        $('#toggle-filters').attr('title', 'Expandir filtros');
+    }
+
+    // Filtrar cuentas por sucursal
+    $('#subsidiary_id').on('change', function() {
+        filterCashAccounts();
+    });
+
+    // Calcular total automáticamente
+    $('#subtotal, #igv').on('input', function() {
+        calculateTotal();
+    });
+
+    // Manejar la visibilidad de los campos de documento y financiero
+    $('#document_type').on('change', function() {
+        const documentFields = $('#document-fields');
+        const financialFields = $('#financial-fields');
+        const simpleTotalField = $('#simple-total-field');
+        const documentType = $(this).val();
+
+        if (documentType === 'F' || documentType === 'B') { // Factura o Boleta
+            documentFields.show();
+            financialFields.show();
+            simpleTotalField.hide();
+            
+            // Sincronizar el total simple con el campo financiero
+            const totalSimple = $('#total_simple').val();
+            if (totalSimple && parseFloat(totalSimple) > 0) {
+                $('#total').val(totalSimple);
+                $('#subtotal').val('0.00');
+                $('#igv').val('0.00');
+            }
+        } else { // Otro tipo de documento
+            documentFields.hide();
+            financialFields.hide();
+            simpleTotalField.show();
+            
+            // Sincronizar el total financiero con el campo simple
+            const total = $('#total').val();
+            if (total && parseFloat(total) > 0) {
+                $('#total_simple').val(total);
+            }
+        }
+    });
+
+    // Sincronizar campos de total
+    $('#total_simple').on('input', function() {
+        const value = $(this).val();
+        if (value && parseFloat(value) > 0) {
+            $('#total').val(value);
+        }
+    });
+
+    $('#total').on('input', function() {
+        const value = $(this).val();
+        if (value && parseFloat(value) > 0) {
+            $('#total_simple').val(value);
+        }
+    });
+});
+
+function openCreateCashflowModal() {
+    // Limpiar formulario
+    $('#cashflow-form')[0].reset();
+    $('#transaction_date').val(new Date().toISOString().split('T')[0]);
+    $('#document_type').val('O'); // Resetear a "Otro" por defecto
+    
+    // Ocultar campos de documento y financiero por defecto
+    $('#document-fields').hide();
+    $('#financial-fields').hide();
+    $('#simple-total-field').show();
+    
+    // Limpiar campos específicos
+    $('#serial').val('');
+    $('#n_receipt').val('');
+    $('#operation_code').val('');
+    $('#subtotal').val('0.00');
+    $('#igv').val('0.00');
+    $('#total').val('0.00');
+    $('#total_simple').val('0.00');
+
+    // Mostrar modal
+    $('#createCashflowModal').modal('show');
+}
+
+function filterCashAccounts() {
+    const subsidiaryId = $('#subsidiary_id').val();
+    const cashSelect = $('#cash_id');
+
+    if (subsidiaryId) {
+        // Filtrar opciones de cuentas por sucursal
+        cashSelect.find('option').each(function() {
+            const option = $(this);
+            const dataSubsidiary = option.data('subsidiary');
+
+            if (dataSubsidiary && dataSubsidiary != subsidiaryId) {
+                option.hide();
+            } else {
+                option.show();
+            }
+        });
+
+        // Resetear selección si la cuenta actual no pertenece a la sucursal
+        const selectedCash = cashSelect.val();
+        if (selectedCash) {
+            const selectedOption = cashSelect.find(`option[value="${selectedCash}"]`);
+            if (selectedOption.data('subsidiary') != subsidiaryId) {
+                cashSelect.val('');
+            }
+        }
+    } else {
+        // Mostrar todas las cuentas si no hay sucursal seleccionada
+        cashSelect.find('option').show();
+    }
+}
+
+function calculateTotal() {
+    const subtotal = parseFloat($('#subtotal').val()) || 0;
+    const igv = parseFloat($('#igv').val()) || 0;
+    const total = subtotal + igv;
+    
+    $('#total').val(total.toFixed(2));
+}
+
+function saveCashflow() {
+    // Validar formulario
+    if (!validateCashflowForm()) {
+        return;
+    }
+
+    // Preparar datos
+    const formData = new FormData($('#cashflow-form')[0]);
+    
+    // Determinar qué campo de total usar según el tipo de documento
+    const documentType = $('#document_type').val();
+    if (documentType === 'F' || documentType === 'B') {
+        // Para Factura/Boleta, usar el total del campo financiero
+        const total = $('#total').val();
+        formData.set('total', total);
+        formData.set('subtotal', $('#subtotal').val() || '0.00');
+        formData.set('igv', $('#igv').val() || '0.00');
+    } else {
+        // Para otros tipos, usar el total simple
+        const totalSimple = $('#total_simple').val();
+        formData.set('total', totalSimple);
+        formData.set('subtotal', '0.00');
+        formData.set('igv', '0.00');
+    }
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cashflow_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    $('#createCashflowModal').modal('hide');
+                    loadCashflows();
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al guardar el gasto', 'error');
+        }
+    });
+}
+
+function validateCashflowForm() {
+    const requiredFields = ['transaction_date', 'transaction_type', 'cash_id', 'user_id', 'description'];
+    const documentType = $('#document_type').val();
+
+    // Validar campos obligatorios básicos
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    // Validar total según el tipo de documento
+    if (documentType === 'F' || documentType === 'B') {
+        const total = $('#total').val();
+        if (!total || parseFloat(total) <= 0) {
+            Swal.fire('Error', 'Por favor ingrese un total válido para Factura/Boleta', 'error');
+            $('#total').focus();
+            return false;
+        }
+    } else {
+        const totalSimple = $('#total_simple').val();
+        if (!totalSimple || parseFloat(totalSimple) <= 0) {
+            Swal.fire('Error', 'Por favor ingrese un total válido', 'error');
+            $('#total_simple').focus();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function loadCashflows() {
+    $('#loading-overlay').show();
+    $('#expenses-count-text').text('Cargando...');
+
+    $.ajax({
+        url: '{% url "apps.accounting:cashflow_list" %}',
+        type: 'POST',
+        data: $('#search-form').serialize(),
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            $('#cashflows-grid').html(response.grid);
+            $('#loading-overlay').hide();
+            
+            // Actualizar conteo de gastos
+            updateExpensesCount();
+        },
+        error: function(xhr, status, error) {
+            $('#loading-overlay').hide();
+            $('#expenses-count-text').text('Error al cargar');
+            console.error('Error al cargar los gastos:', error);
+        }
+    });
+}
+
+function updateExpensesCount() {
+    const expensesCount = $('#cashflows-grid .table tbody tr').length;
+    
+    if (expensesCount === 0) {
+        $('#expenses-count-text').text('No hay gastos');
+    } else {
+        $('#expenses-count-text').text(`${expensesCount} gasto${expensesCount !== 1 ? 's' : ''} encontrado${expensesCount !== 1 ? 's' : ''}`);
+    }
+}
+</script>
+
+<style>
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 1rem;
+    border-radius: 15px !important;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn {
+    border-radius: 25px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-control {
+    border-radius: 10px !important;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.modal-content {
+    border-radius: 20px !important;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-radius: 20px 20px 0 0 !important;
+}
+
+.modal-footer {
+    border-radius: 0 0 20px 20px !important;
+}
+
+/* Estilos para filtros compactos */
+.compact-filters {
+    margin-bottom: 1rem !important;
+    border-radius: 12px !important;
+}
+
+.compact-header {
+    padding: 0.75rem 1rem !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+
+.compact-body {
+    padding: 0.75rem 1rem !important;
+}
+
+.form-label-sm {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.25rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control-sm {
+    height: 32px !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 8px !important;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 20px !important;
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 8px !important;
+    font-size: 0.8rem !important;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+
+/* Estilos para el modal más compacto */
+#createCashflowModal .modal-body {
+    font-size: 0.9rem;
+}
+
+#createCashflowModal .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+#createCashflowModal .form-control {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+    height: auto;
+}
+
+#createCashflowModal .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 1rem;
+}
+
+#createCashflowModal .alert {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+}
+
+#createCashflowModal .alert-heading {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+#createCashflowModal h6 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+#createCashflowModal .modal-title {
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .compact-body {
+        padding: 0.5rem !important;
+    }
+    
+    .compact-header {
+        padding: 0.5rem !important;
+    }
+    
+    .form-control-sm {
+        height: 36px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .gap-2 .btn {
+        margin-bottom: 0.5rem;
+        width: 100%;
+        max-width: 250px;
+    }
+}
+</style>
+{% endblock extrajs %}

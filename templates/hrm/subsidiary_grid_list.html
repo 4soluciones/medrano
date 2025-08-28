@@ -1,0 +1,213 @@
+{% load static %}
+{% if subsidiary_set %}
+    <div class="card roboto-condensed-regular">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0 text-dark">
+                <i class="fas fa-building mr-2"></i>
+                Lista de Sucursales
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="table-subsidiary-list" class="table table-hover table-striped mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th class="text-center" style="width: 5%;">
+                                <i class="fas fa-hashtag"></i>
+                            </th>
+                            <th class="text-center" style="width: 8%;">
+                                <i class="fas fa-tag mr-1"></i>Serie
+                            </th>
+                            <th class="text-center" style="width: 20%;">
+                                <i class="fas fa-building mr-1"></i>Nombre Sucursal
+                            </th>
+                            <th class="text-center" style="width: 12%;">
+                                <i class="fas fa-id-card mr-1"></i>RUC
+                            </th>
+                            <th class="text-center" style="width: 20%;">
+                                <i class="fas fa-briefcase mr-1"></i>Razón Social
+                            </th>
+                            <th class="text-center" style="width: 12%;">
+                                <i class="fas fa-phone mr-1"></i>Teléfono
+                            </th>
+                            <th class="text-center" style="width: 15%;">
+                                <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                            </th>
+                            <th class="text-center" style="width: 8%;">
+                                <i class="fas fa-user-tie mr-1"></i>Representante
+                            </th>
+                            <th class="text-center" style="width: 10%;">
+                                <i class="fas fa-cogs mr-1"></i>Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body">
+                        {% for s in subsidiary_set %}
+                            <tr class="align-middle" pk="{{ s.id }}">
+                                <td class="text-center">
+                                    <span class="badge badge-primary badge-pill">{{ forloop.counter }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-info">{{ s.serial|default:"-" }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-3">
+                                            <i class="fas fa-building fa-2x text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 font-weight-bold text-primary">{{ s.name }}</h6>
+                                            {% if s.email %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-envelope mr-1"></i>{{ s.email }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="font-weight-bold text-success">{{ s.ruc|default:"-" }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-2">
+                                            <i class="fas fa-briefcase text-warning"></i>
+                                        </div>
+                                        <span class="font-weight-bold">{{ s.business_name|default:"-" }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {% if s.phone %}
+                                        <span class="badge badge-light">
+                                            <i class="fas fa-phone mr-1"></i>{{ s.phone }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if s.address %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-map-marker-alt text-danger mr-2"></i>
+                                            <span class="text-truncate" style="max-width: 150px;" title="{{ s.address }}">
+                                                {{ s.address }}
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if s.representative_name %}
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="font-weight-bold">{{ s.representative_name }}</span>
+                                            {% if s.representative_dni %}
+                                                <small class="text-muted">{{ s.representative_dni }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-primary btn-sm item-edit" 
+                                                pk="{{ s.id }}" 
+                                                title="Editar Sucursal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+{#                                        <button class="btn btn-outline-info btn-sm item-view" #}
+{#                                                pk="{{ s.id }}" #}
+{#                                                title="Ver Detalles">#}
+{#                                            <i class="fas fa-eye"></i>#}
+{#                                        </button>#}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Total de sucursales: <strong>{{ subsidiary_set.count }}</strong>
+                    </small>
+                </div>
+                <div class="col-md-6 text-right">
+                    <small class="text-muted">
+                        <i class="fas fa-clock mr-1"></i>
+                        Última actualización: <strong>{{ "now"|date:"d/m/Y H:i" }}</strong>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-building fa-5x text-muted"></i>
+            </div>
+            <h4 class="text-muted mb-3">No hay sucursales registradas</h4>
+            <p class="text-muted mb-4">
+                Comienza registrando la primera sucursal de tu empresa
+            </p>
+            <button type="button" 
+                    onclick="showModalView('modal_subsidiary_create')"
+                    class="btn btn-primary btn-lg">
+                <i class="fas fa-plus mr-2"></i>
+                Registrar Primera Sucursal
+            </button>
+        </div>
+    </div>
+{% endif %}
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    border-top: 1px solid #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+.btn-group .btn {
+    margin: 0 2px;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-header h6 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-footer {
+    border-top: 1px solid #dee2e6;
+}
+</style>

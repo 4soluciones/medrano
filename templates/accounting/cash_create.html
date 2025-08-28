@@ -1,0 +1,516 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+    Crear Nueva Cuenta/Caja
+{% endblock title %}
+
+{% block body %}
+<div class="content-fluid roboto-condensed-regular">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">
+                        <i class="fas fa-plus-circle mr-2"></i>Crear Nueva Cuenta/Caja
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-university mr-1"></i>
+                            Registre una nueva cuenta bancaria o caja registradora
+                        </small>
+                    </h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'apps.accounting:cash_list' %}">
+                                <i class="fas fa-university mr-1"></i>Cuentas y Cajas
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Crear Nueva</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-edit mr-2"></i>Formulario de Nueva Cuenta
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="cash-form" method="post">
+                                {% csrf_token %}
+                                
+                                <!-- Información General -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary border-bottom pb-2">
+                                            <i class="fas fa-info-circle mr-2"></i>Información General
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="cash_name" class="form-label">
+                                                <i class="fas fa-university mr-1"></i>Nombre de la Cuenta <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="cash_name" name="cash_name" 
+                                                   required placeholder="Ej: Caja Principal, Banco BCP, etc."
+                                                   maxlength="100">
+                                            <small class="form-text text-muted">
+                                                Nombre descriptivo para identificar la cuenta o caja
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="subsidiary_id" class="form-label">
+                                                <i class="fas fa-building mr-1"></i>Sucursal <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="subsidiary_id" name="subsidiary_id" required>
+                                                <option value="">Seleccione sucursal</option>
+                                                {% for subsidiary in subsidiary_set %}
+                                                    <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Sucursal donde se ubicará la cuenta o caja
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="account_number" class="form-label">
+                                                <i class="fas fa-hashtag mr-1"></i>Número de Cuenta
+                                            </label>
+                                            <input type="text" class="form-control" id="account_number" name="account_number" 
+                                                   placeholder="Número de cuenta bancaria (opcional)"
+                                                   maxlength="50">
+                                            <small class="form-text text-muted">
+                                                Número de cuenta bancaria si aplica
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="currency_type" class="form-label">
+                                                <i class="fas fa-coins mr-1"></i>Tipo de Moneda <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="currency_type" name="currency_type" required>
+                                                <option value="">Seleccione moneda</option>
+                                                {% for currency_code, currency_name in currency_types %}
+                                                    <option value="{{ currency_code }}">{{ currency_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Moneda en la que operará la cuenta
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="initial_balance" class="form-label">
+                                                <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                            </label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <i class="fas fa-coins"></i>
+                                                    </span>
+                                                </div>
+                                                <input type="number" class="form-control" id="initial_balance" name="initial_balance" 
+                                                       min="0" step="0.01" value="0.00" placeholder="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Saldo inicial de la cuenta o caja
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <!-- Espacio para futuras expansiones -->
+                                    </div>
+                                </div>
+
+                                <!-- Información Adicional -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info border-bottom pb-2">
+                                            <i class="fas fa-lightbulb mr-2"></i>Información Adicional
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-info-circle fa-2x text-info mr-3 mt-1"></i>
+                                                <div>
+                                                    <h6 class="alert-heading">Recomendaciones para el registro:</h6>
+                                                    <ul class="mb-0">
+                                                        <li><strong>Nombre descriptivo:</strong> Use nombres claros como "Caja Principal", "Banco BCP", "Efectivo USD"</li>
+                                                        <li><strong>Sucursal:</strong> Asigne la cuenta a la sucursal correspondiente</li>
+                                                        <li><strong>Moneda:</strong> Seleccione la moneda principal de operación</li>
+                                                        <li><strong>Saldo inicial:</strong> Establezca el saldo actual de la cuenta</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botones de acción -->
+                                <div class="row">
+                                    <div class="col-12 text-center">
+                                        <button type="button" class="btn btn-secondary btn-lg mr-3" onclick="goBack()">
+                                            <i class="fas fa-arrow-left mr-2"></i>Volver
+                                        </button>
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-save mr-2"></i>Guardar Cuenta
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Guardando...</span>
+    </div>
+</div>
+{% endblock body %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // Manejar envío del formulario
+    $('#cash-form').on('submit', function(e) {
+        e.preventDefault();
+        saveCash();
+    });
+
+    // Validación en tiempo real
+    $('#cash_name').on('input', function() {
+        validateField('cash_name', this.value);
+    });
+
+    $('#subsidiary_id').on('change', function() {
+        validateField('subsidiary_id', this.value);
+    });
+
+    $('#currency_type').on('change', function() {
+        validateField('currency_type', this.value);
+    });
+
+    // Formatear saldo inicial
+    $('#initial_balance').on('input', function() {
+        let value = this.value;
+        if (value && !isNaN(value)) {
+            this.value = parseFloat(value).toFixed(2);
+        }
+    });
+});
+
+function validateField(fieldName, value) {
+    const field = $(`#${fieldName}`);
+    const feedback = field.next('.invalid-feedback');
+    
+    // Remover clases de validación previas
+    field.removeClass('is-valid is-invalid');
+    
+    if (feedback.length) {
+        feedback.remove();
+    }
+    
+    let isValid = true;
+    let message = '';
+    
+    switch (fieldName) {
+        case 'cash_name':
+            if (!value.trim()) {
+                isValid = false;
+                message = 'El nombre de la cuenta es obligatorio';
+            } else if (value.trim().length < 3) {
+                isValid = false;
+                message = 'El nombre debe tener al menos 3 caracteres';
+            }
+            break;
+            
+        case 'subsidiary_id':
+            if (!value) {
+                isValid = false;
+                message = 'Debe seleccionar una sucursal';
+            }
+            break;
+            
+        case 'currency_type':
+            if (!value) {
+                isValid = false;
+                message = 'Debe seleccionar un tipo de moneda';
+            }
+            break;
+    }
+    
+    if (isValid) {
+        field.addClass('is-valid');
+    } else {
+        field.addClass('is-invalid');
+        field.after(`<div class="invalid-feedback">${message}</div>`);
+    }
+    
+    return isValid;
+}
+
+function saveCash() {
+    // Validar todos los campos
+    const fields = ['cash_name', 'subsidiary_id', 'currency_type'];
+    let isValid = true;
+    
+    for (const field of fields) {
+        const value = $(`#${field}`).val();
+        if (!validateField(field, value)) {
+            isValid = false;
+        }
+    }
+    
+    if (!isValid) {
+        Swal.fire('Error', 'Por favor complete todos los campos obligatorios correctamente', 'error');
+        return;
+    }
+
+    // Mostrar loading
+    $('#loading-overlay').show();
+    
+    // Preparar datos
+    const formData = new FormData($('#cash-form')[0]);
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cash_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: response.message,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    // Redirigir al listado
+                    window.location.href = '{% url "apps.accounting:cash_list" %}';
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'Error al guardar la cuenta';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            Swal.fire('Error', errorMessage, 'error');
+        },
+        complete: function() {
+            $('#loading-overlay').hide();
+        }
+    });
+}
+
+function goBack() {
+    window.location.href = '{% url "apps.accounting:cash_list" %}';
+}
+</script>
+
+<style>
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 1rem;
+    border-radius: 15px !important;
+}
+
+.card-header {
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.form-control {
+    border-radius: 10px !important;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(.375em + .1875rem) center;
+    background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23dc3545' viewBox='-2 -2 7 7'%3e%3cpath stroke='%23dc3545' d='M0 0l3 3m0-3L0 3'/%3e%3ccircle r='.5'/%3e%3ccircle cx='3' r='.5'/%3e%3ccircle cy='3' r='.5'/%3e%3ccircle cx='3' cy='3' r='.5'/%3e%3c/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right calc(.375em + .1875rem) center;
+    background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 80%;
+    color: #dc3545;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    border-radius: 10px 0 0 10px !important;
+}
+
+.input-group .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0 !important;
+}
+
+.btn {
+    border-radius: 25px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.75rem 2rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-lg {
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+}
+
+.alert {
+    border-radius: 15px !important;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+}
+
+.breadcrumb {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 0.75rem 1rem;
+}
+
+.breadcrumb-item a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-lg {
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+    }
+    
+    .d-flex.justify-content-center {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        margin-bottom: 0.5rem;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .form-control {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock extrajs %}

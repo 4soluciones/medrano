@@ -1,0 +1,387 @@
+{% load static %}
+
+{% if client_set %}
+    <!-- Filtros de búsqueda -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-primary"></i>
+                    </span>
+                </div>
+                <input type="text" class="form-control" id="search-client" 
+                       placeholder="Buscar por nombre del cliente...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" id="filter-document-type">
+                <option value="">Todos los tipos de documento</option>
+                <option value="01">DNI</option>
+                <option value="06">RUC</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="button" onclick="showModalView('modal_client_create')" 
+                    class="btn btn-primary btn-block">
+                <i class="fas fa-plus mr-2"></i>Nuevo Cliente
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de clientes -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped" id="clients-table">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col" class="text-center" style="width: 50px;">
+                        <i class="fas fa-hashtag text-muted"></i>
+                    </th>
+                    <th scope="col" style="width: 120px;">
+                        <i class="fas fa-id-card mr-1"></i>Tipo Doc.
+                    </th>
+                    <th scope="col" style="width: 150px;">
+                        <i class="fas fa-fingerprint mr-1"></i>Número
+                    </th>
+                    <th scope="col">
+                        <i class="fas fa-user mr-1"></i>Nombre Completo
+                    </th>
+                    <th scope="col" style="width: 150px;">
+                        <i class="fas fa-briefcase mr-1"></i>Ocupación
+                    </th>
+                    <th scope="col" style="width: 120px;">
+                        <i class="fas fa-phone mr-1"></i>Teléfono
+                    </th>
+                    <th scope="col" style="width: 200px;">
+                        <i class="fas fa-envelope mr-1"></i>Correo
+                    </th>
+                    <th scope="col" style="width: 200px;">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                    </th>
+                    <th scope="col" style="width: 150px;">
+                        <i class="fas fa-calendar mr-1"></i>Fecha Creación
+                    </th>
+                    <th scope="col" class="text-center" style="width: 100px;">
+                        <i class="fas fa-cogs mr-1"></i>Acciones
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in client_set %}
+                <tr class="client-row" 
+                    data-name="{{ client.full_name|lower }}"
+                    data-document="{{ client.document }}"
+                    data-number="{{ client.number }}"
+                    data-phone="{{ client.phone1|default:'' }}{{ client.phone2|default:'' }}">
+                    <td class="text-center text-muted">
+                        <small>{{ forloop.counter }}</small>
+                    </td>
+                    <td>
+                        {% if client.document == '01' %}
+                            <span class="badge badge-info">
+                                <i class="fas fa-id-card mr-1"></i>DNI
+                            </span>
+                        {% elif client.document == '06' %}
+                            <span class="badge badge-success">
+                                <i class="fas fa-building mr-1"></i>RUC
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong class="text-primary">{{ client.number }}</strong>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle bg-primary text-white mr-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-bold text-dark">{{ client.full_name }}</div>
+                                {% if client.document == '01' %}
+                                    <small class="text-muted">
+                                        {{ client.first_name|default:'' }} {{ client.second_name|default:'' }} 
+                                        {{ client.surname|default:'' }} {{ client.second_surname|default:'' }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if client.occupation %}
+                            <span class="badge badge-light border">
+                                <i class="fas fa-briefcase mr-1"></i>{{ client.occupation }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if client.phone1 %}
+                            <div class="text-primary">
+                                <i class="fas fa-phone mr-1"></i>{{ client.phone1 }}
+                            </div>
+                            {% if client.phone2 %}
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-phone mr-1"></i>{{ client.phone2 }}
+                                </small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if client.email %}
+                            <a href="mailto:{{ client.email }}" class="text-info">
+                                <i class="fas fa-envelope mr-1"></i>{{ client.email }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if client.address %}
+                            <div class="text-truncate" style="max-width: 180px;" 
+                                 title="{{ client.address }}">
+                                <i class="fas fa-map-marker-alt mr-1 text-danger"></i>
+                                {{ client.address }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if client.creation_date %}
+                            <small class="text-muted">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ client.creation_date|date:"d/m/Y" }}
+                            </small>
+                        {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary item-edit" 
+                                    pk="{{ client.id }}" title="Editar Cliente">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteClient({{ client.id }})" title="Eliminar Cliente">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Información de resultados -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <small class="text-muted">
+                <i class="fas fa-info-circle mr-1"></i>
+                Total de clientes: <strong>{{ client_set|length }}</strong>
+            </small>
+        </div>
+        <div class="col-md-6 text-right">
+            <small class="text-muted">
+                <i class="fas fa-search mr-1"></i>
+                Usa los filtros para buscar clientes específicos
+            </small>
+        </div>
+    </div>
+
+{% else %}
+    <!-- Estado vacío -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-users fa-4x text-muted"></i>
+        </div>
+        <h4 class="text-muted mb-3">No hay clientes registrados</h4>
+        <p class="text-muted mb-4">Comienza agregando tu primer cliente para gestionar tu base de datos</p>
+        <button type="button" onclick="showModalView('modal_client_create')" 
+                class="btn btn-primary btn-lg">
+            <i class="fas fa-plus mr-2"></i>Agregar Primer Cliente
+        </button>
+    </div>
+{% endif %}
+
+<style>
+    /* Estilos para la tabla */
+    .table {
+        font-size: 0.9rem;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .table thead th {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        padding: 12px 8px;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .table td {
+        padding: 12px 8px;
+        vertical-align: middle;
+        border-top: 1px solid #f1f3f4;
+    }
+    
+    /* Avatar circular */
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    
+    /* Badges personalizados */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+    }
+    
+    .badge-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .badge-light {
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Botones de acción con estilo redondeado como order_list */
+    .btn-group .btn {
+        border-radius: 6px;
+        margin: 0 2px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Input de búsqueda */
+    #search-client {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    #search-client:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Filtros */
+    #filter-document-type {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+    }
+    
+    /* Botón principal con estilo redondeado */
+    .btn-primary {
+        border-radius: 6px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .avatar-circle {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+        }
+        
+        .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+    
+    /* Animaciones */
+    .client-row {
+        transition: all 0.2s ease;
+    }
+    
+    .client-row.hidden {
+        display: none;
+    }
+    
+    /* Hover effects */
+    .table tbody tr:hover .badge {
+        transform: scale(1.05);
+        transition: transform 0.2s ease;
+    }
+    
+    .table tbody tr:hover .btn-group .btn {
+        transform: translateY(-1px);
+        transition: transform 0.2s ease;
+    }
+</style>
+
+<script>
+
+</script>
+

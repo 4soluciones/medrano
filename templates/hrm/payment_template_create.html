@@ -1,0 +1,375 @@
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content border-0 shadow roboto-condensed-regular">
+        <div class="modal-header bg-gradient-success text-white border-0">
+            <h5 class="modal-title">
+                <i class="fas fa-user-cog mr-2"></i>Nueva Plantilla de Pago
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        
+        <form id="form-payment-template-create" method="POST" action="{% url 'apps.hrm:create_payment_template' %}">
+            {% csrf_token %}
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Selección de Empleado -->
+                    <div class="col-md-6 mb-3">
+                        <label for="employee" class="form-label">
+                            <i class="fas fa-user mr-2"></i>Empleado <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-control select2" id="employee" name="employee" required>
+                            <option value="">Seleccionar empleado</option>
+                            {% for employee in employees %}
+                                <option value="{{ employee.id }}">
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                    {% if employee.document %}({{ employee.document }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Solo se muestran empleados sin plantillas activas</small>
+                    </div>
+
+                    <!-- Tarifa Diaria -->
+                    <div class="col-md-6 mb-3">
+                        <label for="daily_rate" class="form-label">
+                            <i class="fas fa-money-bill mr-2"></i>Tarifa Diaria (S/) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light border-right-0">
+                                    <i class="fas fa-coins text-success"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control form-control-sm border-left-0" id="daily_rate" name="daily_rate"
+                                   placeholder="0.00" required>
+                        </div>
+                        <small class="form-text text-muted">Monto que se pagará por cada día trabajado</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Fecha Efectiva -->
+                    <div class="col-md-6 mb-3">
+                        <label for="effective_date" class="form-label">
+                            <i class="fas fa-calendar-check mr-2"></i>Fecha Efectiva <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="effective_date" name="effective_date" 
+                               value="{{ current_date }}" required>
+                        <small class="form-text text-muted">Fecha desde la cual aplica esta tarifa</small>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="col-md-6 mb-3">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note mr-2"></i>Observaciones
+                        </label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Observaciones sobre la tarifa..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Vista Previa de la Plantilla -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-success">
+                            <div class="card-header bg-gradient-success">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-eye mr-2"></i>Vista Previa de la Plantilla
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="template-preview">
+                                    <p class="text-muted text-center">Completa los campos para ver la vista previa</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info border-0">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle fa-2x text-info mr-3"></i>
+                                <div>
+                                    <h6 class="alert-heading">Información Importante</h6>
+                                    <ul class="mb-0">
+                                        <li class="mb-0">Al crear una nueva plantilla, se desactivará automáticamente la anterior del empleado</li>
+                                        <li class="mb-0">La tarifa diaria se aplicará a todos los períodos de pago futuros</li>
+                                        <li class="mb-0">Los períodos de pago existentes mantendrán su tarifa original</li>
+                                        <li class="mb-0">Puedes modificar la tarifa en cualquier momento creando una nueva plantilla</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button type="submit" class="btn btn-success rounded-pill" id="btn-create-template">
+                    <i class="fas fa-save mr-2"></i>Crear Plantilla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Reducir tamaño de letra general */
+    body {
+        font-size: 0.9rem;
+    }
+    
+    /* Reducir tamaños de encabezados */
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.1rem; }
+    h5 { font-size: 1rem; }
+    h6 { font-size: 0.9rem; }
+    
+    /* Reducir tamaño de párrafos y texto general */
+    p, .card-body, .table {
+        font-size: 0.85rem;
+    }
+    
+    /* Reducir tamaño de botones */
+    .btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 25px !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    /* Reducir tamaño de formularios */
+    .form-control, .select2-container--default .select2-selection--single {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.85rem;
+    }
+    
+    .form-text {
+        font-size: 0.8rem;
+    }
+    
+    /* Reducir tamaño de select2 */
+    .select2-container--default .select2-selection--single {
+        height: 36px;
+        line-height: 36px;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 34px;
+        padding-left: 15px;
+        font-size: 0.85rem;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 34px;
+    }
+    
+    /* Reducir tamaño de input groups */
+    .input-group-text {
+        border-radius: 10px 0 0 10px;
+        background-color: #f8f9fa;
+        border-color: #e9ecef;
+        font-size: 0.85rem;
+    }
+    
+    /* Reducir tamaño de cards */
+    .card {
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Reducir tamaño de alertas */
+    .alert {
+        border-radius: 10px;
+        font-size: 0.8rem;
+    }
+    
+    .alert ul {
+        padding-left: 1.2rem;
+    }
+    
+    .alert li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-heading {
+        font-size: 0.9rem;
+    }
+    
+    /* Reducir padding de modal */
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .modal-content {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+        
+        // Actualizar vista previa cuando cambien los campos
+        $('#employee, #daily_rate, #effective_date').on('change keyup', function() {
+            updateTemplatePreview();
+        });
+        
+        // Función para actualizar vista previa
+        function updateTemplatePreview() {
+            let employee = $('#employee option:selected').text();
+            let dailyRate = $('#daily_rate').val();
+            let effectiveDate = $('#effective_date').val();
+            
+            if (employee && dailyRate && effectiveDate) {
+                let previewHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Empleado:</strong> ${employee}</p>
+                            <p><strong>Tarifa diaria:</strong> S/ ${dailyRate}</p>
+                            <p><strong>Fecha efectiva:</strong> ${effectiveDate}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado:</strong> <span class="badge badge-success">Activo</span></p>
+                            <p><strong>Pago semanal:</strong> S/ ${(parseFloat(dailyRate) * 6).toFixed(2)}</p>
+                            <p><strong>Pago mensual:</strong> S/ ${(parseFloat(dailyRate) * 26).toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        </div>
+                        <small class="text-muted">Plantilla lista para usar en períodos de pago</small>
+                    </div>
+                `;
+                
+                $('#template-preview').html(previewHtml);
+            } else {
+                $('#template-preview').html('<p class="text-muted text-center">Completa los campos para ver la vista previa</p>');
+            }
+        }
+        
+        // Validación del formulario
+        $('#form-payment-template-create').on('submit', function(e) {
+            e.preventDefault();
+            
+            let dailyRate = parseFloat($('#daily_rate').val());
+            
+            // Validar tarifa diaria
+            if (dailyRate <= 0) {
+                toastr.error('La tarifa diaria debe ser mayor a 0', 'Error de Validación');
+                return;
+            }
+            
+            if (dailyRate > 1000) {
+                toastr.error('La tarifa diaria no puede ser mayor a S/ 1000', 'Error de Validación');
+                return;
+            }
+            
+            // Enviar formulario
+            submitForm();
+        });
+        
+        function submitForm() {
+            let formData = new FormData($('#form-payment-template-create')[0]);
+            
+            $.ajax({
+                url: $('#form-payment-template-create').attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('#btn-create-template').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Creando...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#modal-payment-template-create').modal('hide');
+                        
+                        // Recargar la página para mostrar la nueva plantilla
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error al crear la plantilla de pago';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    toastr.error(message, 'Error');
+                },
+                complete: function() {
+                    $('#btn-create-template').prop('disabled', false).html('<i class="fas fa-save mr-2"></i>Crear Plantilla');
+                }
+            });
+        }
+        
+        // Formatear entrada de tarifa diaria
+        /*$('#daily_rate').on('input', function() {
+            let value = $(this).val();
+            if (value && !isNaN(value)) {
+                let formatted = parseFloat(value).toFixed(2);
+                if (formatted !== value) {
+                    $(this).val(formatted);
+                }
+            }
+        });*/
+    });
+</script>

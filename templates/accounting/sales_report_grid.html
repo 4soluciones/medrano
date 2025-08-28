@@ -1,0 +1,316 @@
+{% load operations %}
+
+<!-- Título del reporte -->
+<div class="row mb-2">
+    <div class="col-12">
+        <h5 class="text-center text-primary">
+            <i class="fas fa-chart-line mr-2"></i>
+            REPORTE DE VENTAS Y GASTOS  {{ report_date }}
+        </h5>
+        {% if subsidiary %}
+            <p class="text-center text-muted small">Sucursal: {{ subsidiary.name }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resumen de totales -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="card-title mb-0 small">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Resumen de Ventas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-1 small"><strong>Total Ventas:</strong></p>
+                        <p class="mb-1 small"><strong>A Cuenta:</strong></p>
+                        <p class="mb-1 small"><strong>Saldo:</strong></p>
+                    </div>
+                    <div class="col-6 text-right">
+                        <p class="mb-1 text-success small">S/. {{ total_sales|floatformat:2 }}</p>
+                        <p class="mb-1 text-info small">S/. {{ total_cash_advance|floatformat:2 }}</p>
+                        <p class="mb-1 text-danger small">S/. {{ total_balance|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="card-title mb-0 small">
+                    <i class="fas fa-money-bill-wave mr-2"></i>
+                    Resumen de Gastos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-1 small"><strong>Total Ingresos:</strong></p>
+                        <p class="mb-1 small"><strong>Total Gastos:</strong></p>
+                        <p class="mb-1 small"><strong>Neto Gastos:</strong></p>
+                    </div>
+                    <div class="col-6 text-right">
+                        <p class="mb-1 text-success small">S/. {{ total_income|floatformat:2 }}</p>
+                        <p class="mb-1 text-danger small">S/. {{ total_expenses|floatformat:2 }}</p>
+                        <p class="mb-1 text-warning small">S/. {{ net_expenses|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenido principal del reporte -->
+<div class="row">
+    <!-- Sección de Ventas -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="card-title mb-0 small text-dark">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    PRINCIPAL DÍA {{ report_date }}
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped mb-0 small">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th class="text-center" style="width: 5%">NRO</th>
+                                <th class="text-center" style="width: 7%">FECHA</th>
+                                <th class="text-center" style="width: 10%">N°<br> COMPROBANTE</th>
+                                <th class="text-center" style="width: 20%">CLIENTE</th>
+                                <th class="text-center" style="width: 5%">CANT.</th>
+                                <th class="text-center" style="width: 23%">DESCRIPCIÓN</th>
+                                <th class="text-center" style="width: 10%">A CUENTA</th>
+                                <th class="text-center" style="width: 10%">SALDO</th>
+                                <th class="text-center" style="width: 10%">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if orders %}
+                                {% for order in orders %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td class="text-center">{{ order.register_date|date:"d/m/Y" }}</td>
+                                    <td class="text-center">{{ order.subsidiary.serial }}-{{ order.correlative|stringformat:"03d" }}</td>
+                                    <td>{{ order.client.full_name|default:"-" }}</td>
+                                    <td class="text-center">{{ order|sum_order_quantities|floatformat:0 }}</td>
+                                    <td>
+                                        {% for detail in order.orderdetail_set.all %}
+                                            <div class="mb-1">
+                                                <strong>{{ detail.product_name|default:"Producto Manual" }}</strong>
+{#                                                <br><small class="text-muted">Cantidad: {{ detail.quantity }}</small>#}
+                                            </div>
+                                            {% if not forloop.last %}<hr class="my-1">{% endif %}
+                                        {% empty %}
+                                            {{ order.observation|default:"ORDEN DE SERVICIO" }}
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-right">S/ {{ order.cash_advance|floatformat:2 }}</td>
+                                    <td class="text-right">S/ {{ order.total|calculate_balance:order.cash_advance|floatformat:2 }}</td>
+                                    <td class="text-right">S/ {{ order.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        No hay órdenes para esta fecha
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+{#                                <td colspan="7" class="text-right"><strong>CAJA:</strong></td>#}
+                                <td colspan="9"></td>
+{#                                <td class="text-right"><strong>S/. {{ total_sales|floatformat:2 }}</strong></td>#}
+                            </tr>
+                            <tr class="bg-warning">
+                                <td colspan="6" class="text-right"><strong>INGRESO REAL:</strong></td>
+                                <td class="text-right" style="background-color: #fffc92"><strong>S/ {{ total_cash_advance|floatformat:2 }}</strong></td>
+                                <td class="text-right text-danger"><strong>S/ {{ total_balance|floatformat:2 }}</strong></td>
+                                <td class="text-right"><strong>S/ {{ total_sales|floatformat:2 }}</strong></td>
+                            </tr>
+{#                            <tr>#}
+{#                                <td colspan="3" class="text-right"><strong>CAJA:</strong></td>#}
+{#                                <td class="text-right"><strong>S/. {{ total_sales|floatformat:2 }}</strong></td>#}
+{#                            </tr>#}
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Gastos -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h6 class="card-title mb-0 small text-dark">
+                    <i class="fas fa-money-bill-wave mr-2"></i>
+                    GASTOS
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <!-- Gastos Variables -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm mb-0 small">
+                        <thead class="bg-danger text-white">
+                            <tr>
+                                <th style="width: 70%">GASTOS VARIABLES</th>
+                                <th style="width: 30%" class="text-center">IMPORTE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cashflow in cashflows %}
+                                {% if cashflow.type == 'S' and cashflow.type_expense == 'V' %}
+                                <tr>
+                                    <td>{{ cashflow.description }}</td>
+                                    <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if total_variable_expenses > 0 %}
+                                <tr class="bg-light">
+                                    <td><strong>SUB TOTAL</strong></td>
+                                    <td class="text-right"><strong>S/ {{ total_variable_expenses|floatformat:2 }}</strong></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gastos Fijos -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-sm mb-0 small">
+                        <thead class="bg-danger text-white">
+                            <tr>
+                                <th style="width: 70%">GASTOS FIJOS</th>
+                                <th style="width: 30%" class="text-center">IMPORTE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cashflow in cashflows %}
+                                {% if cashflow.type == 'S' and cashflow.type_expense == 'F' %}
+                                <tr>
+                                    <td>{{ cashflow.description }}</td>
+                                    <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if total_fixed_expenses > 0 %}
+                                <tr class="bg-light">
+                                    <td><strong>SUB TOTAL</strong></td>
+                                    <td class="text-right"><strong>S/ {{ total_fixed_expenses|floatformat:2 }}</strong></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gastos Personales -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-sm mb-0 small">
+                        <thead class="bg-danger text-white">
+                            <tr>
+                                <th style="width: 70%">GASTOS PERSONALES</th>
+                                <th style="width: 30%" class="text-center">IMPORTE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cashflow in cashflows %}
+                                {% if cashflow.type == 'S' and cashflow.type_expense == 'P' %}
+                                <tr>
+                                    <td>{{ cashflow.description }}</td>
+                                    <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if total_personal_expenses > 0 %}
+                                <tr class="bg-light">
+                                    <td><strong>SUB TOTAL</strong></td>
+                                    <td class="text-right"><strong>S/ {{ total_personal_expenses|floatformat:2 }}</strong></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Otros Gastos -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-sm mb-0 small">
+                        <thead class="bg-danger text-white">
+                            <tr>
+                                <th style="width: 70%">OTROS GASTOS</th>
+                                <th style="width: 30%" class="text-center">IMPORTE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cashflow in cashflows %}
+                                {% if cashflow.type == 'S' and cashflow.type_expense == 'O' %}
+                                <tr>
+                                    <td>{{ cashflow.description }}</td>
+                                    <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if total_other_expenses > 0 %}
+                                <tr class="bg-light">
+                                    <td><strong>SUB TOTAL</strong></td>
+                                    <td class="text-right"><strong>S/ {{ total_other_expenses|floatformat:2 }}</strong></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="bg-danger text-white">
+                            <tr>
+                                <td><strong>GASTOS TOTAL</strong></td>
+                                <td class="text-right"><strong>S/ {{ total_expenses|floatformat:2 }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen final -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card text-white" style="background-color: #809599">
+            <div class="card-header">
+                <h6 class="card-title mb-0 small text-dark">
+                    <i class="fas fa-calculator mr-2"></i>
+                    RESUMEN FINAL
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h6>Total Ventas</h6>
+                        <h5 class="text-success">S/ {{ total_sales|floatformat:2 }}</h5>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6>Saldo Pendiente</h6>
+                        <h5 class="text-danger">S/ {{ total_balance|floatformat:2 }}</h5>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6>Neto Gastos</h6>
+                        <h5 class="text-warning">S/ {{ net_expenses|floatformat:2 }}</h5>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h6>CAJA FINAL</h6>
+                        <h5 class="bg-warning text-dark p-2 rounded">S/ {{ final_cash|floatformat:2 }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

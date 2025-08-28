@@ -1,0 +1,499 @@
+/* ===== DASHBOARD PROFESIONAL COMPLETO ===== */
+
+/* Reset completo y variables */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #7c3aed;
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --danger-color: #dc2626;
+    --info-color: #0891b2;
+    --dark-color: #1f2937;
+    --light-color: #f8fafc;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --border-radius: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estilos base del body */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    background: #f8fafc !important;
+    color: var(--text-primary) !important;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Wrapper principal */
+.wrapper {
+    background: #f8fafc !important;
+    min-height: 100vh;
+}
+
+/* Header completamente rediseñado */
+.main-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+    border: none !important;
+    box-shadow: var(--shadow-lg) !important;
+    height: 70px !important;
+    padding: 0 2rem !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1030 !important;
+}
+
+.main-header .navbar-nav .nav-link {
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0 0.25rem !important;
+    border-radius: 8px !important;
+    transition: var(--transition) !important;
+    position: relative !important;
+}
+
+.main-header .navbar-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.main-header .navbar-nav .nav-link i {
+    margin-right: 0.5rem !important;
+    font-size: 1rem !important;
+}
+
+/* Sidebar completamente rediseñado */
+.main-sidebar {
+    background: linear-gradient(180deg, #1f2937 0%, #111827 100%) !important;
+    border: none !important;
+    box-shadow: var(--shadow-xl) !important;
+    width: 280px !important;
+    position: fixed !important;
+    top: 70px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    z-index: 1020 !important;
+    overflow-y: auto !important;
+}
+
+/* Brand link del sidebar */
+.main-sidebar .brand-link {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+    padding: 1.5rem !important;
+    border: none !important;
+    text-align: center !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.main-sidebar .brand-text {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.main-sidebar .brand-image {
+    width: 40px !important;
+    height: 40px !important;
+    margin-right: 0.75rem !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* User panel del sidebar */
+.main-sidebar .user-panel {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 1rem !important;
+    margin: 1rem !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.main-sidebar .user-panel .image img {
+    width: 40px !important;
+    height: 40px !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    transition: var(--transition) !important;
+}
+
+.main-sidebar .user-panel .info a {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    text-decoration: none !important;
+}
+
+.main-sidebar .user-panel .info a:hover {
+    color: #60a5fa !important;
+}
+
+/* Sidebar search */
+.main-sidebar .form-inline .input-group {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin: 0 1rem 1rem 1rem !important;
+}
+
+.main-sidebar .form-inline .form-control {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+}
+
+.main-sidebar .form-inline .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.main-sidebar .form-inline .btn-sidebar {
+    background: var(--info-color) !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    transition: var(--transition) !important;
+}
+
+.main-sidebar .form-inline .btn-sidebar:hover {
+    background: #0e7490 !important;
+    transform: scale(1.02) !important;
+}
+
+/* Navegación del sidebar */
+.main-sidebar .nav-header {
+    color: #9ca3af !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 1.5rem 1rem 0.5rem 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.main-sidebar .nav-sidebar .nav-link {
+    color: #d1d5db !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0.125rem 0.5rem !important;
+    border-radius: 8px !important;
+    transition: var(--transition) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    border-left: 3px solid transparent !important;
+}
+
+.main-sidebar .nav-sidebar .nav-link:hover {
+    background: rgba(37, 99, 235, 0.1) !important;
+    color: white !important;
+    transform: translateX(4px) !important;
+    border-left-color: var(--primary-color) !important;
+}
+
+.main-sidebar .nav-sidebar .nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+    color: white !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.main-sidebar .nav-sidebar .nav-link i {
+    margin-right: 0.75rem !important;
+    font-size: 1rem !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+
+/* Submenús del sidebar */
+.main-sidebar .nav-treeview {
+    margin-left: 1rem !important;
+}
+
+.main-sidebar .nav-treeview .nav-link {
+    padding: 0.5rem 1rem 0.5rem 2.5rem !important;
+    font-size: 0.8rem !important;
+    opacity: 0.8 !important;
+    margin: 0.125rem 0.5rem !important;
+}
+
+.main-sidebar .nav-treeview .nav-link:hover {
+    opacity: 1 !important;
+    background: rgba(37, 99, 235, 0.05) !important;
+    color: #60a5fa !important;
+}
+
+/* Content wrapper */
+.content-wrapper {
+    background: #f8fafc !important;
+    margin-left: 280px !important;
+    margin-top: 70px !important;
+    min-height: calc(100vh - 70px) !important;
+    padding: 0 !important;
+}
+
+/* Container principal */
+.container-fluid {
+    padding: 2rem !important;
+}
+
+/* Filas */
+.row {
+    margin-bottom: 2rem !important;
+}
+
+/* Tarjetas completamente rediseñadas */
+.small-box {
+    background: white !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: var(--transition) !important;
+    overflow: hidden !important;
+    position: relative !important;
+    border-left: 4px solid var(--primary-color) !important;
+    height: 160px !important;
+}
+
+.small-box:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.small-box .inner {
+    padding: 1.5rem !important;
+    position: relative !important;
+    z-index: 2 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.small-box .inner h3 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.2 !important;
+}
+
+.small-box .inner p {
+    font-size: 0.875rem !important;
+    color: var(--text-secondary) !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+.small-box .icon {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    font-size: 3rem !important;
+    opacity: 0.1 !important;
+    color: var(--text-secondary) !important;
+    transition: var(--transition) !important;
+}
+
+.small-box:hover .icon {
+    opacity: 0.2 !important;
+    transform: scale(1.1) !important;
+}
+
+.small-box .small-box-footer {
+    background: var(--light-color) !important;
+    color: var(--text-primary) !important;
+    padding: 0.75rem 1rem !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    border-top: 1px solid var(--border-color) !important;
+    transition: var(--transition) !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+.small-box .small-box-footer:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Colores específicos para cada tarjeta */
+.small-box.bg-warning {
+    border-left-color: var(--warning-color) !important;
+}
+
+.small-box.bg-warning .icon {
+    color: var(--warning-color) !important;
+}
+
+.small-box.bg-info {
+    border-left-color: var(--info-color) !important;
+}
+
+.small-box.bg-info .icon {
+    color: var(--info-color) !important;
+}
+
+.small-box.bg-success {
+    border-left-color: var(--success-color) !important;
+}
+
+.small-box.bg-success .icon {
+    color: var(--success-color) !important;
+}
+
+.small-box.bg-danger {
+    border-left-color: var(--danger-color) !important;
+}
+
+.small-box.bg-danger .icon {
+    color: var(--danger-color) !important;
+}
+
+/* Footer */
+.main-footer {
+    background: white !important;
+    color: var(--text-secondary) !important;
+    padding: 1.5rem 2rem !important;
+    text-align: center !important;
+    border-top: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin-left: 280px !important;
+}
+
+.main-footer a {
+    color: var(--primary-color) !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+}
+
+.main-footer a:hover {
+    color: var(--primary-dark) !important;
+    text-decoration: none !important;
+}
+
+/* Preloader */
+.preloader {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .main-sidebar {
+        transform: translateX(-100%) !important;
+    }
+    
+    .content-wrapper {
+        margin-left: 0 !important;
+    }
+    
+    .main-footer {
+        margin-left: 0 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem !important;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .small-box .icon {
+        font-size: 2.5rem !important;
+    }
+    
+    .main-header {
+        padding: 0 1rem !important;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.small-box {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+/* Scrollbar personalizado */
+.main-sidebar::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.main-sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 3px !important;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Efectos de hover adicionales */
+.small-box a {
+    text-decoration: none !important;
+    transition: var(--transition) !important;
+}
+
+.small-box a:hover {
+    text-decoration: none !important;
+}
+
+/* Notificaciones */
+.notify .badge {
+    background: var(--danger-color) !important;
+    color: white !important;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 9999px !important;
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    animation: pulse 2s infinite !important;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}

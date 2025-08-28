@@ -1,0 +1,152 @@
+@font-face {
+    font-family: 'roboto_medium_regular';
+    src: url('../../webfonts/roboto-medium-webfont.woff2') format('woff2'),
+    url('../../webfonts/roboto-medium-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'roboto_condensed_light';
+    src: url('../../webfonts/robotocondensed-light-webfont.woff2') format('woff2'),
+    url('../../webfonts/robotocondensed-light-webfont.woff') format('woff'),
+    url('../../webfonts/robotocondensed-light-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'roboto_condensed_regular';
+    src: url('../../webfonts/robotocondensed-regular-webfont.woff2') format('woff2'),
+    url('../../webfonts/robotocondensed-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+/*----------  Text Styles  ----------*/
+.roboto-medium {
+    font-family: 'roboto_medium_regular';
+}
+
+.roboto-condensed-light {
+    font-family: 'roboto_condensed_light';
+}
+
+.roboto-condensed-regular {
+    font-family: 'roboto_condensed_regular';
+}
+
+.hind-vadodara {
+    font-family: 'Hind_Vadodara';
+}
+
+.aldrich {
+    font-family: "Aldrich";
+}
+
+.montserrat {
+    font-family: "Montserrat";
+}
+
+.open-sans {
+    font-family: "Open Sans";
+}
+
+.ticketing {
+    font-family: "ticketing_regular";
+}
+
+.archive {
+    font-family: 'Archivo', sans-serif;
+}
+/*---------------------------------*/
+
+/*-------- btn --------*/
+.btn-pink {
+    color: #fff;
+    background-color: #E91E63;
+    border-color: #E91E63;
+}
+
+.btn-green {
+    color: #fff;
+    background-color: #009688;
+    border-color: #009688;
+}
+
+.btn-blue {
+    color: #fff;
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-green:hover {
+    color: #fff;
+    background-color: #26a69a;
+    border-color: #26a69a;
+}
+
+.btn-pink:hover {
+    color: #fff;
+    background-color: #F06292;
+    border-color: #F06292;
+}
+
+.btn-blue:hover {
+    color: #fff;
+    background-color: #5c6bc0;
+    border-color: #5c6bc0;
+}
+
+/*------------------------*/
+
+.bg-lazo {
+    background-color: #ff010b !important;
+}
+
+.font-lazo {
+    font-family: "BankGothic Md BT" !important;
+    font-style: normal;
+    font-weight: 400
+}
+
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    /*background-color: #007bff;*/
+    /*border-color: #006fe6;*/
+    color: #000000 !important;
+    /*padding: 0 10px;*/
+    /*margin-top: .31rem;*/
+}
+
+.input-icon {
+    position: relative;
+}
+
+.input-icon > i {
+    position: absolute;
+    display: block;
+    transform: translate(0, -50%);
+    top: 50%;
+    pointer-events: none;
+    width: 25px;
+    text-align: center;
+    font-style: normal;
+}
+
+.input-icon > input {
+    padding-left: 25px;
+    padding-right: 8px;
+}
+
+.input-icon-right > i {
+    right: 0;
+}
+
+.input-icon-right > input {
+    padding-left: 0;
+    padding-right: 25px;
+    text-align: right;
+}

@@ -1,0 +1,217 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    Gestión de Clientes
+{% endblock title %}
+
+{% block body %}
+    <div class="content-header">
+        <div class="container-fluid roboto-condensed-regular">
+            <!-- Header con estadísticas -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="m-0 text-dark">
+                                <i class="fas fa-users mr-2"></i>Gestión de Clientes
+                            </h1>
+                            <p class="text-muted mb-0">Administra la información de tus clientes de manera eficiente</p>
+                        </div>
+                        <div class="d-flex">
+                            <button type="button" class="btn btn-info" id="btn-list-client">
+                                <i class="fas fa-list mr-1"></i>Lista de Clientes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de lista de clientes -->
+            <div class="card list-client shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-primary">
+                            <i class="fas fa-user-friends mr-2"></i>Clientes Registrados
+                        </h5>
+                        <button type="button" onclick="showModalView('modal_client_create')"
+                                class="btn btn-primary">
+                            <i class="fas fa-plus mr-1"></i>Nuevo Cliente
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="employee-grid-list">
+                        {% include "sales/client_grid_list.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div class="modal fade" id="modal-client-create" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="modal-client-update" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle" aria-hidden="true"></div>
+{% endblock body %}
+
+{% block extrajs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Función para mostrar modal de creación
+            window.showModalView = function (route) {
+                $.ajax({
+                    url: '/sales/' + route + '/',
+                    dataType: 'json',
+                    type: 'GET',
+                    data: {'pk': 1},
+                    success: function (response) {
+                        $('#modal-client-create').html(response.form);
+                        $('#modal-client-create').modal('show');
+                    },
+                    error: function (response) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Error en la petición', '¡Mensaje!');
+                        } else {
+                            console.error('Error en la petición');
+                        }
+                    }
+                });
+            };
+
+            // Función para mostrar modal de edición
+            $(document).on('click', '.item-edit', function () {
+                let _pk = $(this).attr('pk');
+                $.ajax({
+                    url: '/sales/modal_client_update/',
+                    dataType: 'json',
+                    type: 'GET',
+                    data: {'pk': _pk},
+                    success: function (response) {
+                        $('#modal-client-update').html(response.form);
+                        $('#modal-client-update').modal('show');
+                    },
+                    error: function (response) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Error en la petición', '¡Mensaje!');
+                        } else {
+                            console.error('Error en la petición');
+                        }
+                    }
+                });
+            });
+
+            // Inicializar con la vista de lista activa
+            $('#btn-list-client').removeClass('btn-outline-info').addClass('btn-info');
+        });
+
+        // Función para eliminar cliente (placeholder)
+        function deleteClient(clientId) {
+            if (confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+                // Aquí iría la lógica para eliminar el cliente
+                console.log('Eliminando cliente:', clientId);
+                // Puedes implementar la llamada AJAX aquí
+            }
+        }
+
+        // Función para filtrar clientes por nombre únicamente
+        function filterClients(searchTerm, documentType = '') {
+            $('.client-row').each(function () {
+                let row = $(this);
+                let name = row.data('name') || '';
+                let document = row.data('document') || '';
+
+                // Solo buscar por nombre (convertir a minúsculas para comparación)
+                let matchesSearch = !searchTerm ||
+                    name.toLowerCase().includes(searchTerm.toLowerCase());
+
+                let matchesDocument = !documentType || document === documentType;
+
+                if (matchesSearch && matchesDocument) {
+                    row.show();
+                } else {
+                    row.hide();
+                }
+            });
+
+            // Actualizar contador de resultados
+            updateResultsCount();
+        }
+
+        // Función para actualizar contador de resultados
+        function updateResultsCount() {
+            let visibleRows = $('.client-row:visible').length;
+            let totalRows = $('.client-row').length;
+
+            // Aquí puedes actualizar un elemento que muestre el contador
+            console.log(`Mostrando ${visibleRows} de ${totalRows} clientes`);
+        }
+
+        // Inicializar filtros cuando el documento esté listo
+        $(document).ready(function () {
+            // Búsqueda en tiempo real por nombre
+            $('#search-client').on('keyup', function () {
+                let searchTerm = $(this).val();
+                filterClients(searchTerm, $('#filter-document-type').val());
+            });
+
+            // Filtro por tipo de documento
+            $('#filter-document-type').on('change', function () {
+                let documentType = $(this).val();
+                filterClients($('#search-client').val(), documentType);
+            });
+
+            // Inicializar contador
+            updateResultsCount();
+        });
+    </script>
+
+    <style>
+        /* Estilos modernos para los botones del template principal */
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+        }
+
+        .card {
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+{% endblock extrajs %}

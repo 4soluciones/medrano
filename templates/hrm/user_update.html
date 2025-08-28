@@ -1,0 +1,394 @@
+{% load static %}
+<div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-content">
+        <div id="modal-loader-edit" class="overlay" style="display: none">
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-header bg-gradient-success text-white">
+            <h5 class="modal-title mb-0">
+                <i class="fas fa-user-edit mr-2"></i>
+                Editar Colaborador
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <form id="form-edit-user" action="{% url 'apps.hrm:update_user' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="pk-user" value="{{ user_obj.id }}">
+            
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Columna izquierda - Información personal -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-user mr-2"></i>Información Personal
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Nombres *</label>
+                                        <input type="text" class="form-control" 
+                                                       value="{{ user_obj.first_name }}"
+                                                       name="first-name" required>
+                                            </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Apellidos *</label>
+                                        <input type="text" class="form-control" 
+                                                       value="{{ user_obj.last_name }}"
+                                                       name="last-name" required>
+                                            </div>
+                                        </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Documento *</label>
+                                        <input type="text" class="form-control" 
+                                               value="{{ user_obj.document }}"
+                                               name="document" required>
+                                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Fecha de Nacimiento</label>
+                                        <input type="date" class="form-control" 
+                                               name="birth-date" 
+                                                           value="{{ user_obj.birth_date|date:'Y-m-d' }}">
+                                                </div>
+                                            </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Género</label>
+                                        <select class="form-control" name="gender">
+                                                    {% for g in gender_set %}
+                                                        {% if user_obj.gender == g.0 %}
+                                                            <option selected value="{{ g.0 }}">{{ g.1 }}</option>
+                                                        {% else %}
+                                                            <option value="{{ g.0 }}">{{ g.1 }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Nacionalidad</label>
+                                        <select class="form-control" name="nationality">
+                                                    {% for n in nationality_set %}
+                                                        {% if user_obj.nationality == n.0 %}
+                                                            <option selected value="{{ n.0 }}">{{ n.1 }}</option>
+                                                        {% else %}
+                                                            <option value="{{ n.0 }}">{{ n.1 }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Estado Civil</label>
+                                        <select class="form-control" name="marital-status">
+                                            {% for m in marital_status_set %}
+                                                {% if user_obj.marital_status == m.0 %}
+                                                    <option selected value="{{ m.0 }}">{{ m.1 }}</option>
+                                                {% else %}
+                                                    <option value="{{ m.0 }}">{{ m.1 }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Educación</label>
+                                        <select class="form-control" name="education">
+                                            {% for e in education_set %}
+                                                {% if user_obj.education == e.0 %}
+                                                    <option selected value="{{ e.0 }}">{{ e.1 }}</option>
+                                                {% else %}
+                                                    <option value="{{ e.0 }}">{{ e.1 }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Dirección</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{ user_obj.address|default:'' }}"
+                                           name="address" placeholder="Ingrese dirección completa">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Teléfono</label>
+                                        <input type="text" class="form-control" 
+                                               value="{{ user_obj.phone|default:'' }}"
+                                               name="phone" placeholder="Número telefónico">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Celular</label>
+                                        <input type="text" class="form-control" 
+                                               value="{{ user_obj.cellphone|default:'' }}"
+                                               name="cellphone" placeholder="Número celular">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Referencia</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{ user_obj.reference|default:'' }}"
+                                           name="reference" placeholder="Punto de referencia">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Observaciones</label>
+                                    <textarea class="form-control" 
+                                              name="observations" rows="3" 
+                                              placeholder="Observaciones adicionales">{{ user_obj.observations|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0 shadow-sm mt-4">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-envelope mr-2"></i>Información de Contacto
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Correo Electrónico *</label>
+                                        <input type="email" class="form-control" 
+                                               value="{{ user_obj.email }}"
+                                               name="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Usuario</label>
+                                        <input type="text" class="form-control" 
+                                               value="{{ user_obj.username }}"
+                                               name="user" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Nueva Contraseña</label>
+                                        <input type="password" class="form-control" 
+                                               name="password" placeholder="Dejar en blanco para mantener">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted small">Sucursal *</label>
+                                        <select class="form-control" name="subsidiary" required>
+                                            <option value="">Seleccione una sucursal</option>
+                                            {% for s in subsidiary_set %}
+                                                {% if user_obj.subsidiary.id == s.id %}
+                                                    <option selected value="{{ s.id }}">{{ s.name }}</option>
+                                                {% else %}
+                                                    <option value="{{ s.id }}">{{ s.name }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna derecha - Foto y permisos -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-camera mr-2"></i>Foto del Colaborador
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <img id="blah" class="img-fluid rounded-circle border" 
+                                         width="150" height="150" 
+                                         src="{% if user_obj.photo %}{{ user_obj.photo.url }}{% else %}{% static 'img/employee/employee.jpg' %}{% endif %}"
+                                         style="object-fit: cover;">
+                                </div>
+                                <div class="mb-3">
+                                    <input type="file" class="form-control-file" 
+                                           id="exampleInputEditFile" name="exampleInputFile" 
+                                           onchange="readURL(this);" accept="image/*">
+                                </div>
+                                <small class="text-muted">Formatos: JPG, PNG, GIF. Máximo 2MB</small>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0 shadow-sm mt-4">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-shield-alt mr-2"></i>Permisos del Sistema
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckActive" name="customCheckActive"
+                                           {% if user_obj.is_active %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckActive">
+                                        Usuario Activo
+                                    </label>
+                                </div>
+                                
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxAccess" name="customCheckboxAccess"
+                                           {% if user_obj.has_access_system %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxAccess">
+                                        Acceso al Sistema
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save mr-2"></i>Actualizar Colaborador
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-radius: 15px 15px 0 0;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.card-header h6 {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+}
+
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.custom-switch .custom-control-label::before {
+    border-radius: 20px;
+    background-color: #e9ecef;
+}
+
+.custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #28a745;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.9);
+    z-index: 1000;
+    border-radius: 15px;
+}
+</style>
+
+<script type="text/javascript">
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                $('#blah').attr('src', e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    $('#form-edit-user').submit(function(event) {
+        event.preventDefault();
+        
+        // Mostrar loader
+        $('#modal-loader-edit').show();
+        
+        let formData = new FormData(this);
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            cache: false,
+            processData: false,
+            contentType: false,
+            headers: {"X-CSRFToken": '{{ csrf_token }}'},
+            success: function(response) {
+                $('#modal-loader-edit').hide();
+                if (response.success) {
+                    toastr.success(response.message, '¡Éxito!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    toastr.error(response.message, 'Error');
+                }
+            },
+            error: function() {
+                $('#modal-loader-edit').hide();
+                toastr.error('Ocurrió un problema al actualizar el colaborador', 'Error');
+            }
+        });
+    });
+</script>

@@ -1,0 +1,67 @@
+<form id="unitForm" method="post">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="unit-name" class="form-label">
+                    <i class="fas fa-ruler text-primary mr-2"></i>Nombre de la Unidad <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="unit-name" name="unit-name" 
+                       placeholder="Ej: KG, M, L, UN" required maxlength="5">
+                <small class="form-text text-muted">Abreviatura corta de la unidad (máximo 5 caracteres)</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="unit-description" class="form-label">
+                    <i class="fas fa-info-circle text-primary mr-2"></i>Descripción
+                </label>
+                <input type="text" class="form-control" id="unit-description" name="unit-description" 
+                       placeholder="Ej: Kilogramos, Metros, Litros, Unidades">
+                <small class="form-text text-muted">Descripción completa de la unidad de medida</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle mr-2"></i>
+        <strong>Nota:</strong> Las unidades de medida son fundamentales para el control de inventario y precios. 
+        Ejemplos: KG (Kilogramos), M (Metros), L (Litros), UN (Unidades), etc.
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times mr-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-success" onclick="saveUnit()">
+            <i class="fas fa-save mr-2"></i>Guardar Unidad
+        </button>
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    // Validación del formulario
+    $('#unitForm').on('submit', function(e) {
+        e.preventDefault();
+        saveUnit();
+    });
+
+    // Validación en tiempo real
+    $('#unit-name').on('input', function() {
+        var value = $(this).val();
+        if (value.length > 0) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        }
+    });
+
+    // Convertir a mayúsculas
+    $('#unit-name').on('input', function() {
+        $(this).val($(this).val().toUpperCase());
+    });
+});
+</script>

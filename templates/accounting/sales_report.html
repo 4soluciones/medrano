@@ -1,0 +1,497 @@
+{% extends 'home.html' %}
+{% load static %}
+{% load operations %}
+
+{% block title %}Reporte de Ventas y Gastos{% endblock %}
+
+{% block body %}
+<div class="container-fluid pt-2 roboto-condensed-regular">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Reporte de Ventas y Gastos
+                    </h3>
+                </div>
+                <div class="card-body bg-light">
+                    <!-- Token CSRF -->
+                    {% csrf_token %}
+                    
+                    <!-- Filtros del reporte -->
+                    <div class="row mb-2">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="report_date">Fecha del Reporte:</label>
+                                <input type="date" class="form-control" id="report_date" value="{{ date_now }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="subsidiary">Sucursal:</label>
+                                <select class="form-control" id="subsidiary">
+                                    <option value="0">Todas las Sucursales</option>
+                                    {% for subsidiary in subsidiary_set %}
+                                        <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="cash_account">Cuenta/Caja:</label>
+                                <select class="form-control" id="cash_account">
+                                    <option value="0">Todas las Cuentas</option>
+                                    {% for cash in cash_accounts %}
+                                        <option value="{{ cash.id }}">{{ cash.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="button" class="btn btn-primary" id="btn_generate_report">
+                                        <i class="fas fa-search mr-2"></i>
+                                        Generar Reporte
+                                        <i class="fas fa-spinner fa-spin ml-2" id="spinner" style="display: none;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario oculto para CSRF -->
+                    <form id="csrf_form" style="display: none;">
+                        {% csrf_token %}
+                    </form>
+
+
+                    <!-- Contenido del reporte -->
+                    <div id="report_content">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-chart-line fa-3x mb-3"></i>
+                            <h5>Seleccione una fecha y genere el reporte</h5>
+                            <p>El reporte mostrará las ventas y gastos del día seleccionado</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de exportación (se mostrarán después de generar el reporte) -->
+                    <div id="export_buttons" style="display: none;">
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-download mr-2"></i>
+                                    Exportar Reporte
+                                </h6>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-success btn-lg" id="btn_export_excel">
+                                        <i class="fas fa-file-excel mr-2"></i>
+                                        Exportar a Excel
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-lg" id="btn_export_pdf">
+                                        <i class="fas fa-file-pdf mr-2"></i>
+                                        Exportar a PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extrajs %}
+<style>
+    /* Estilos profesionales con bordes redondeados */
+    .form-control {
+        border-radius: 25px !important;
+        border: 2px solid #e3e6f0 !important;
+        padding: 8px 20px !important;
+        font-size: 14px !important;
+        transition: all 0.3s ease !important;
+        height: auto !important;
+        min-height: 45px !important;
+        line-height: 1.5 !important;
+    }
+    
+    .form-control:focus {
+        border-color: #4e73df !important;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    /* Estilos específicos para selectores */
+    select.form-control {
+        padding-right: 40px !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 12px center !important;
+        background-repeat: no-repeat !important;
+        background-size: 16px !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        cursor: pointer !important;
+    }
+    
+    /* Asegurar que las opciones del selector sean visibles */
+    select.form-control option {
+        padding: 8px 12px !important;
+        background-color: white !important;
+        color: #5a5c69 !important;
+    }
+    
+    /* Estilos para el input de fecha */
+    input[type="date"].form-control {
+        padding: 8px 20px !important;
+    }
+    
+    /* Asegurar que todos los form-controls tengan el mismo comportamiento */
+    .form-control:not(select) {
+        padding: 8px 20px !important;
+    }
+    
+    .btn {
+        border-radius: 25px !important;
+        padding: 12px 25px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.3s ease !important;
+        border: none !important;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%) !important;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%) !important;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%) !important;
+    }
+    
+    .card {
+        border-radius: 15px !important;
+        border: none !important;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        background: linear-gradient(135deg, #f8f9fc 0%, #eaecf4 100%) !important;
+        border-bottom: 1px solid #e3e6f0 !important;
+    }
+    
+    .form-group label {
+        font-weight: 600 !important;
+        color: #5a5c69 !important;
+        margin-bottom: 8px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Mejorar el espaciado entre elementos del formulario */
+    .form-group {
+        margin-bottom: 20px !important;
+    }
+    
+    /* Asegurar que los inputs tengan suficiente espacio */
+    .form-control {
+        margin-bottom: 5px !important;
+    }
+    
+    /* Animación para el spinner */
+    #spinner {
+        animation: pulse 1.5s ease-in-out infinite alternate;
+    }
+    
+    @keyframes pulse {
+        from { opacity: 1; }
+        to { opacity: 0.5; }
+    }
+    
+    /* Estilos para los botones de exportación */
+    #export_buttons {
+        background: linear-gradient(135deg, #f8f9fc 0%, #eaecf4 100%);
+        border-radius: 15px;
+        padding: 25px;
+        border: 1px solid #e3e6f0;
+        margin-top: 20px;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+    }
+    
+    #export_buttons.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Estado inicial oculto */
+    #export_buttons {
+        display: none !important;
+    }
+    
+    #export_buttons.show {
+        display: block !important;
+    }
+    
+    #export_buttons h6 {
+        color: #5a5c69;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .btn-lg {
+        padding: 15px 30px !important;
+        font-size: 16px !important;
+        margin: 0 10px;
+    }
+    
+    /* Efecto hover mejorado para botones de exportación */
+    .btn-success:hover, .btn-danger:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // Generar reporte
+    $('#btn_generate_report').click(function() {
+        generateReport();
+    });
+
+    // Exportar a Excel
+    $('#btn_export_excel').click(function() {
+        exportToExcel();
+    });
+
+    // Exportar a PDF
+    $('#btn_export_pdf').click(function() {
+        exportToPDF();
+    });
+
+    // Generar reporte
+    function generateReport() {
+        const reportDate = $('#report_date').val();
+        const subsidiary = $('#subsidiary').val();
+        const cashAccount = $('#cash_account').val();
+
+        if (!reportDate) {
+            toastr.error('Debe seleccionar una fecha');
+            return;
+        }
+
+        // Obtener token CSRF del formulario oculto
+        const csrfToken = $('#csrf_form [name=csrfmiddlewaretoken]').val();
+        if (!csrfToken) {
+            toastr.error('Error de seguridad: Token CSRF no encontrado');
+            return;
+        }
+
+        // Mostrar spinner en el botón
+        $('#spinner').show();
+        $('#btn_generate_report').prop('disabled', true);
+
+        // Crear FormData para enviar los datos
+        const formData = new FormData();
+        formData.append('report_date', reportDate);
+        formData.append('subsidiary', subsidiary);
+        formData.append('cash_account', cashAccount);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        $.ajax({
+            url: '{% url "apps.accounting:sales_report" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                console.log("=== RESPUESTA EXITOSA ===");
+                console.log("Response:", response);
+                
+                if (response.success) {
+                    $('#report_content').html(response.grid);
+                    // Mostrar botones de exportación con animación
+                    $('#export_buttons').show().addClass('show');
+                    // Actualizar resumen en el sidebar si existe
+                    updateSummary(response.summary);
+                    toastr.success('Reporte generado exitosamente');
+                } else {
+                    toastr.error(response.message || 'Error al generar el reporte');
+                }
+                
+
+            },
+            error: function(xhr, status, error) {
+                
+                let errorMessage = 'Error al generar el reporte';
+                
+                try {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 400) {
+                        errorMessage = 'Datos de entrada inválidos';
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'Error de permisos o token CSRF inválido';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error interno del servidor';
+                    }
+                } catch (e) {
+                    console.error('Error al procesar respuesta:', e);
+                }
+                
+                toastr.error(errorMessage);
+                
+
+            },
+            complete: function() {
+                $('#spinner').hide();
+                $('#btn_generate_report').prop('disabled', false);
+            }
+        });
+    }
+
+    // Exportar a Excel
+    function exportToExcel() {
+        const reportDate = $('#report_date').val();
+        const subsidiary = $('#subsidiary').val();
+        const cashAccount = $('#cash_account').val();
+
+        if (!reportDate) {
+            toastr.error('Debe seleccionar una fecha');
+            return;
+        }
+
+        // Obtener token CSRF
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+        if (!csrfToken) {
+            toastr.error('Error de seguridad: Token CSRF no encontrado');
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "apps.accounting:export_sales_report_excel" %}',
+            type: 'POST',
+            data: {
+                'report_date': reportDate,
+                'subsidiary': subsidiary,
+                'cash_account': cashAccount,
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Descargar archivo
+                    const link = document.createElement('a');
+                    link.href = response.file_url;
+                    link.download = response.filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    toastr.success('Reporte exportado exitosamente');
+                } else {
+                    toastr.error(response.message || 'Error al exportar el reporte');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error AJAX Excel:', xhr.responseText);
+                let errorMessage = 'Error al exportar el reporte';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                toastr.error(errorMessage);
+            },
+            complete: function() {
+                // Función completada
+            }
+        });
+    }
+
+    // Exportar a PDF
+    function exportToPDF() {
+        const reportDate = $('#report_date').val();
+        const subsidiary = $('#subsidiary').val();
+        const cashAccount = $('#cash_account').val();
+
+        if (!reportDate) {
+            toastr.error('Debe seleccionar una fecha');
+            return;
+        }
+
+        // Obtener token CSRF
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+        if (!csrfToken) {
+            toastr.error('Error de seguridad: Token CSRF no encontrado');
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "apps.accounting:export_sales_report_pdf" %}',
+            type: 'POST',
+            data: {
+                'report_date': reportDate,
+                'subsidiary': subsidiary,
+                'cash_account': cashAccount,
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Descargar archivo
+                    const link = document.createElement('a');
+                    link.href = response.file_url;
+                    link.download = response.filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    toastr.success('Reporte PDF generado exitosamente');
+                } else {
+                    toastr.error(response.message || 'Error al generar el PDF');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error AJAX PDF:', xhr.responseText);
+                let errorMessage = 'Error al generar el PDF';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                toastr.error(errorMessage);
+            },
+            complete: function() {
+                // Función completada
+            }
+        });
+    }
+
+    // Actualizar resumen en el sidebar
+    function updateSummary(summary) {
+        // Aquí puedes actualizar elementos del sidebar si los tienes
+        console.log('Resumen actualizado:', summary);
+    }
+
+
+
+    // Generar reporte al cargar la página si hay fecha
+    if ($('#report_date').val()) {
+        generateReport();
+    }
+});
+</script>
+{% endblock %}

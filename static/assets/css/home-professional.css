@@ -1,0 +1,512 @@
+/* ===== ESTILOS PROFESIONALES PARA HOME ===== */
+
+/* Variables CSS personalizadas */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --info-color: #17a2b8;
+    --dark-color: #34495e;
+    --light-color: #ecf0f1;
+    --white-color: #ffffff;
+    --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+    --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+    --shadow-heavy: 0 8px 30px rgba(0,0,0,0.2);
+    --border-radius: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estilos generales del body */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+/* Wrapper principal con efecto glassmorphism */
+.wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--border-radius);
+    margin: 20px;
+    box-shadow: var(--shadow-heavy);
+    overflow: hidden;
+}
+
+/* Navbar mejorado */
+.main-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+    border-bottom: 3px solid var(--secondary-color);
+    box-shadow: var(--shadow-medium);
+}
+
+.main-header .navbar-nav .nav-link {
+    color: var(--white-color) !important;
+    font-weight: 500;
+    padding: 12px 20px;
+    margin: 0 5px;
+    border-radius: 25px;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.main-header .navbar-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.main-header .navbar-nav .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.main-header .navbar-nav .nav-link:hover::before {
+    left: 100%;
+}
+
+/* Sidebar mejorado */
+.main-sidebar {
+    background: linear-gradient(180deg, var(--dark-color) 0%, var(--primary-color) 100%);
+    border-right: 3px solid var(--secondary-color);
+    box-shadow: var(--shadow-medium);
+}
+
+.main-sidebar .brand-link {
+    background: linear-gradient(135deg, var(--accent-color) 0%, #c0392b 100%);
+    padding: 20px;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.main-sidebar .brand-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.main-sidebar .user-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.main-sidebar .nav-sidebar .nav-link {
+    color: var(--white-color);
+    padding: 15px 20px;
+    margin: 5px 15px;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.main-sidebar .nav-sidebar .nav-link:hover {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, #2980b9 100%);
+    transform: translateX(10px);
+    box-shadow: var(--shadow-light);
+}
+
+.main-sidebar .nav-sidebar .nav-link i {
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+/* Contenido principal */
+.content-wrapper {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: calc(100vh - 200px);
+}
+
+/* Tarjetas de estadísticas mejoradas */
+.small-box {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-medium);
+    transition: var(--transition);
+    overflow: hidden;
+    position: relative;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.small-box:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-heavy);
+}
+
+.small-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.small-box:hover::before {
+    opacity: 1;
+}
+
+.small-box .inner {
+    padding: 25px;
+    position: relative;
+    z-index: 2;
+}
+
+.small-box .inner h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.small-box .inner p {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+}
+
+.small-box .icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 4rem;
+    opacity: 0.8;
+    transition: var(--transition);
+}
+
+.small-box:hover .icon {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+}
+
+.small-box .small-box-footer {
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    padding: 15px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.small-box .small-box-footer:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Colores específicos para cada tarjeta */
+.small-box.bg-warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.small-box.bg-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.small-box.bg-success {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+}
+
+.small-box.bg-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+/* Footer mejorado */
+.main-footer {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+    color: var(--white-color);
+    padding: 20px;
+    text-align: center;
+    border-top: 3px solid var(--secondary-color);
+}
+
+.main-footer a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.main-footer a:hover {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+/* Preloader mejorado */
+.preloader {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+
+.preloader img {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Efectos de hover para enlaces */
+.small-box a {
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.small-box a:hover {
+    text-decoration: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .wrapper {
+        margin: 10px;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 2rem;
+    }
+    
+    .small-box .icon {
+        font-size: 3rem;
+    }
+}
+
+/* Animaciones de entrada */
+.small-box {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efecto de brillo en las tarjetas */
+.small-box::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    transition: var(--transition);
+    opacity: 0;
+}
+
+.small-box:hover::after {
+    opacity: 1;
+    animation: shine 1.5s ease-in-out;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Mejoras en el sidebar search */
+.form-inline .input-group {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.form-inline .form-control {
+    background: transparent;
+    border: none;
+    color: var(--white-color);
+    padding: 12px 20px;
+}
+
+.form-inline .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.form-inline .btn-sidebar {
+    background: var(--secondary-color);
+    border: none;
+    color: var(--white-color);
+    padding: 12px 20px;
+    transition: var(--transition);
+}
+
+.form-inline .btn-sidebar:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+/* Mejoras en las notificaciones */
+.notify .badge {
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
+/* Efectos de transición suaves */
+* {
+    transition: var(--transition);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+/* Mejoras adicionales para el contenido */
+.container-fluid {
+    padding: 30px;
+}
+
+.row {
+    margin-bottom: 30px;
+}
+
+/* Efectos especiales para las tarjetas */
+.small-box.bg-warning .icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.small-box.bg-info .icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.small-box.bg-success .icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.small-box.bg-danger .icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Mejoras en el header del contenido */
+.content-header {
+    background: linear-gradient(135deg, var(--light-color) 0%, #d5d8dc 100%);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-light);
+}
+
+/* Efectos de hover mejorados para las tarjetas */
+.small-box:hover .inner h3 {
+    transform: scale(1.05);
+}
+
+.small-box:hover .inner p {
+    transform: scale(1.02);
+}
+
+/* Animación de entrada escalonada para las tarjetas */
+.small-box:nth-child(1) { animation-delay: 0.1s; }
+.small-box:nth-child(2) { animation-delay: 0.2s; }
+.small-box:nth-child(3) { animation-delay: 0.3s; }
+.small-box:nth-child(4) { animation-delay: 0.4s; }
+
+/* Mejoras en el sidebar navigation */
+.nav-header {
+    color: var(--white-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 20px 15px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 15px;
+}
+
+/* Efectos de hover para los elementos del sidebar */
+.nav-treeview .nav-link {
+    padding-left: 35px;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.nav-treeview .nav-link:hover {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.3) 0%, rgba(41, 128, 185, 0.3) 100%);
+}
+
+/* Mejoras en el navbar */
+.navbar-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    border-radius: 10px;
+}
+
+/* Efectos de transición para el logo */
+.brand-image {
+    transition: var(--transition);
+}
+
+.brand-image:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Mejoras en el user panel */
+.user-panel .image img {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+}
+
+.user-panel .image img:hover {
+    border-color: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+.user-panel .info a {
+    color: var(--white-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.user-panel .info a:hover {
+    color: var(--secondary-color);
+}

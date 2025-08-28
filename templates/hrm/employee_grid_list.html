@@ -1,0 +1,189 @@
+{% load static %}
+{% if user_set %}
+    <table id="table-employee-list" class="table table-hover table-striped align-content-center w-100">
+        <thead class="thead-dark">
+        <tr class="text-center">
+            <th class="th-sm font-weight-normal text-center">N°</th>
+            <th class="th-sm font-weight-normal text-center">Documento</th>
+            <th class="th-sm font-weight-normal text-center">Nombres/Apellidos</th>
+            <th class="th-sm font-weight-normal text-center">Fecha nacimiento</th>
+            <th class="th-sm font-weight-normal text-center">Correo/Telefono</th>
+            <th class="th-sm font-weight-normal text-center">Dirección</th>
+            <th class="th-sm font-weight-normal text-center">Estado</th>
+            <th class="th-sm font-weight-normal text-center">Usuario</th>
+            <th class="th-sm font-weight-normal text-center">Foto</th>
+            <th class="th-sm font-weight-normal text-center">Acciones</th>
+        </tr>
+        </thead>
+        <tbody style="font-size: 14px;">
+        {% for u in user_set %}
+            <tr class="text-center align-middle" pk="{{ u.id }}">
+                <td class="align-middle">
+                    <span class="badge badge-primary badge-pill">{{ forloop.counter }}</span>
+                </td>
+                <td class="align-middle">
+                    <code class="text-dark">{{ u.document|default_if_none:"-" }}</code>
+                </td>
+                <td class="align-middle text-left">
+                    <div class="d-flex flex-column">
+                        <span class="font-weight-bold text-primary">{{ u.first_name }}</span>
+                        <span class="text-muted">{{ u.last_name }}</span>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    {% if u.birth_date %}
+                        <span class="badge badge-info">{{ u.birth_date|date:'d-m-Y' }}</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td class="align-middle text-left">
+                    <div class="d-flex flex-column">
+                        <div class="mb-1">
+                            <i class="fas fa-envelope text-primary mr-2"></i>
+                            <small class="text-primary">{{ u.email }}</small>
+                        </div>
+                        {% if u.phone %}
+                            <div class="mb-1">
+                                <i class="fas fa-phone text-success mr-2"></i>
+                                <small class="text-success">{{ u.phone }}</small>
+                            </div>
+                        {% endif %}
+                        {% if u.cellphone %}
+                            <div>
+                                <i class="fas fa-mobile-alt text-info mr-2"></i>
+                                <small class="text-info">{{ u.cellphone }}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="align-middle text-left">
+                    {% if u.address %}
+                        <small class="text-muted">{{ u.address|truncatechars:30 }}</small>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td class="align-middle">
+                    {% if u.is_active %}
+                        <span class="badge badge-success badge-pill">
+                            <i class="fas fa-check-circle mr-1"></i>Activo
+                        </span>
+                    {% else %}
+                        <span class="badge badge-danger badge-pill">
+                            <i class="fas fa-times-circle mr-1"></i>Inactivo
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="align-middle">
+                    <strong>{{ u.username|default_if_none:"-" }}</strong>
+                </td>
+                <td class="align-middle justify-content-center">
+                    {% if u.photo.url %}
+                        <img class="img-size-50 mr-3 img-circle border" src="{{ u.photo.url }}"
+                             id="img-photo-employee" alt="User Avatar">
+                    {% else %}
+                        <img src="{% static 'dist/img/user1-128x128.jpg' %}" alt="User Avatar"
+                             id="img-photo-employee" class="img-size-50 mr-3 img-circle border">
+                    {% endif %}
+                </td>
+                <td class="align-middle">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm item-edit" pk="{{ u.id }}" 
+                                title="Editar Colaborador">
+                            <i class="fas fa-user-edit"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot class="thead-light">
+        <tr class="text-center">
+            <th class="th-sm font-weight-normal text-center">N°</th>
+            <th class="th-sm font-weight-normal text-center">Documento</th>
+            <th class="th-sm font-weight-normal text-center">Nombres/Apellidos</th>
+            <th class="th-sm font-weight-normal text-center">Fecha nacimiento</th>
+            <th class="th-sm font-weight-normal text-center">Correo/Telefono</th>
+            <th class="th-sm font-weight-normal text-center">Dirección</th>
+            <th class="th-sm font-weight-normal text-center">Estado</th>
+            <th class="th-sm font-weight-normal text-center">Usuario</th>
+            <th class="th-sm font-weight-normal text-center">Foto</th>
+            <th class="th-sm font-weight-normal text-center">Acciones</th>
+        </tr>
+        </tfoot>
+    </table>
+    
+    <style>
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .thead-dark {
+            background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+            color: white;
+        }
+        
+        .thead-light {
+            background: #f8f9fa;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.1);
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+        
+        .badge {
+            font-size: 0.7em;
+        }
+        
+        .badge-sm {
+            font-size: 0.65em;
+        }
+        
+        .img-size-50 {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+        }
+        
+        .btn-group .btn {
+            border-radius: 6px;
+            margin: 0 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .table td, .table th {
+            vertical-align: middle;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+    </style>
+{% else %}
+    <div class="text-center py-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay colaboradores registrados</h4>
+                <p class="text-muted">Comienza agregando el primer colaborador a tu equipo.</p>
+                <button type="button" onclick="showModalView('modal_user_create')" 
+                        class="btn btn-primary btn-lg">
+                    <i class="fas fa-user-plus mr-2"></i>Agregar Primer Colaborador
+                </button>
+            </div>
+        </div>
+    </div>
+{% endif %}

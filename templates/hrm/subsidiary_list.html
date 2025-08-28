@@ -1,0 +1,107 @@
+{% extends 'home.html' %}
+{% load static %}
+{% block title %}
+    System | Sucursal
+{% endblock title %}
+
+{% block body %}
+    <div class="card roboto-condensed-regular">
+        <div class="card-header p-2">
+            <button type="button" onclick="showModalView('modal_subsidiary_create')"
+                    class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> Registrar nueva sucursal
+            </button>
+
+        </div>
+        <div class="card-body p-2">
+            <div id="employee-grid-list"
+                 class="table-responsive small">{% include "hrm/subsidiary_grid_list.html" %}</div>
+        </div>
+    </div>
+    <div class="modal fade" id="modal-subsidiary-create" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle"
+         aria-hidden="true"></div>
+    <div class="modal fade" id="modal-subsidiary-update" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle"
+         aria-hidden="true"></div>
+    <div class="modal fade" id="modal-store-create" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle"
+         aria-hidden="true"></div>
+    <div class="modal fade" id="modal-store-update" tabindex="-1" role="dialog"
+         aria-labelledby="ModalHelpTitle"
+         aria-hidden="true"></div>
+
+{% endblock body %}
+
+{% block extrajs %}
+
+<script type="text/javascript">
+    function showModalView(route) {
+        $('#modal-subsidiary-create').empty()
+        $.ajax({
+            url: '/hrm/' + route + '/',
+            dataType: 'json',
+            type: 'GET',
+            data: {'pk': 1},
+            success: function (response) {
+                $('#modal-subsidiary-create').html(response.form);
+                $('#modal-subsidiary-create').modal('show');
+            },
+            fail: function (response) {
+                toastr.error('Error en la petición', '¡Mensaje!');
+            }
+        });
+    };
+    $(document).on('click', '.item-edit', function () {
+        let _pk = $(this).attr('pk');
+        $('#modal-subsidiary-update').empty()
+        $.ajax({
+            url: '/hrm/modal_subsidiary_update/',
+            dataType: 'json',
+            type: 'GET',
+            data: {'pk': _pk},
+            success: function (response) {
+                $('#modal-subsidiary-update').html(response.form);
+                $('#modal-subsidiary-update').modal('show');
+            },
+            fail: function (response) {
+                toastr.error('Error en la peticion', '¡Mensaje!');
+            }
+        });
+    });
+    $(document).on('click', '.subsidiary_store_edit', function () {
+        let _pk = $(this).attr('pk');
+        $('#modal-store-create').empty()
+        $.ajax({
+            url: '/hrm/modal_subsidiary_store_update/',
+            dataType: 'json',
+            type: 'GET',
+            data: {'pk': _pk},
+            success: function (response) {
+                $('#modal-store-create').html(response.form);
+                $('#modal-store-create').modal('show');
+            },
+            fail: function (response) {
+                toastr.error('Error en la peticion', '¡Mensaje!');
+            }
+        });
+    });
+    $(document).on('click', '.item-view', function () {
+        let _pk = $(this).attr('pk');
+        let _table = $(this).parent('td').parent('tr').next('tr').children('td.table-store');
+        $('#table-subsidiary-list tbody.table-body tr td.table-store').parent('tr').slideUp(800);
+        $('#table-subsidiary-list tbody.table-body tr td.table-store').empty();
+        $.ajax({
+            url: '/hrm/subsidiary_detail/',
+            async: true,
+            dataType: 'json',
+            type: 'GET',
+            data: {'pk': _pk},
+            success: function (response) {
+                toastr.info('Almacenes de la sucursal');
+                _table.html(response.grid);
+                _table.parent('tr').slideDown(800);
+            },
+        });
+    });
+</script>
+{% endblock extrajs %}
