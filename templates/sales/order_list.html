@@ -997,7 +997,7 @@
 
     <!-- Modal para completar orden -->
     <div class="modal fade" id="completeOrderModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-md roboto-condensed-regular" role="document">
+        <div class="modal-dialog modal-lg roboto-condensed-regular" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
@@ -1011,11 +1011,65 @@
                     <form id="complete-order-form">
                         <input type="hidden" id="complete_order_id" name="order_id" value="">
                         <input type="hidden" id="complete_order_balance" name="order_balance" value="">
+                        <input type="hidden" id="complete_order_total" name="order_total" value="">
+                        <input type="hidden" id="complete_client_document" name="client_document" value="">
+                        <input type="hidden" id="complete_client_name" name="client_name" value="">
                         
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle mr-2"></i>
                             <strong>Información de la Orden:</strong>
                             <div id="complete-order-info" class="mt-2"></div>
+                        </div>
+                        
+                        <!-- Totales de la orden -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-calculator mr-2"></i>Totales de la Orden</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Subtotal</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                               id="complete_subtotal" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">IGV (18%)</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                               id="complete_igv" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Total</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                               id="complete_total" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -1055,6 +1109,77 @@
                             <small class="form-text text-muted">
                                 Seleccione la cuenta donde se registrará el ingreso
                             </small>
+                        </div>
+                        
+                        <!-- Checkbox para emitir comprobante electrónico -->
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document" name="emit_electronic_document">
+                                <label class="custom-control-label" for="emit_electronic_document">
+                                    <i class="fas fa-file-invoice mr-1"></i>Emitir Comprobante Electrónico
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Marque esta opción si desea generar un comprobante electrónico (Boleta o Factura)
+                            </small>
+                        </div>
+                        
+                        <!-- Panel de comprobante electrónico (inicialmente oculto) -->
+                        <div id="electronic-document-panel" style="display: none;">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante Electrónico</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="document_type" class="form-label">
+                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="form-control" id="document_type" name="document_type">
+                                                    <option value="">Seleccione tipo</option>
+                                                    <option value="B">BOLETA</option>
+                                                    <option value="F">FACTURA</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="document_number" class="form-label">
+                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control" id="document_number" 
+                                                       name="document_number" placeholder="DNI o RUC del cliente">
+                                                <small class="form-text text-muted">
+                                                    <span id="document_help">Ingrese el documento del cliente</span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="client_full_name" class="form-label">
+                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control" id="client_full_name" 
+                                                       name="client_full_name" placeholder="Nombre completo o razón social">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="client_address" class="form-label">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                                                </label>
+                                                <input type="text" class="form-control" id="client_address" 
+                                                       name="client_address" placeholder="Dirección del cliente">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1763,6 +1888,10 @@
                 $('#complete-order-form')[0].reset();
                 $('#complete_order_id').val('');
                 $('#complete_order_balance').val('');
+                $('#complete_order_total').val('');
+                $('#complete_client_document').val('');
+                $('#complete_client_name').val('');
+                resetElectronicDocumentFields();
             });
 
             $('#cancelOrderModal').on('hidden.bs.modal', function() {
@@ -1771,6 +1900,47 @@
                 $('#cancel_order_advance').val('');
                 $('#refund-details').hide();
                 $('#refund_cash_account').prop('required', false);
+            });
+
+            // Event listeners para el modal de completar orden
+            $('#emit_electronic_document').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#electronic-document-panel').slideDown(300);
+                    // Cargar datos del cliente automáticamente
+                    loadClientDataForDocument();
+                } else {
+                    $('#electronic-document-panel').slideUp(300);
+                }
+            });
+
+            // Event listener para cambio de tipo de comprobante
+            $('#document_type').on('change', function() {
+                const documentType = $(this).val();
+                if (documentType) {
+                    updateDocumentFields(documentType);
+                }
+            });
+
+            // Event listener para cancelar el modal de completar orden
+            $('#completeOrderModal').on('click', '.btn-secondary', function() {
+                // Restaurar el estado de la orden a pendiente
+                restoreOrderStatusToPending();
+            });
+
+            // Validación en tiempo real para el número de documento
+            $('#document_number').on('input', function() {
+                const documentType = $('#document_type').val();
+                const documentNumber = $(this).val();
+                
+                if (documentType && documentNumber) {
+                    if (documentType === 'B' && documentNumber.length !== 8) {
+                        $(this).addClass('is-invalid');
+                    } else if (documentType === 'F' && documentNumber.length !== 11) {
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                }
             });
         });
 
@@ -3316,8 +3486,16 @@
                         // Llenar información del modal
                         $('#complete_order_id').val(orderId);
                         $('#complete_order_balance').val(order.balance);
+                        $('#complete_order_total').val(order.total);
                         $('#complete_payment_amount').val(order.balance);
                         $('#complete_payment_date').val(getServerDate());
+                        
+                        // Guardar información del cliente
+                        $('#complete_client_document').val(order.client.document);
+                        $('#complete_client_name').val(order.client.full_name);
+                        
+                        // Calcular y mostrar totales
+                        calculateOrderTotals(order.total);
                         
                         // Mostrar información de la orden
                         const orderInfo = `
@@ -3328,6 +3506,9 @@
                             <strong>Saldo:</strong> S/ ${order.balance}
                         `;
                         $('#complete-order-info').html(orderInfo);
+                        
+                        // Limpiar campos del comprobante electrónico
+                        resetElectronicDocumentFields();
                         
                         // Mostrar modal
                         $('#completeOrderModal').modal('show');
@@ -3384,6 +3565,74 @@
             });
         }
 
+        // Función para calcular totales de la orden
+        function calculateOrderTotals(total) {
+            const totalAmount = parseFloat(total) || 0;
+            const subtotal = totalAmount / 1.18; // Calcular subtotal sin IGV
+            const igv = totalAmount - subtotal; // Calcular IGV
+            
+            // Mostrar totales en el modal
+            $('#complete_subtotal').val(subtotal.toFixed(2));
+            $('#complete_igv').val(igv.toFixed(2));
+            $('#complete_total').val(totalAmount.toFixed(2));
+        }
+
+        // Función para resetear campos del comprobante electrónico
+        function resetElectronicDocumentFields() {
+            $('#emit_electronic_document').prop('checked', false);
+            $('#document_type').val('');
+            $('#document_number').val('');
+            $('#client_full_name').val('');
+            $('#client_address').val('');
+            $('#electronic-document-panel').hide();
+            
+            // Limpiar validaciones
+            $('#document_type').removeClass('is-invalid');
+            $('#document_number').removeClass('is-invalid');
+            $('#client_full_name').removeClass('is-invalid');
+        }
+
+        // Función para validar campos del comprobante electrónico
+        function validateElectronicDocument() {
+            const emitDocument = $('#emit_electronic_document').is(':checked');
+            
+            if (!emitDocument) {
+                return true; // No es obligatorio si no se marca el checkbox
+            }
+            
+            const documentType = $('#document_type').val();
+            const documentNumber = $('#document_number').val();
+            const clientName = $('#client_full_name').val();
+            
+            let isValid = true;
+            
+            // Validar tipo de documento
+            if (!documentType) {
+                $('#document_type').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#document_type').removeClass('is-invalid');
+            }
+            
+            // Validar número de documento
+            if (!documentNumber) {
+                $('#document_number').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#document_number').removeClass('is-invalid');
+            }
+            
+            // Validar nombre del cliente
+            if (!clientName) {
+                $('#client_full_name').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#client_full_name').removeClass('is-invalid');
+            }
+            
+            return isValid;
+        }
+
         // Función para confirmar la completación de la orden
         function confirmCompleteOrder() {
             const orderId = $('#complete_order_id').val();
@@ -3392,7 +3641,13 @@
             const cashAccountId = $('#complete_cash_account').val();
 
             if (!orderId || !paymentAmount || !paymentDate || !cashAccountId) {
-                Swal.fire('Error', 'Por favor complete todos los campos', 'error');
+                Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+                return;
+            }
+
+            // Validar campos del comprobante electrónico si está marcado
+            if (!validateElectronicDocument()) {
+                Swal.fire('Error', 'Por favor complete todos los campos del comprobante electrónico', 'error');
                 return;
             }
 
@@ -3420,6 +3675,18 @@
             confirmButton.html('<i class="fas fa-spinner fa-spin mr-1"></i>Procesando...');
             confirmButton.prop('disabled', true);
 
+            // Preparar datos del comprobante electrónico si está marcado
+            const emitDocument = $('#emit_electronic_document').is(':checked');
+            const documentData = {};
+            
+            if (emitDocument) {
+                documentData.emit_document = true;
+                documentData.document_type = $('#document_type').val();
+                documentData.document_number = $('#document_number').val();
+                documentData.client_full_name = $('#client_full_name').val();
+                documentData.client_address = $('#client_address').val();
+            }
+
             $.ajax({
                 url: '{% url "apps.sales:complete_order_with_payment" %}',
                 type: 'POST',
@@ -3427,17 +3694,25 @@
                     'order_id': orderId,
                     'payment_amount': paymentAmount,
                     'payment_date': paymentDate,
-                    'cash_account_id': cashAccountId
+                    'cash_account_id': cashAccountId,
+                    ...documentData
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 success: function (response) {
                     if (response.success) {
+                        let successMessage = response.message;
+                        
+                        // Agregar información del comprobante si se generó
+                        if (emitDocument && response.document_info) {
+                            successMessage += `\n\nComprobante electrónico generado: ${response.document_info}`;
+                        }
+                        
                         Swal.fire({
                             icon: 'success',
                             title: '¡Orden Completada!',
-                            text: response.message,
+                            text: successMessage,
                             showConfirmButton: true,
                             confirmButtonColor: '#28a745'
                         }).then(() => {
@@ -3547,6 +3822,66 @@
                     confirmButton.prop('disabled', false);
                 }
             });
+        }
+
+        // Función para cargar datos del cliente en el comprobante electrónico
+        function loadClientDataForDocument() {
+            const clientDocument = $('#complete_client_document').val();
+            const clientName = $('#complete_client_name').val();
+            
+            // Cargar nombre del cliente
+            $('#client_full_name').val(clientName);
+            
+            // Cargar documento del cliente
+            if (clientDocument) {
+                $('#document_number').val(clientDocument);
+            }
+        }
+
+        // Función para actualizar campos según el tipo de comprobante
+        function updateDocumentFields(documentType) {
+            const documentNumber = $('#document_number').val();
+            const documentHelp = $('#document_help');
+            
+            if (documentType === 'B') {
+                // BOLETA - DNI
+                documentHelp.text('Ingrese el DNI del cliente (8 dígitos)');
+                $('#document_number').attr('placeholder', 'DNI del cliente');
+                $('#document_number').attr('maxlength', '8');
+                
+                // Validar formato DNI si ya hay un número
+                if (documentNumber && documentNumber.length !== 8) {
+                    $('#document_number').addClass('is-invalid');
+                } else {
+                    $('#document_number').removeClass('is-invalid');
+                }
+                
+            } else if (documentType === 'F') {
+                // FACTURA - RUC
+                documentHelp.text('Ingrese el RUC del cliente (11 dígitos)');
+                $('#document_number').attr('placeholder', 'RUC del cliente');
+                $('#document_number').attr('maxlength', '11');
+                
+                // Validar formato RUC si ya hay un número
+                if (documentNumber && documentNumber.length !== 11) {
+                    $('#document_number').addClass('is-invalid');
+                } else {
+                    $('#document_number').removeClass('is-invalid');
+                }
+            }
+        }
+
+        // Función para restaurar el estado de la orden a pendiente
+        function restoreOrderStatusToPending() {
+            const orderId = $('#complete_order_id').val();
+            if (orderId) {
+                // Buscar el select de estado de la orden
+                const statusSelect = document.querySelector(`select.status-select[data-order-id="${orderId}"]`);
+                if (statusSelect) {
+                    // Restaurar a pendiente silenciosamente
+                    statusSelect.value = 'P';
+                }
+            }
         }
 
         // =============================================================================
@@ -5997,6 +6332,103 @@
         #createClientModal .btn-success:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Estilos para el panel de comprobante electrónico */
+        #electronic-document-panel {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #electronic-document-panel .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+            border: none;
+        }
+
+        #electronic-document-panel .card-header h6 {
+            color: white;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Estilos para los campos del comprobante electrónico */
+        #document_type, #document_number, #client_full_name, #client_address {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        #document_type:focus, #document_number:focus, #client_full_name:focus, #client_address:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Estilos para campos válidos */
+        #document_type.is-valid, #document_number.is-valid, #client_full_name.is-valid {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        /* Estilos para campos inválidos */
+        #document_type.is-invalid, #document_number.is-invalid, #client_full_name.is-invalid {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+
+        /* Estilos para el checkbox personalizado */
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .custom-control-input:focus ~ .custom-control-label::before {
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Estilos para los totales en el modal */
+        #complete_subtotal, #complete_igv, #complete_total {
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        #complete_subtotal:focus, #complete_igv:focus, #complete_total:focus {
+            background-color: white;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Estilos para el modal de completar orden */
+        #completeOrderModal .modal-lg {
+            max-width: 800px;
+        }
+
+        #completeOrderModal .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #completeOrderModal .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        /* Responsive para el modal de completar orden */
+        @media (max-width: 768px) {
+            #completeOrderModal .modal-lg {
+                max-width: 95%;
+                margin: 0.5rem auto;
+            }
+            
+            #electronic-document-panel .card-body {
+                padding: 1rem;
+            }
+            
+            .col-md-4, .col-md-6 {
+                margin-bottom: 1rem;
+            }
         }
 
         /* Estilos para el indicador de cliente listo */
