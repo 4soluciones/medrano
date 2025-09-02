@@ -35,7 +35,6 @@ urlpatterns = [
     # NUEVAS URLs PARA EL SISTEMA DE ÓRDENES MODERNO
     # =============================================================================
     path('orders/', login_required(order_list), name='order_list'),
-    path('orders/create/', login_required(order_create), name='order_create'),
     path('orders/save/', login_required(order_save), name='order_save'),
     path('orders/<int:order_id>/edit/', login_required(order_edit), name='order_edit'),
     path('orders/update/', login_required(order_update), name='order_update'),

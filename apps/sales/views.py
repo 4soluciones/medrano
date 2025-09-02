@@ -1011,26 +1011,79 @@ def order_list(request):
                 orders = orders.filter(register_date=current_date)
             else:
                 if date_from:
-                    orders = orders.filter(register_date__gte=date_from)
+                    orders = orders.filter(register_date__gte=date_from).order_by('id')
                 if date_to:
-                    orders = orders.filter(register_date__lte=date_to)
+                    orders = orders.filter(register_date__lte=date_to).order_by('id')
 
             orders = orders.select_related('client', 'user', 'subsidiary').prefetch_related('orderdetail_set')
 
-            # Calcular saldo para cada orden
+            # Crear diccionario con cálculos de saldo para cada orden
+            order_dict = []
             for order in orders:
-                order.saldo = order.total - order.cash_advance
+                # if order.cash_pay > 0:
+                #     balance = order.total - order.cash_pay
+                # else:
+                #     balance = order.total - order.cash_advance
+                # if balance < 0:
+                #     balance = Decimal('0.00')
+                balance = order.total - order.cash_advance
+                if order.cash_advance + order.cash_pay == order.total:
+                    balance = decimal.Decimal(0.00)
+                order_data = {
+                    'id': order.id,
+                    'order': order,
+                    'type_order': order.type,
+                    'type_order_display': order.get_type_display(),
+                    'register_date': order.register_date,
+                    'delivery_date': order.delivery_date,
+                    'serial': order.subsidiary.serial,
+                    'correlative': order.correlative,
+                    'status': order.status,
+                    'status_display': order.get_status_display(),
+                    'delivery_status': order.delivery_status,
+                    'delivery_status_display': order.get_delivery_status_display(),
+                    'client': order.client.full_name,
+                    'client_document': order.client.document,
+                    'client_number': order.client.number,
+                    'user': order.user.first_name,
+                    'details': [],
+                    'balance': str(round(balance, 2)),
+                    'cash_pay': str(round(order.cash_pay, 2)),
+                    'total': str(round(order.total, 2)),
+                    'cash_advance': str(round(order.cash_advance, 2)),
+                    # 'is_paid': order.cash_pay >= order.total if order.cash_pay > 0 else False,
+                    # 'has_advance': order.cash_advance > 0,
+                    # 'payment_status': 'PAID' if order.cash_pay >= order.total else 'PARTIAL' if order.cash_pay > 0 else 'PENDING'
+                }
+                for detail in order.orderdetail_set.all():
+                    detail_data = {
+                        'id': detail.id,
+                        'product': detail.product.id,
+                        'quantity': str(round(detail.quantity, 0)),
+                        'product_name': detail.product.name,
+                        'description': detail.product_name,
+                        'observation': detail.observation,
+                    }
+                    order_data.get('details').append(detail_data)
+                order_dict.append(order_data)
 
             # Calcular totales del período
             total_sales = orders.aggregate(total=Sum('total'))['total'] or 0
             total_cash_advance = orders.aggregate(total=Sum('cash_advance'))['total'] or 0
-            total_balance = total_sales - total_cash_advance
+            total_cash_pay = orders.aggregate(total=Sum('cash_pay'))['total'] or 0
+            
+            # El balance total se calcula basándose en los pagos reales
+            if total_cash_pay > 0:
+                total_balance = total_sales - total_cash_pay
+            else:
+                total_balance = total_sales - total_cash_advance
 
             tpl = loader.get_template('sales/order_list_grid.html')
             context = {
-                'orders': orders.order_by('id'),
+                'order_dict': order_dict,
                 'total_sales': total_sales,
                 'total_cash_advance': total_cash_advance,
+                'total_cash_pay': total_cash_pay,
                 'total_balance': total_balance,
                 'date_from': date_from,
                 'date_to': date_to
@@ -1047,33 +1100,6 @@ def order_list(request):
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
-def order_create(request):
-    """Vista para crear nueva orden"""
-    if request.method == 'GET':
-        subsidiary_set = Subsidiary.objects.all()
-        user_set = CustomUser.objects.filter(is_active=True)
-        product_set = Product.objects.filter(is_enabled=True).select_related('product_category')
-        client_set = Person.objects.filter(type='C')
-        
-        # Generar correlativo
-        subsidiary_id = request.GET.get('subsidiary', '')
-        order_type = request.GET.get('type', 'C')
-        
-        correlative = 1
-        if subsidiary_id:
-            subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
-            correlative = get_correlative_order_by_subsidiary(subsidiary_obj, order_type)
-        
-        return render(request, 'sales/order_create.html', {
-            'subsidiary_set': subsidiary_set,
-            'user_set': user_set,
-            'product_set': product_set,
-            'client_set': client_set,
-            'correlative': correlative,
-            'date_now': date.today().strftime('%Y-%m-%d'),
-        })
-
-
 @csrf_exempt
 def order_save(request):
     """Vista para guardar nueva orden"""
@@ -1087,7 +1113,7 @@ def order_save(request):
             register_date = request.POST.get('register_date')
             delivery_date = request.POST.get('delivery_date')
             way_to_pay = request.POST.get('way_to_pay', 'E')
-            cash_advance = request.POST.get('cash_advance', 0)
+            cash_advance = request.POST.get('advance_input', 0)
             voucher_type = request.POST.get('voucher_type', 'T')
             observation = request.POST.get('observation', '')
             
@@ -1107,6 +1133,9 @@ def order_save(request):
             correlative = get_correlative_order_by_subsidiary(subsidiary_obj, order_type)
             code = f'{subsidiary_obj.serial}-{str(correlative).zfill(3)}'
             
+            # Verificar si el adelanto es igual al total para marcar como completado
+            cash_advance_decimal = decimal.Decimal(str(cash_advance)) if cash_advance else decimal.Decimal('0.00')
+            
             # Crear la orden
             order_obj = Order(
                 code=code,
@@ -1119,7 +1148,7 @@ def order_save(request):
                 register_date=register_date,
                 delivery_date=delivery_date if delivery_date else None,
                 way_to_pay=way_to_pay,
-                cash_advance=decimal.Decimal(str(cash_advance)) if cash_advance else decimal.Decimal('0.00'),
+                cash_advance=cash_advance_decimal,
                 voucher_type=voucher_type,
                 observation=observation.upper(),
                 status='P'
@@ -1142,7 +1171,6 @@ def order_save(request):
                         if product_id:
                             try:
                                 product_obj = Product.objects.get(id=int(product_id))
-                                product_name = product_obj.name
                             except Product.DoesNotExist:
                                 product_obj = None
                         else:
@@ -1151,7 +1179,7 @@ def order_save(request):
                         order_detail = OrderDetail(
                             order=order_obj,
                             product=product_obj,
-                            product_name=product_name,
+                            product_name=product_name.upper(),
                             quantity=decimal.Decimal(quantity),
                             price_unit=decimal.Decimal(price_unit),
                             # observation=observation
@@ -1160,6 +1188,12 @@ def order_save(request):
             
             # Calcular totales
             order_obj.calculate_totals()
+            
+            # Verificar si el adelanto es igual al total para marcar como completado
+            if cash_advance_decimal >= order_obj.total and order_obj.total > 0:
+                order_obj.status = 'C'  # COMPLETADO
+                order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                order_obj.save()
             
             # Generar PDF del ticket automáticamente
             try:
@@ -1487,32 +1521,45 @@ def create_client(request):
     if request.method == 'POST':
         try:
             # Obtener datos del formulario
-            document = request.POST.get('document')
-            number = request.POST.get('number')
+            document = request.POST.get('document', '')
+            number = request.POST.get('number', '')
             full_name = request.POST.get('full_name')
             address = request.POST.get('address', '')
             phone = request.POST.get('phone', '')
             email = request.POST.get('email', '')
             
-            # Validaciones básicas
-            if not document or not number or not full_name:
+            # Validaciones básicas - solo el nombre es obligatorio
+            if not full_name:
                 return JsonResponse({
                     'success': False,
-                    'message': 'Los campos Tipo de Documento, Número y Nombre Completo son obligatorios'
+                    'message': 'El campo Nombre Completo es obligatorio'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Verificar si ya existe un cliente con ese documento y número
-            if Person.objects.filter(document=document, number=number, type='C').exists():
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Ya existe un cliente con {document} número {number}'
-                }, status=HTTPStatus.BAD_REQUEST)
+            # Si se proporciona documento y número, verificar si ya existe
+            if document and number:
+                existing_client = Person.objects.filter(document=document, number=number, type='C').first()
+                if existing_client:
+                    # Si ya existe, devolver los datos del cliente existente
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Cliente ya existe con {document} número {number}',
+                        'client': {
+                            'id': existing_client.id,
+                            'full_name': existing_client.full_name,
+                            'document': existing_client.document,
+                            'number': existing_client.number,
+                            'address': existing_client.address or '',
+                            'phone': existing_client.phone1 or '',
+                            'email': existing_client.email or ''
+                        },
+                        'existing': True
+                    }, status=HTTPStatus.OK)
             
-            # Crear el cliente
+            # Crear el cliente si no existe
             client_obj = Person(
                 type='C',  # Cliente
-                document=document,
-                number=number,
+                document=document if document else '',
+                number=number if number else '',
                 full_name=full_name.upper(),
                 address=address.upper() if address else '',
                 phone1=phone if phone else '',
@@ -1527,8 +1574,12 @@ def create_client(request):
                     'id': client_obj.id,
                     'full_name': client_obj.full_name,
                     'document': client_obj.document,
-                    'number': client_obj.number
-                }
+                    'number': client_obj.number,
+                    'address': client_obj.address or '',
+                    'phone': client_obj.phone1 or '',
+                    'email': client_obj.email or ''
+                },
+                'existing': False
             }, status=HTTPStatus.OK)
             
         except Exception as e:
@@ -2052,6 +2103,7 @@ def complete_order_with_payment(request):
             
             # Actualizar el estado de la orden a completado
             order.status = 'C'
+            order.cash_pay = payment_amount_decimal  # Guardar el monto pagado
             order.save()
             
             return JsonResponse({

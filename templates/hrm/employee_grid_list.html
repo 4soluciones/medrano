@@ -11,6 +11,7 @@
             <th class="th-sm font-weight-normal text-center">Dirección</th>
             <th class="th-sm font-weight-normal text-center">Estado</th>
             <th class="th-sm font-weight-normal text-center">Usuario</th>
+            <th class="th-sm font-weight-normal text-center">Permisos</th>
             <th class="th-sm font-weight-normal text-center">Foto</th>
             <th class="th-sm font-weight-normal text-center">Acciones</th>
         </tr>
@@ -78,6 +79,28 @@
                 <td class="align-middle">
                     <strong>{{ u.username|default_if_none:"-" }}</strong>
                 </td>
+                <td class="align-middle">
+                    <div class="d-flex flex-column">
+                        {% if u.has_access_system %}
+                            <span class="badge badge-primary badge-sm mb-1">
+                                <i class="fas fa-desktop mr-1"></i>Sistema
+                            </span>
+                        {% endif %}
+                        {% if u.has_access_to_sales %}
+                            <span class="badge badge-success badge-sm mb-1">
+                                <i class="fas fa-shopping-cart mr-1"></i>Ventas
+                            </span>
+                        {% endif %}
+                        {% if u.has_access_to_all %}
+                            <span class="badge badge-danger badge-sm">
+                                <i class="fas fa-user-shield mr-1"></i>Admin
+                            </span>
+                        {% endif %}
+                        {% if not u.has_access_system and not u.has_access_to_sales and not u.has_access_to_all %}
+                            <span class="text-muted small">Sin permisos</span>
+                        {% endif %}
+                    </div>
+                </td>
                 <td class="align-middle justify-content-center">
                     {% if u.photo.url %}
                         <img class="img-size-50 mr-3 img-circle border" src="{{ u.photo.url }}"
@@ -108,6 +131,7 @@
             <th class="th-sm font-weight-normal text-center">Dirección</th>
             <th class="th-sm font-weight-normal text-center">Estado</th>
             <th class="th-sm font-weight-normal text-center">Usuario</th>
+            <th class="th-sm font-weight-normal text-center">Permisos</th>
             <th class="th-sm font-weight-normal text-center">Foto</th>
             <th class="th-sm font-weight-normal text-center">Acciones</th>
         </tr>

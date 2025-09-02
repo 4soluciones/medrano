@@ -2,6 +2,8 @@ from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
 from apps.users.models import CustomUser
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill, Adjust
 
 
 class Subsidiary(models.Model):
@@ -18,6 +20,9 @@ class Subsidiary(models.Model):
     observation = models.CharField(max_length=500, null=True, blank=True)
     url = models.CharField(max_length=500, null=True, blank=True)
     token = models.CharField(max_length=500, null=True, blank=True)
+    photo = models.ImageField(upload_to='subsidiary/', default='subsidiary/employee0.jpg', blank=True)
+    photo_thumbnail = ImageSpecField([Adjust(contrast=1.2, sharpness=1.1), ResizeToFill(100, 100)], source='photo',
+                                     format='JPEG', options={'quality': 90})
 
     def __str__(self):
         return self.name

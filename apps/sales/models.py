@@ -60,6 +60,7 @@ class Order(models.Model):
     voucher_type = models.CharField('Tipo de comprobante', max_length=2, choices=VOUCHER_CHOICES, default='T')
     cancellation_reason = models.CharField('Motivo de cancelacion', max_length=500, null=True, blank=True)
     delivery_status = models.CharField(max_length=1, choices=DELIVERY_CHOICES, default='P')
+    cash_pay = models.DecimalField('Pago Adelanto', max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return str(self.id)

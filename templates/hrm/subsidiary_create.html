@@ -40,7 +40,7 @@
                                     <small class="form-text text-muted">Máximo 4 caracteres</small>
                                 </div>
                             </div>
-                            <div class="col-md-9">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label font-weight-bold">
                                         <i class="fas fa-building mr-1"></i>
@@ -53,6 +53,25 @@
                                            name="name" 
                                            placeholder="Ingrese el nombre de la sucursal"
                                            required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label font-weight-bold">
+                                        <i class="fas fa-camera mr-1"></i>
+                                        Foto de la Sucursal
+                                    </label>
+                                    <div class="custom-file">
+                                        <input type="file" 
+                                               class="custom-file-input" 
+                                               id="id-photo" 
+                                               name="photo" 
+                                               accept="image/*">
+                                        <label class="custom-file-label" for="id-photo">
+                                            <i class="fas fa-upload mr-1"></i>Seleccionar imagen
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Formatos: JPG, PNG, GIF</small>
                                 </div>
                             </div>
                         </div>
@@ -305,6 +324,12 @@ $(document).ready(function() {
     // Remover clase de error cuando el usuario empiece a escribir
     $('input, textarea').on('input', function() {
         $(this).removeClass('is-invalid');
+    });
+
+    // Manejar la visualización del nombre del archivo seleccionado
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html('<i class="fas fa-image mr-1"></i>' + fileName);
     });
 });
 </script>

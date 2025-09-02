@@ -42,6 +42,8 @@ class CustomUser(AbstractUser):
     reference = models.CharField(max_length=200, null=True, blank=True)
     observations = models.CharField(max_length=400, null=True, blank=True)
     has_access_system = models.BooleanField(default=False)
+    has_access_to_sales = models.BooleanField(default=False)
+    has_access_to_all = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Empleado'

@@ -248,6 +248,24 @@
                                         Acceso al Sistema
                                     </label>
                                 </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxSales" name="customCheckboxSales"
+                                           {% if user_obj.has_access_to_sales %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxSales">
+                                        Acceso a Ventas
+                                    </label>
+                                </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxAdmin" name="customCheckboxAdmin"
+                                           {% if user_obj.has_access_to_all %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxAdmin">
+                                        Acceso Admin
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

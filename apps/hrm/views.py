@@ -44,7 +44,7 @@ class Home(TemplateView):
 
 def get_subsidiary_list(request):
     if request.method == 'GET':
-        subsidiary_set = Subsidiary.objects.all()
+        subsidiary_set = Subsidiary.objects.all().order_by('id')
         return render(request, 'hrm/subsidiary_list.html', {
             'subsidiary_set': subsidiary_set,
         })
@@ -94,6 +94,10 @@ def create_subsidiary(request):
                 representative_name=_representative_name,
                 observation=_observation,
             )
+            
+            # Manejar la foto si se subió una
+            if 'photo' in request.FILES:
+                subsidiary_obj.photo = request.FILES['photo']
             
             subsidiary_obj.save()
             
@@ -160,6 +164,10 @@ def update_subsidiary(request):
             subsidiary_obj.representative_dni = _representative_dni
             subsidiary_obj.representative_name = _representative_name
             subsidiary_obj.observation = _observation_input  # Usar el campo correcto del modelo
+            
+            # Manejar la foto si se subió una nueva
+            if 'photo' in request.FILES:
+                subsidiary_obj.photo = request.FILES['photo']
             
             subsidiary_obj.save()
             
@@ -229,12 +237,18 @@ def create_user(request):
             # Checkboxes de permisos
             _check_access = request.POST.get('customCheckboxAccess', False)
             _check_active = request.POST.get('customCheckActive', False)
+            _check_sales = request.POST.get('customCheckboxSales', False)
+            _check_admin = request.POST.get('customCheckboxAdmin', False)
 
             # Convertir checkboxes a boolean
             if _check_access == 'on':
                 _check_access = True
             if _check_active == 'on':
                 _check_active = True
+            if _check_sales == 'on':
+                _check_sales = True
+            if _check_admin == 'on':
+                _check_admin = True
             
             # Validar campos requeridos
             if not _first_name or not _last_name or not _email or not _password:
@@ -307,7 +321,9 @@ def create_user(request):
                 reference=_reference,
                 cellphone=_cellphone,
                 observations=_observations,
-                has_access_system=_check_access
+                has_access_system=_check_access,
+                has_access_to_sales=_check_sales,
+                has_access_to_all=_check_admin
             )
             
             # Establecer contraseña
@@ -402,12 +418,18 @@ def update_user(request):
             # Checkboxes de permisos
             _check_active = request.POST.get('customCheckActive', False)
             _check_access = request.POST.get('customCheckboxAccess', False)
+            _check_sales = request.POST.get('customCheckboxSales', False)
+            _check_admin = request.POST.get('customCheckboxAdmin', False)
             
             # Convertir checkboxes a boolean
             if _check_active == 'on':
                 _check_active = True
             if _check_access == 'on':
                 _check_access = True
+            if _check_sales == 'on':
+                _check_sales = True
+            if _check_admin == 'on':
+                _check_admin = True
             
             # Validar campos requeridos
             if not _first_name or not _last_name or not _email:
@@ -477,6 +499,8 @@ def update_user(request):
             user_obj.cellphone = _cellphone
             user_obj.observations = _observations
             user_obj.has_access_system = _check_access
+            user_obj.has_access_to_sales = _check_sales
+            user_obj.has_access_to_all = _check_admin
             
             # Actualizar foto si se proporcionó una nueva
             if _photo:

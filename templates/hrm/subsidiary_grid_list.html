@@ -18,13 +18,16 @@
                             <th class="text-center" style="width: 8%;">
                                 <i class="fas fa-tag mr-1"></i>Serie
                             </th>
-                            <th class="text-center" style="width: 20%;">
+                            <th class="text-center" style="width: 10%;">
+                                <i class="fas fa-camera mr-1"></i>Foto
+                            </th>
+                            <th class="text-center" style="width: 18%;">
                                 <i class="fas fa-building mr-1"></i>Nombre Sucursal
                             </th>
                             <th class="text-center" style="width: 12%;">
                                 <i class="fas fa-id-card mr-1"></i>RUC
                             </th>
-                            <th class="text-center" style="width: 20%;">
+                            <th class="text-center" style="width: 18%;">
                                 <i class="fas fa-briefcase mr-1"></i>Razón Social
                             </th>
                             <th class="text-center" style="width: 12%;">
@@ -49,6 +52,13 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-info">{{ s.serial|default:"-" }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if s.photo %}
+                                        <img src="{{ s.photo.url }}" alt="Foto de {{ s.name }}" class="img-fluid rounded" style="max-height: 40px;">
+                                    {% else %}
+                                        <i class="fas fa-camera fa-2x text-muted"></i>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -209,5 +219,20 @@
 
 .card-footer {
     border-top: 1px solid #dee2e6;
+}
+
+/* Estilos para las imágenes de foto */
+.img-fluid.rounded {
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.img-fluid.rounded:hover {
+    border-color: #007bff;
+    transform: scale(1.05);
+}
+
+.fa-camera.fa-2x.text-muted {
+    opacity: 0.6;
 }
 </style>

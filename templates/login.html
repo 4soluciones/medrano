@@ -35,7 +35,14 @@
         <form method="post" class="login-form">
             {% csrf_token %}
 
-            {% if form.errors %}
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div class="error-message {% if 'inactivo' in error %}inactive-user{% endif %}">
+                        <span class="material-icons">{% if 'inactivo' in error %}warning{% else %}error{% endif %}</span>
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            {% elif form.errors %}
                 <div class="error-message">
                     <span class="material-icons">error</span>
                     Usuario o contraseña incorrectos
@@ -320,6 +327,16 @@
     .error-message .material-icons {
         margin-right: 8px;
         font-size: 20px;
+    }
+
+    .error-message.inactive-user {
+        background: #fff3e0;
+        color: #ef6c00;
+        border-left: 4px solid #ff9800;
+    }
+
+    .error-message.inactive-user .material-icons {
+        color: #ff9800;
     }
 
     .background-pattern {

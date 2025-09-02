@@ -56,7 +56,8 @@
                                 <div class="alert alert-info alert-sm mb-2" role="alert">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     <small><strong>Por defecto se muestran las órdenes del día actual.</strong> Use los
-                                        filtros para ver otros períodos. <strong>El filtro de cliente permite búsqueda por nombre o documento con autocompletado.</strong></small>
+                                        filtros para ver otros períodos. <strong>El filtro de cliente permite búsqueda
+                                            por nombre o documento con autocompletado.</strong></small>
                                 </div>
 
                                 <form id="search-form">
@@ -92,8 +93,10 @@
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <input type="hidden" id="client-id-filter" name="client_id_filter" value="">
-                                                <div id="client-suggestions" class="client-suggestions" style="display: none;"></div>
+                                                <input type="hidden" id="client-id-filter" name="client_id_filter"
+                                                       value="">
+                                                <div id="client-suggestions" class="client-suggestions"
+                                                     style="display: none;"></div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -226,7 +229,7 @@
                                             class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="client_search_input" 
+                                        <input type="text" class="form-control" id="client_search_input"
                                                placeholder="Escriba para buscar cliente..." autocomplete="off">
                                         <input type="hidden" id="client_id" name="client_id" required>
                                         <div class="input-group-append">
@@ -235,12 +238,14 @@
                                                 <i class="fas fa-plus"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-clear-client"
-                                                    onclick="clearClientSelection()" title="Limpiar cliente seleccionado" style="display: none;">
+                                                    onclick="clearClientSelection()"
+                                                    title="Limpiar cliente seleccionado" style="display: none;">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="client_autocomplete_results" class="client-autocomplete-results" style="display: none;"></div>
+                                    <div id="client_autocomplete_results" class="client-autocomplete-results"
+                                         style="display: none;"></div>
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle mr-1"></i>
                                         Escriba el nombre o documento del cliente para buscar rápidamente
@@ -355,11 +360,16 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group mb-3">
-                                    <label for="cash_advance" class="form-label">
-                                        <i class="fas fa-money-bill-wave mr-1"></i>Adelanto
+                                    <label for="cash_account_id" class="form-label">
+                                        <i class="fas fa-university mr-1"></i>Cuenta de Caja
                                     </label>
-                                    <input type="text" class="form-control" id="cash_advance" name="cash_advance"
-                                           onkeyup="updateAdvanceFromMain()">
+                                    <select class="form-control" id="cash_account_id" name="cash_account_id">
+                                        <option value="">Seleccione cuenta</option>
+                                        {% for cash in cash_accounts %}
+                                            <option value="{{ cash.id }}">{{ cash.name }}
+                                                - {{ cash.subsidiary.name }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -457,8 +467,8 @@
                                     <small><strong>Lógica de cálculo:</strong> El total se calcula como (cantidad ×
                                         precio), luego se extrae el IGV para obtener el subtotal sin impuestos. El
                                         adelanto se resta del total final.</small>
-{#                                    <br><small class="text-muted"><strong>Ejemplo:</strong> 9 × S/ 50 = S/ 450 (total) →#}
-{#                                    Subtotal: S/ 381.36, IGV: S/ 68.64</small>#}
+                                    {#                                    <br><small class="text-muted"><strong>Ejemplo:</strong> 9 × S/ 50 = S/ 450 (total) →#}
+                                    {#                                    Subtotal: S/ 381.36, IGV: S/ 68.64</small>#}
                                 </div>
 
                                 <div class="table-responsive">
@@ -467,11 +477,12 @@
                                         <tr>
                                             <th class="text-dark" style="width: 5%">#</th>
                                             <th class="text-dark" style="width: 55%">Producto/Servicio</th>
-{#                                            <th class="text-dark" style="width: 25%">Observación</th>#}
+                                            {#                                            <th class="text-dark" style="width: 25%">Observación</th>#}
                                             <th class="text-dark" style="width: 10%">Cant.</th>
                                             <th class="text-dark" style="width: 15%">Precio</th>
                                             <th class="text-dark" style="width: 10%">Subtotal</th>
-                                            <th class="text-dark text-center" style="width: 5%"><i class="fas fa-trash fa-2xs"></i></th>
+                                            <th class="text-dark text-center" style="width: 5%"><i
+                                                    class="fas fa-trash fa-2xs"></i></th>
                                         </tr>
                                         </thead>
                                         <tbody id="order_details_body">
@@ -503,9 +514,9 @@
                                                 <small class="d-block text-muted">Se resta del total final</small>
                                             </td>
                                             <td class="text-right">
-                                                <input type="number" class="form-control form-control-sm text-right"
+                                                <input type="text" class="form-control form-control-sm text-right"
                                                        id="advance_input" name="advance_input"
-                                                       min="0" step="0.01" value="0"
+                                                       value="0"
                                                        placeholder="0.00"
                                                        onkeyup="updateAdvance()">
                                             </td>
@@ -562,46 +573,50 @@
                     <form id="create-client-form">
                         <div class="form-group">
                             <label for="new_client_document" class="form-label">
-                                <i class="fas fa-id-card mr-1"></i>Tipo de Documento <span class="text-danger">*</span>
+                                <i class="fas fa-id-card mr-1"></i>Tipo de Documento
                             </label>
-                            <select class="form-control" id="new_client_document" name="document" required>
+                            <select class="form-control" id="new_client_document" name="document">
+                                <option value="">Sin documento</option>
                                 <option value="01">DNI</option>
                                 <option value="06">RUC</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="new_client_number" class="form-label">
-                                <i class="fas fa-hashtag mr-1"></i>Número de Documento <span
-                                    class="text-danger">*</span>
+                                <i class="fas fa-hashtag mr-1"></i>Número de Documento
                             </label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="new_client_number" name="number" required>
+                                <input type="text" class="form-control" id="new_client_number" name="number"
+                                       placeholder="Opcional" autocomplete="off">
                                 <div class="input-group-append">
-                                    <button type="button" class="btn btn-outline-primary" onclick="searchClientInAPI()" title="Buscar en sistema externo">
+                                    <button type="button" class="btn btn-outline-primary" onclick="searchClientInAPI()"
+                                            title="Buscar en sistema externo">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
                             </div>
                             <small class="form-text text-info">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                Presione <kbd>Enter</kbd> o haga clic en el botón de búsqueda para consultar automáticamente
+                                Presione <kbd>Enter</kbd> o haga clic en el botón de búsqueda para consultar
+                                automáticamente
                             </small>
                         </div>
-                        
+
                         <!-- Indicador de cliente listo para seleccionar -->
-{#                        <div id="client-ready-indicator" class="alert alert-success" style="display: none;">#}
-{#                            <i class="fas fa-check-circle mr-2"></i>#}
-{#                            <strong>Cliente listo para seleccionar:</strong> #}
-{#                            <span id="ready-client-name"></span>#}
-{#                            <button type="button" class="btn btn-sm btn-outline-success ml-2" onclick="selectClientFromModal()">#}
-{#                                <i class="fas fa-check mr-1"></i>Seleccionar#}
-{#                            </button>#}
-{#                        </div>#}
+                        {#                        <div id="client-ready-indicator" class="alert alert-success" style="display: none;">#}
+                        {#                            <i class="fas fa-check-circle mr-2"></i>#}
+                        {#                            <strong>Cliente listo para seleccionar:</strong>#}
+                        {#                            <span id="ready-client-name"></span>#}
+                        {#                            <button type="button" class="btn btn-sm btn-outline-success ml-2" onclick="selectClientFromModal()">#}
+                        {#                                <i class="fas fa-check mr-1"></i>Seleccionar#}
+                        {#                            </button>#}
+                        {#                        </div>#}
                         <div class="form-group">
                             <label for="new_client_name" class="form-label">
                                 <i class="fas fa-user mr-1"></i>Nombre Completo <span class="text-danger">*</span>
                             </label>
-                            <input type="text" class="form-control" id="new_client_name" name="full_name" required>
+                            <input type="text" class="form-control" autocomplete="off"
+                                   id="new_client_name" name="full_name" required>
                         </div>
                         <div class="form-group">
                             <label for="new_client_address" class="form-label">
@@ -671,7 +686,7 @@
                                             class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="edit_client_search_input" 
+                                        <input type="text" class="form-control" id="edit_client_search_input"
                                                placeholder="Escriba para buscar cliente..." autocomplete="off">
                                         <input type="hidden" id="edit_client_id" name="client_id" required>
                                         <div class="input-group-append">
@@ -680,12 +695,14 @@
                                                 <i class="fas fa-plus"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-clear-client"
-                                                    onclick="clearEditClientSelection()" title="Limpiar cliente seleccionado" style="display: none;">
+                                                    onclick="clearEditClientSelection()"
+                                                    title="Limpiar cliente seleccionado" style="display: none;">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="edit_client_autocomplete_results" class="client-autocomplete-results" style="display: none;"></div>
+                                    <div id="edit_client_autocomplete_results" class="client-autocomplete-results"
+                                         style="display: none;"></div>
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle mr-1"></i>
                                         Escriba el nombre o documento del cliente para buscar rápidamente
@@ -907,18 +924,19 @@
                                     <br><small class="text-muted"><strong>Ejemplo:</strong> 9 × S/ 50 = S/ 450 (total) →
                                     Subtotal: S/ 381.36, IGV: S/ 68.64</small>
                                 </div>
-                                
+
                                 <div class="table-responsive">
                                     <table class="table table-striped table-sm" id="edit_order_details_table">
                                         <thead class="thead-dark">
                                         <tr>
                                             <th class="text-dark" style="width: 5%">#</th>
                                             <th class="text-dark" style="width: 55%">Producto/Servicio</th>
-{#                                            <th class="text-dark" style="width: 25%">Observación</th>#}
+                                            {#                                            <th class="text-dark" style="width: 25%">Observación</th>#}
                                             <th class="text-dark" style="width: 10%">Cant.</th>
                                             <th class="text-dark" style="width: 15%">Precio</th>
                                             <th class="text-dark" style="width: 10%">Subtotal</th>
-                                            <th class="text-dark text-center" style="width: 5%"><i class="fas fa-trash fa-2xs"></i></th>
+                                            <th class="text-dark text-center" style="width: 5%"><i
+                                                    class="fas fa-trash fa-2xs"></i></th>
                                         </tr>
                                         </thead>
                                         <tbody id="edit_order_details_body">
@@ -1014,13 +1032,13 @@
                         <input type="hidden" id="complete_order_total" name="order_total" value="">
                         <input type="hidden" id="complete_client_document" name="client_document" value="">
                         <input type="hidden" id="complete_client_name" name="client_name" value="">
-                        
+
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle mr-2"></i>
                             <strong>Información de la Orden:</strong>
                             <div id="complete-order-info" class="mt-2"></div>
                         </div>
-                        
+
                         <!-- Totales de la orden -->
                         <div class="row mb-3">
                             <div class="col-12">
@@ -1037,7 +1055,8 @@
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text">S/</span>
                                                         </div>
-                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
                                                                id="complete_subtotal" readonly>
                                                     </div>
                                                 </div>
@@ -1049,7 +1068,8 @@
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text">S/</span>
                                                         </div>
-                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
                                                                id="complete_igv" readonly>
                                                     </div>
                                                 </div>
@@ -1061,7 +1081,8 @@
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text">S/</span>
                                                         </div>
-                                                        <input type="text" class="form-control text-right font-weight-bold" 
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
                                                                id="complete_total" readonly>
                                                     </div>
                                                 </div>
@@ -1071,7 +1092,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="complete_payment_amount" class="form-label">
                                 <i class="fas fa-money-bill-wave mr-1"></i>Saldo Pendiente a Pagar
@@ -1080,22 +1101,22 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">S/</span>
                                 </div>
-                                <input type="number" class="form-control" id="complete_payment_amount" 
+                                <input type="number" class="form-control" id="complete_payment_amount"
                                        name="payment_amount" readonly>
                             </div>
                             <small class="form-text text-muted">
                                 Este es el saldo faltante que debe ser pagado para completar la orden
                             </small>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="complete_payment_date" class="form-label">
                                 <i class="fas fa-calendar mr-1"></i>Fecha del Pago <span class="text-danger">*</span>
                             </label>
-                            <input type="date" class="form-control" id="complete_payment_date" 
+                            <input type="date" class="form-control" id="complete_payment_date"
                                    name="payment_date" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="complete_cash_account" class="form-label">
                                 <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
@@ -1110,11 +1131,12 @@
                                 Seleccione la cuenta donde se registrará el ingreso
                             </small>
                         </div>
-                        
+
                         <!-- Checkbox para emitir comprobante electrónico -->
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document" name="emit_electronic_document">
+                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document"
+                                       name="emit_electronic_document">
                                 <label class="custom-control-label" for="emit_electronic_document">
                                     <i class="fas fa-file-invoice mr-1"></i>Emitir Comprobante Electrónico
                                 </label>
@@ -1123,19 +1145,21 @@
                                 Marque esta opción si desea generar un comprobante electrónico (Boleta o Factura)
                             </small>
                         </div>
-                        
+
                         <!-- Panel de comprobante electrónico (inicialmente oculto) -->
                         <div id="electronic-document-panel" style="display: none;">
                             <div class="card">
                                 <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante Electrónico</h6>
+                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante
+                                        Electrónico</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="document_type" class="form-label">
-                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
+                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span
+                                                        class="text-danger">*</span>
                                                 </label>
                                                 <select class="form-control" id="document_type" name="document_type">
                                                     <option value="">Seleccione tipo</option>
@@ -1147,9 +1171,10 @@
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="document_number" class="form-label">
-                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
+                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span
+                                                        class="text-danger">*</span>
                                                 </label>
-                                                <input type="text" class="form-control" id="document_number" 
+                                                <input type="text" class="form-control" id="document_number"
                                                        name="document_number" placeholder="DNI o RUC del cliente">
                                                 <small class="form-text text-muted">
                                                     <span id="document_help">Ingrese el documento del cliente</span>
@@ -1157,15 +1182,17 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="client_full_name" class="form-label">
-                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
+                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span
+                                                        class="text-danger">*</span>
                                                 </label>
-                                                <input type="text" class="form-control" id="client_full_name" 
-                                                       name="client_full_name" placeholder="Nombre completo o razón social">
+                                                <input type="text" class="form-control" id="client_full_name"
+                                                       name="client_full_name"
+                                                       placeholder="Nombre completo o razón social">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -1173,7 +1200,7 @@
                                                 <label for="client_address" class="form-label">
                                                     <i class="fas fa-map-marker-alt mr-1"></i>Dirección
                                                 </label>
-                                                <input type="text" class="form-control" id="client_address" 
+                                                <input type="text" class="form-control" id="client_address"
                                                        name="client_address" placeholder="Dirección del cliente">
                                             </div>
                                         </div>
@@ -1211,27 +1238,29 @@
                     <form id="cancel-order-form">
                         <input type="hidden" id="cancel_order_id" name="order_id" value="">
                         <input type="hidden" id="cancel_order_advance" name="order_advance" value="">
-                        
+
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
                             <strong>Información de la Orden:</strong>
                             <div id="cancel-order-info" class="mt-2"></div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="cancellation_reason" class="form-label">
-                                <i class="fas fa-comment-alt mr-1"></i>Motivo de Anulación <span class="text-danger">*</span>
+                                <i class="fas fa-comment-alt mr-1"></i>Motivo de Anulación <span
+                                    class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control" id="cancellation_reason" name="cancellation_reason" 
+                            <textarea class="form-control" id="cancellation_reason" name="cancellation_reason"
                                       rows="3" placeholder="Describa el motivo de la anulación..." required></textarea>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="refund_advance" class="form-label">
                                 <i class="fas fa-undo mr-1"></i>Devolución del Adelanto
                             </label>
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="refund_advance" name="refund_advance">
+                                <input type="checkbox" class="custom-control-input" id="refund_advance"
+                                       name="refund_advance">
                                 <label class="custom-control-label" for="refund_advance">
                                     Marcar si se debe devolver el adelanto al cliente
                                 </label>
@@ -1240,7 +1269,7 @@
                                 Si marca esta opción, se registrará una salida de dinero por el monto del adelanto
                             </small>
                         </div>
-                        
+
                         <div id="refund-details" style="display: none;">
                             <div class="form-group">
                                 <label for="refund_amount" class="form-label">
@@ -1250,19 +1279,21 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">S/</span>
                                     </div>
-                                    <input type="number" class="form-control" id="refund_amount" 
+                                    <input type="number" class="form-control" id="refund_amount"
                                            name="refund_amount" readonly>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="refund_cash_account" class="form-label">
-                                    <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
+                                    <i class="fas fa-university mr-1"></i>Cuenta de Caja <span
+                                        class="text-danger">*</span>
                                 </label>
                                 <select class="form-control" id="refund_cash_account" name="refund_cash_account">
                                     <option value="">Seleccione una cuenta</option>
                                     {% for cash in cash_accounts %}
-                                        <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
+                                        <option value="{{ cash.id }}">{{ cash.name }}
+                                            - {{ cash.subsidiary.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -1315,7 +1346,7 @@
                 byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
             const byteArray = new Uint8Array(byteNumbers);
-            return new Blob([byteArray], { type: mimeType });
+            return new Blob([byteArray], {type: mimeType});
         }
 
         // =============================================================================
@@ -1333,7 +1364,7 @@
             }
 
             const resultsId = isEdit ? '#edit_client_autocomplete_results' : '#client_autocomplete_results';
-            
+
             // Mostrar estado de carga
             $(resultsId).html(`
                 <div class="client-autocomplete-loading">
@@ -1373,12 +1404,12 @@
         function displayClientAutocompleteResults(clients, isEdit = false) {
             let html = '';
             const resultsId = isEdit ? '#edit_client_autocomplete_results' : '#client_autocomplete_results';
-            
+
             clients.forEach(client => {
                 const documentType = client.document === '01' ? 'DNI' : 'RUC';
                 const address = client.address || 'Sin dirección';
                 const phone = client.phone || 'Sin teléfono';
-                
+
                 html += `
                     <div class="client-autocomplete-item" 
                          onclick="selectClientFromAutocomplete(${client.id}, '${client.full_name}', '${documentType}: ${client.number}', '${address}', ${isEdit})">
@@ -1391,7 +1422,7 @@
                     </div>
                 `;
             });
-            
+
             $(resultsId).html(html);
         }
 
@@ -1401,21 +1432,21 @@
             const hiddenId = isEdit ? '#edit_client_id' : '#client_id';
             const resultsId = isEdit ? '#edit_client_autocomplete_results' : '#client_autocomplete_results';
             const clearBtnClass = isEdit ? '.btn-clear-client' : '.btn-clear-client';
-            
+
             // Establecer valores
             $(hiddenId).val(clientId);
             $(inputId).val(`${clientName} - ${clientDocument}`);
-            
+
             // Ocultar resultados
             $(resultsId).hide();
-            
+
             // Marcar como seleccionado
             $(inputId).addClass('client-selected');
             $(inputId).attr('readonly', true);
-            
+
             // Mostrar botón de limpiar
             $(inputId).closest('.input-group').find(clearBtnClass).show();
-            
+
             // Mostrar notificación
             showClientSelectedNotification(clientName, isEdit);
         }
@@ -1424,7 +1455,7 @@
         function showClientSelectedNotification(clientName, isEdit = false) {
             const inputId = isEdit ? '#edit_client_search_input' : '#client_search_input';
             const notificationId = isEdit ? '#edit-client-notification' : '#client-notification';
-            
+
             // Crear o actualizar notificación
             let notification = $(notificationId);
             if (notification.length === 0) {
@@ -1466,12 +1497,12 @@
         function handleClientAutocompleteKeyboard(e, isEdit = false) {
             const resultsId = isEdit ? '#edit_client_autocomplete_results' : '#client_autocomplete_results';
             const items = $(resultsId).find('.client-autocomplete-item');
-            
+
             if (items.length === 0) return;
-            
+
             let currentIndex = $(resultsId).find('.client-autocomplete-item.selected').index();
-            
-            switch(e.keyCode) {
+
+            switch (e.keyCode) {
                 case 38: // Flecha arriba
                     e.preventDefault();
                     if (currentIndex > 0) {
@@ -1479,7 +1510,7 @@
                         items.eq(currentIndex - 1).addClass('selected');
                     }
                     break;
-                    
+
                 case 40: // Flecha abajo
                     e.preventDefault();
                     if (currentIndex < items.length - 1) {
@@ -1489,7 +1520,7 @@
                         items.first().addClass('selected');
                     }
                     break;
-                    
+
                 case 13: // Enter
                     e.preventDefault();
                     const selectedItem = $(resultsId).find('.client-autocomplete-item.selected');
@@ -1497,7 +1528,7 @@
                         selectedItem.click();
                     }
                     break;
-                    
+
                 case 27: // Escape
                     $(resultsId).hide();
                     break;
@@ -1571,11 +1602,11 @@
             $('#client-id-filter').val(clientId);
             $('#client-search').val(`${clientName} - ${clientDocument}`);
             $('#client-suggestions').hide();
-            
+
             // Agregar indicador visual de cliente seleccionado
             $('#client-search').addClass('is-valid');
             $('#client-search').removeClass('is-invalid');
-            
+
             // Mostrar notificación de cliente seleccionado
             showClientSelectedNotificationForFilters(clientName);
         }
@@ -1602,10 +1633,10 @@
             $('#client-id-filter').val('');
             $('#client-search').val('');
             $('#client-suggestions').hide();
-            
+
             // Remover indicadores visuales
             $('#client-search').removeClass('is-valid is-invalid');
-            
+
             // Ocultar notificación
             $('#client-notification').remove();
         }
@@ -1640,16 +1671,16 @@
         // =============================================================================
         function testAutocompleteFunctions() {
             console.log('🧪 Probando funciones de autocompletado...');
-            
+
             // Verificar que las funciones estén definidas
             console.log('✅ searchClientsForOrder:', typeof searchClientsForOrder === 'function');
             console.log('✅ searchClientsForFilters:', typeof searchClientsForFilters === 'function');
             console.log('✅ displayClientAutocompleteResults:', typeof displayClientAutocompleteResults === 'function');
             console.log('✅ displayClientSuggestionsForFilters:', typeof displayClientSuggestionsForFilters === 'function');
-            
+
             // Verificar que no haya conflictos
             console.log('❌ searchClients (debe ser undefined):', typeof searchClients === 'function');
-            
+
             console.log('🎯 Prueba completada');
         }
 
@@ -1743,15 +1774,15 @@
             });
 
             // Limpiar campos cuando cambie el tipo de documento
-            $('#new_client_document').on('change', function() {
+            $('#new_client_document').on('change', function () {
                 clearClientFields();
                 $('#new_client_number').val('').focus();
             });
 
             // Auto-focus en el campo de nombre cuando se abre el modal
             $('#createClientModal').on('shown.bs.modal', function () {
-                //$('#new_client_name').focus();
-                $('#new_client_number').focus();
+                $('#new_client_name').focus();
+                //$('#new_client_number').focus();
             });
 
             // Restaurar botón cuando se cierre el modal
@@ -1760,7 +1791,7 @@
             });
 
             // Event listener para buscar cliente en API cuando se presiona Enter
-            $('#new_client_number').on('keypress', function(e) {
+            $('#new_client_number').on('keypress', function (e) {
                 if (e.which === 13) { // Código de tecla Enter
                     e.preventDefault();
                     searchClientInAPI();
@@ -1791,7 +1822,7 @@
             // =============================================================================
 
             // Autocompletado para modal de creación
-            $('#client_search_input').on('input', function() {
+            $('#client_search_input').on('input', function () {
                 const searchTerm = $(this).val();
                 if (searchTerm.length >= 2) {
                     searchClientsForOrder(searchTerm, false);
@@ -1801,7 +1832,7 @@
             });
 
             // Autocompletado para modal de edición
-            $('#edit_client_search_input').on('input', function() {
+            $('#edit_client_search_input').on('input', function () {
                 const searchTerm = $(this).val();
                 if (searchTerm.length >= 2) {
                     searchClientsForOrder(searchTerm, true);
@@ -1811,7 +1842,7 @@
             });
 
             // Ocultar resultados al hacer clic fuera
-            $(document).on('click', function(e) {
+            $(document).on('click', function (e) {
                 if (!$(e.target).closest('#client_search_input, #client_autocomplete_results').length) {
                     $('#client_autocomplete_results').hide();
                 }
@@ -1821,12 +1852,12 @@
             });
 
             // Navegación con teclado para modal de creación
-            $('#client_search_input').on('keydown', function(e) {
+            $('#client_search_input').on('keydown', function (e) {
                 handleClientAutocompleteKeyboard(e, false);
             });
 
             // Navegación con teclado para modal de edición
-            $('#edit_client_search_input').on('keydown', function(e) {
+            $('#edit_client_search_input').on('keydown', function (e) {
                 handleClientAutocompleteKeyboard(e, true);
             });
 
@@ -1865,7 +1896,7 @@
             // =============================================================================
 
             // Manejar checkbox de devolución de adelanto
-            $('#refund_advance').on('change', function() {
+            $('#refund_advance').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#refund-details').slideDown(300);
                     $('#refund_cash_account').prop('required', true);
@@ -1877,14 +1908,14 @@
             });
 
             // Establecer fecha actual en modal de completar orden
-            $('#completeOrderModal').on('shown.bs.modal', function() {
+            $('#completeOrderModal').on('shown.bs.modal', function () {
                 if (!$('#complete_payment_date').val()) {
                     $('#complete_payment_date').val(getServerDate());
                 }
             });
 
             // Limpiar modales al cerrarlos
-            $('#completeOrderModal').on('hidden.bs.modal', function() {
+            $('#completeOrderModal').on('hidden.bs.modal', function () {
                 $('#complete-order-form')[0].reset();
                 $('#complete_order_id').val('');
                 $('#complete_order_balance').val('');
@@ -1894,7 +1925,7 @@
                 resetElectronicDocumentFields();
             });
 
-            $('#cancelOrderModal').on('hidden.bs.modal', function() {
+            $('#cancelOrderModal').on('hidden.bs.modal', function () {
                 $('#cancel-order-form')[0].reset();
                 $('#cancel_order_id').val('');
                 $('#cancel_order_advance').val('');
@@ -1903,7 +1934,7 @@
             });
 
             // Event listeners para el modal de completar orden
-            $('#emit_electronic_document').on('change', function() {
+            $('#emit_electronic_document').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#electronic-document-panel').slideDown(300);
                     // Cargar datos del cliente automáticamente
@@ -1914,7 +1945,7 @@
             });
 
             // Event listener para cambio de tipo de comprobante
-            $('#document_type').on('change', function() {
+            $('#document_type').on('change', function () {
                 const documentType = $(this).val();
                 if (documentType) {
                     updateDocumentFields(documentType);
@@ -1922,16 +1953,16 @@
             });
 
             // Event listener para cancelar el modal de completar orden
-            $('#completeOrderModal').on('click', '.btn-secondary', function() {
+            $('#completeOrderModal').on('click', '.btn-secondary', function () {
                 // Restaurar el estado de la orden a pendiente
                 restoreOrderStatusToPending();
             });
 
             // Validación en tiempo real para el número de documento
-            $('#document_number').on('input', function() {
+            $('#document_number').on('input', function () {
                 const documentType = $('#document_type').val();
                 const documentNumber = $(this).val();
-                
+
                 if (documentType && documentNumber) {
                     if (documentType === 'B' && documentNumber.length !== 8) {
                         $(this).addClass('is-invalid');
@@ -1964,7 +1995,6 @@
             updateTotals();
 
             // Inicializar adelanto
-            $('#cash_advance').val('');
             $('#advance_input').val('');
             updateAdvance();
 
@@ -1974,8 +2004,17 @@
             // Limpiar autocompletado de cliente
             clearClientSelection();
 
+            // Seleccionar automáticamente la sucursal del usuario
+            selectUserSubsidiary();
+
+            // Seleccionar automáticamente el vendedor (usuario actual)
+            selectCurrentUser();
+
             // Mostrar modal
             $('#createOrderModal').modal('show');
+
+            // Verificar si hay un cliente pendiente de selección
+            checkPendingClientSelection();
         }
 
         function updateCorrelative() {
@@ -2070,15 +2109,84 @@
                     if (response.success && response.products.length > 0) {
                         displayProducts(response.products);
                         $('#products_results').show();
+
+                        // Agregar eventos de teclado para navegación
+                        setupProductKeyboardNavigation();
                     } else {
                         $('#products_list').html('<p class="text-muted text-center">No se encontraron productos</p>');
                         $('#products_results').show();
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al buscar productos', 'error');
+                    toastr.error('Error al buscar productos', 'Error');
                 }
             });
+        }
+
+        function setupProductKeyboardNavigation() {
+            let selectedIndex = -1;
+            const productItems = $('#products_list .product-item');
+
+            // Limpiar selección anterior
+            productItems.removeClass('selected');
+
+            // Evento de teclado en el campo de búsqueda
+            $('#product_search').off('keydown.products').on('keydown.products', function (e) {
+                if (!$('#products_results').is(':visible')) return;
+
+                switch (e.keyCode) {
+                    case 38: // Flecha arriba
+                        e.preventDefault();
+                        if (selectedIndex > 0) {
+                            selectedIndex--;
+                        } else {
+                            selectedIndex = productItems.length - 1;
+                        }
+                        updateProductSelection();
+                        break;
+
+                    case 40: // Flecha abajo
+                        e.preventDefault();
+                        if (selectedIndex < productItems.length - 1) {
+                            selectedIndex++;
+                        } else {
+                            selectedIndex = 0;
+                        }
+                        updateProductSelection();
+                        break;
+
+                    case 13: // Enter
+                        e.preventDefault();
+                        if (selectedIndex >= 0 && selectedIndex < productItems.length) {
+                            const selectedItem = productItems.eq(selectedIndex);
+                            const productId = selectedItem.data('product-id');
+                            const productName = selectedItem.data('product-name');
+                            const productPrice = selectedItem.data('product-price');
+                            const productUnit = selectedItem.data('product-unit');
+
+                            addProductToOrder(productId, productName, productPrice, productUnit);
+                            $('#products_results').hide();
+                            $('#product_search').val('');
+                        }
+                        break;
+
+                    case 27: // Escape
+                        $('#products_results').hide();
+                        break;
+                }
+            });
+
+            function updateProductSelection() {
+                productItems.removeClass('selected');
+                if (selectedIndex >= 0 && selectedIndex < productItems.length) {
+                    productItems.eq(selectedIndex).addClass('selected');
+                    // Hacer scroll al elemento seleccionado
+                    const selectedElement = productItems.eq(selectedIndex)[0];
+                    if (selectedElement) {
+                        selectedElement.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+                    }
+                }
+            }
         }
 
         function displayProducts(products) {
@@ -2086,6 +2194,10 @@
             products.forEach(product => {
                 html += `
             <div class="product-item border-bottom p-2 cursor-pointer"
+                 data-product-id="${product.id}"
+                 data-product-name="${product.name}"
+                 data-product-price="${product.price_sale}"
+                 data-product-unit="${product.unit}"
                  onclick="addProductToOrder(${product.id}, '${product.name}', ${product.price_sale}, '${product.unit}')">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -2111,10 +2223,12 @@
                 existingDetail.quantity += 1;
                 updateDetailRow(existingDetail);
             } else {
+                const fullProductName = `${productName}`;
+
                 const newDetail = {
                     id: ++detailCounter,
                     product_id: productId,
-                    product_name: productName,
+                    product_name: fullProductName,
                     quantity: 1,
                     price_unit: price,
                     unit: unit,
@@ -2159,8 +2273,10 @@
             <td>
                 <input type="text" class="form-control form-control-sm"
                        value="${detail.product_name}"
-                       placeholder="Nombre del producto"
-                       onkeyup="updateDetailField(${detail.id}, 'product_name', this.value)">
+                       placeholder="Nombre del producto (editable)"
+                       title="Puede editar este campo libremente para agregar especificaciones, notas o cualquier información adicional"
+                       onkeyup="updateProductName(${detail.id}, this.value)"
+                       onblur="updateProductName(${detail.id}, this.value)">
             </td>
             <td class="text-center">
                 <input type="number" class="form-control form-control-sm"
@@ -2187,11 +2303,32 @@
             $('#order_details_body').append(row);
         }
 
+        function updateProductName(detailId, value) {
+            const detail = orderDetails.find(d => d.id === detailId);
+            if (detail) {
+                // Guardar exactamente lo que el usuario escriba en el campo product_name
+                // Esto permite al usuario agregar información adicional como:
+                // - Especificaciones técnicas
+                // - Notas de color, tamaño, material
+                // - Códigos internos
+                // - Cualquier texto descriptivo adicional
+                detail.product_name = value;
+                console.log(`Product name updated for detail ${detailId}: "${value}"`);
+            }
+        }
+
         function updateDetailField(detailId, field, value) {
             const detail = orderDetails.find(d => d.id === detailId);
             if (detail) {
                 detail[field] = field === 'quantity' || field === 'price_unit' ? parseFloat(value) || 0 : value;
                 detail.subtotal = detail.quantity * detail.price_unit;
+
+                // Si se actualiza el precio o la cantidad, NO sobrescribir el product_name manual
+                // Solo actualizar el subtotal, el usuario puede editar el nombre libremente
+                if (field === 'price_unit' || field === 'quantity') {
+                    // NO actualizar product_name automáticamente
+                    // El usuario puede escribir cualquier texto en ese campo
+                }
 
                 // Actualizar subtotal en la fila
                 $(`#subtotal-${detailId}`).text(detail.subtotal.toFixed(2));
@@ -2202,7 +2339,7 @@
 
         function updateDetailRow(detail) {
             const row = $(`#detail-row-${detail.id}`);
-            row.find('input[placeholder="Nombre del producto"]').val(detail.product_name);
+            row.find('input[placeholder="Nombre del producto (editable)"]').val(detail.product_name);
             row.find('input[placeholder="Observación"]').val(detail.observation || '');
             row.find('input[type="number"]').first().val(detail.quantity);
             row.find('input[type="number"]').last().val(detail.price_unit);
@@ -2251,9 +2388,6 @@
             // El faltante se calcula desde el total (IGV incluido)
             const remaining = total - advance;
 
-            // Sincronizar con el campo del formulario principal
-            $('#cash_advance').val(advance.toFixed(2));
-
             // Actualizar faltante
             $('#remaining_amount').text(`S/ ${remaining.toFixed(2)}`);
 
@@ -2271,29 +2405,39 @@
             }
         }
 
-        // Función para actualizar adelanto desde el campo principal
-        function updateAdvanceFromMain() {
-            const advance = parseFloat($('#cash_advance').val()) || 0;
-            $('#advance_input').val(advance);
-            updateAdvance();
-        }
 
-        // Función para actualizar adelanto desde el campo principal en edición
-        function updateEditAdvanceFromMain() {
-            const advance = parseFloat($('#edit_cash_advance').val()) || 0;
-            $('#edit_advance_input').val(advance);
-            updateEditAdvance();
+        // Función para actualizar adelanto en edición
+        function updateEditAdvance() {
+            const total = parseFloat($('#edit_total_final').text().replace('S/ ', '').replace(',', '')) || 0;
+            const advance = parseFloat($('#edit_advance_input').val()) || 0;
+            const remaining = total - advance;
+
+            // Actualizar faltante
+            $('#edit_remaining_amount').text(`S/ ${remaining.toFixed(2)}`);
+
+            // Cambiar color del faltante según el valor
+            const remainingRow = $('#edit_remaining_amount').closest('tr');
+            if (remaining < 0) {
+                remainingRow.removeClass('table-danger table-success').addClass('table-warning');
+                $('#edit_remaining_amount').text(`S/ ${Math.abs(remaining).toFixed(2)} (Excedente)`);
+            } else if (remaining === 0) {
+                remainingRow.removeClass('table-danger table-warning').addClass('table-success');
+                $('#edit_remaining_amount').text('S/ 0.00 (Pagado)');
+            } else {
+                remainingRow.removeClass('table-success table-warning').addClass('table-danger');
+                $('#edit_remaining_amount').text(`S/ ${remaining.toFixed(2)}`);
+            }
         }
 
         // Sincronizar adelanto del formulario principal con el de la tabla
-        $('#cash_advance').on('input', function () {
+        /*$('#cash_advance').on('input', function () {
             updateAdvanceFromMain();
         });
 
         // Sincronizar adelanto del formulario principal de edición con el de la tabla
         $('#edit_cash_advance').on('input', function () {
             updateEditAdvanceFromMain();
-        });
+        });*/
 
         // Función para calcular total al precio (IGV incluido)
         function calculateTotalWithIGV(subtotal) {
@@ -2319,14 +2463,25 @@
 
             // Validar que haya al menos un detalle
             if (orderDetails.length === 0) {
-                Swal.fire('Error', 'Debe agregar al menos un producto o servicio', 'error');
+                toastr.error('Debe agregar al menos un producto o servicio', 'Error');
                 return;
             }
 
             // Preparar datos
             const formData = new FormData($('#order-form')[0]);
 
+                        // Verificar si el adelanto es igual al total para marcar como completado
+            const total = parseFloat($('#total_final').text().replace('S/ ', '').replace(',', '')) || 0;
+            const advance = parseFloat($('#advance_input').val()) || 0;
+            
+            if (advance >= total && total > 0) {
+                formData.append('auto_complete', 'true');
+                console.log('Orden marcada como completada automáticamente - Adelanto cubre el total');
+            }
+
             // Agregar detalles como JSON
+            // Nota: product_name se guarda exactamente como lo escribió el usuario
+            // incluyendo cualquier información adicional agregada manualmente
             const detailsJson = JSON.stringify(orderDetails);
             formData.append('details', detailsJson);
 
@@ -2341,55 +2496,46 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 success: function (response) {
+                    console.log(response)
                     if (response.success) {
                         // Si hay contenido del PDF, abrirlo en nueva pestaña
                         if (response.pdf_content) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Éxito!',
-                                text: response.message + '\n\nSe abrirá el PDF del ticket en una nueva pestaña.',
-                                showConfirmButton: true,
-                                confirmButtonColor: '#28a745'
-                            }).then((result) => {
-                                $('#createOrderModal').modal('hide');
-                                loadOrders();
-                                
-                                // Crear y abrir PDF desde base64 en nueva pestaña
-                                const pdfBlob = base64ToBlob(response.pdf_content, 'application/pdf');
-                                const pdfUrl = URL.createObjectURL(pdfBlob);
-                                window.open(pdfUrl, '_blank');
-                                // Limpiar el objeto URL después de un tiempo
-                                setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-                            });
+                            toastr.success(response.message + '\n\nSe abrirá el PDF del ticket en una nueva pestaña.', '¡Éxito!');
+                            $('#createOrderModal').modal('hide');
+                            loadOrders();
+
+                            // Crear y abrir PDF desde base64 en nueva pestaña
+                            const pdfBlob = base64ToBlob(response.pdf_content, 'application/pdf');
+                            const pdfUrl = URL.createObjectURL(pdfBlob);
+                            window.open(pdfUrl, '_blank');
+                            // Limpiar el objeto URL después de un tiempo
+                            setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
                         } else {
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Éxito!',
-                                text: response.message,
-                                showConfirmButton: true,
-                                confirmButtonColor: '#28a745'
-                            }).then((result) => {
-                                $('#createOrderModal').modal('hide');
-                                loadOrders();
-                            });
+                            toastr.success(response.message, '¡Éxito!');
+                            $('#createOrderModal').modal('hide');
+                            loadOrders();
                         }
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function (xhr) {
-                    Swal.fire('Error', 'Error al guardar la orden', 'error');
+                    let msg = 'Error al guardar la orden';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    toastr.error(msg, 'Error');
                 }
             });
         }
 
         function validateForm() {
-            const requiredFields = ['order_type', 'subsidiary_id', 'user_id', 'client_id'];
+            const requiredFields = ['order_type', 'subsidiary_id', 'user_id', 'client_id', 'cash_account_id'];
 
             for (const field of requiredFields) {
                 const value = $(`#${field}`).val();
                 if (!value) {
-                    Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+                    toastr.error('Por favor complete todos los campos obligatorios', 'Error');
                     $(`#${field}`).focus();
                     return false;
                 }
@@ -2516,15 +2662,17 @@
             const number = $('#new_client_number').val();
             const fullName = $('#new_client_name').val().trim();
 
-            if (!document || !number || !fullName) {
-                Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            // Solo el nombre es obligatorio
+            if (!fullName) {
+                toastr.error('El campo Nombre Completo es obligatorio', 'Error');
                 return;
             }
 
-            // Validar formato del documento
-            if (document === '02' && number.length !== 11) {
-                Swal.fire('Error', 'El RUC debe tener 11 dígitos', 'error');
-                $('#new_client_number').focus();
+            // Validar formato del documento solo si se proporciona
+            if (document && number && document === '06' && number.length !== 11) {
+                toastr.error('El RUC debe tener 11 dígitos', 'Error');
+                //$('#new_client_number').focus();
+                $('#new_client_name').focus();
                 return;
             }
 
@@ -2547,38 +2695,26 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Cliente Creado!',
-                            text: response.message,
-                            showConfirmButton: true,
-                            confirmButtonColor: '#28a745'
-                        }).then(() => {
-                            $('#createClientModal').modal('hide');
+                        if (response.existing) {
+                            // Cliente ya existe, mostrar mensaje y seleccionarlo
+                            toastr.success(response.message, 'Cliente Existente');
+                        } else {
+                            // Cliente creado exitosamente
+                            toastr.success(response.message, '¡Cliente Creado!');
+                        }
 
-                            // Actualizar la lista de clientes en el select del modal de orden
-                            const clientSelect = $('#client_id');
-                            const documentType = response.client.document === '01' ? 'DNI' : 'RUC';
-                            const newOption = new Option(
-                                `${response.client.full_name} - ${documentType}: ${response.client.number}`,
-                                response.client.id,
-                                true,
-                                true
-                            );
-                            clientSelect.append(newOption);
-                            clientSelect.val(response.client.id);
+                        // Cerrar modal de crear cliente
+                        $('#createClientModal').modal('hide');
 
-                            // Mostrar notificación de éxito
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Cliente Seleccionado',
-                                text: 'El nuevo cliente ha sido seleccionado automáticamente',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                        });
+                        // Seleccionar el cliente en el modal de nueva orden
+                        const clientSelected = selectClientInOrderModal(response.client);
+
+                        // Mostrar confirmación solo si se seleccionó correctamente
+                        if (clientSelected) {
+                            toastr.success(`Cliente "${response.client.full_name}" seleccionado automáticamente`, 'Cliente Seleccionado');
+                        }
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function (xhr) {
@@ -2586,7 +2722,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    Swal.fire('Error', errorMessage, 'error');
+                    toastr.error(errorMessage, 'Error');
                 },
                 complete: function () {
                     // Restaurar botón
@@ -2597,49 +2733,155 @@
         }
 
 
+        function selectUserSubsidiary() {
+            // Obtener la sucursal del usuario actual desde el contexto de Django
+            // Esta información debe estar disponible en el template
+            const userSubsidiaryId = '{{ request.user.subsidiary.id|default:"" }}';
+            if (userSubsidiaryId) {
+                $('#subsidiary_id').val(userSubsidiaryId);
+                //$('#subsidiary_id').prop('disabled', true);
+                //$('#subsidiary_id').addClass('disabled-field');
+
+                // Actualizar serie y correlativo
+                updateSerial();
+                updateCorrelative();
+            }
+        }
+
+        function selectCurrentUser() {
+            // Obtener el ID del usuario actual desde el contexto de Django
+            const currentUserId = '{{ request.user.id }}';
+            if (currentUserId) {
+                $('#user_id').val(currentUserId);
+                //$('#user_id').prop('disabled', true);
+                //$('#user_id').addClass('disabled-field');
+            }
+        }
+
+        function checkPendingClientSelection() {
+            // Verificar si hay un cliente pendiente de selección
+            const pendingClient = sessionStorage.getItem('pendingClientSelection');
+            if (pendingClient) {
+                try {
+                    const client = JSON.parse(pendingClient);
+                    // Limpiar el cliente pendiente
+                    sessionStorage.removeItem('pendingClientSelection');
+
+                    // Seleccionar el cliente
+                    selectClientInOrderModal(client);
+
+                    // Mostrar mensaje de confirmación
+                    toastr.success(`Cliente "${client.full_name}" seleccionado automáticamente`, 'Cliente Seleccionado');
+                } catch (error) {
+                    console.error('Error al procesar cliente pendiente:', error);
+                    sessionStorage.removeItem('pendingClientSelection');
+                }
+            }
+        }
+
+        function selectClientInOrderModal(client) {
+            // Verificar si el modal de nueva orden está abierto
+            if ($('#createOrderModal').hasClass('show')) {
+                // Seleccionar el cliente en el campo de búsqueda del modal de nueva orden
+                const documentType = client.document === '01' ? 'DNI' :
+                    client.document === '06' ? 'RUC' : 'S/D';
+                const documentNumber = client.number || 'S/N';
+                const clientDisplayText = `${client.full_name} - ${documentType}: ${documentNumber}`;
+
+                // Establecer el valor en el campo de búsqueda
+                $('#client_search_input').val(clientDisplayText);
+                $('#client_search_input').addClass('client-selected');
+                $('#client_search_input').attr('readonly', true);
+
+                // Establecer el ID del cliente en el campo oculto
+                $('#client_id').val(client.id);
+
+                // Mostrar el botón de limpiar cliente
+                $('.btn-clear-client').show();
+
+                // Limpiar resultados de autocompletado si están visibles
+                $('#client_autocomplete_results').hide();
+
+                console.log('✅ Cliente seleccionado en modal de nueva orden:', client.full_name);
+                return true;
+            }
+            // Verificar si el modal de edición está abierto
+            else if ($('#editOrderModal').hasClass('show')) {
+                // Seleccionar el cliente en el campo de búsqueda del modal de edición
+                const documentType = client.document === '01' ? 'DNI' :
+                    client.document === '06' ? 'RUC' : 'S/D';
+                const documentNumber = client.number || 'S/N';
+                const clientDisplayText = `${client.full_name} - ${documentType}: ${documentNumber}`;
+
+                // Establecer el valor en el campo de búsqueda
+                $('#edit_client_search_input').val(clientDisplayText);
+                $('#edit_client_search_input').addClass('client-selected');
+                $('#edit_client_search_input').attr('readonly', true);
+
+                // Establecer el ID del cliente en el campo oculto
+                $('#edit_client_id').val(client.id);
+
+                // Mostrar el botón de limpiar cliente
+                $('.btn-clear-client').show();
+
+                // Limpiar resultados de autocompletado si están visibles
+                $('#edit_client_autocomplete_results').hide();
+
+                console.log('✅ Cliente seleccionado en modal de edición:', client.full_name);
+                return true;
+            } else {
+                console.log('⚠️ Ningún modal de orden está abierto');
+                // Si no hay modal abierto, mostrar mensaje informativo y guardar el cliente para selección posterior
+                toastr.info('Abra el modal de nueva orden o edición para seleccionar el cliente', 'Modal no abierto');
+
+                // Guardar el cliente en sessionStorage para selección posterior
+                sessionStorage.setItem('pendingClientSelection', JSON.stringify(client));
+
+                return false;
+            }
+        }
+
 
         function changeButtonToSelect(clientId, clientName) {
             // Cambiar el botón de "Guardar Cliente" a "Seleccionar Cliente"
             const saveButton = $('#createClientModal .btn-info');
             saveButton.html('<i class="fas fa-check mr-1"></i>Seleccionar Cliente');
             saveButton.removeClass('btn-info').addClass('btn-success');
-            saveButton.attr('onclick', `selectClientFromModal(${clientId}, '${clientName}')`);
+
+            // Limpiar eventos anteriores y asignar el nuevo
+            saveButton.off('click').on('click', function () {
+                selectClientFromModal(clientId, clientName);
+            });
             saveButton.attr('title', 'Seleccionar este cliente para la orden');
-            
+
             // Agregar indicador visual
-            $('#createClientModal .modal-header').addClass('bg-success');
-            $('#createClientModal .modal-header').removeClass('bg-info');
-            
+            $('#createClientModal .modal-header').addClass('bg-success').removeClass('bg-info');
+
             // Mostrar indicador de cliente listo
             $('#ready-client-name').text(clientName);
-            //$('#client-ready-indicator').show();
-            
-            // Guardar ID del cliente en el indicador
-            //$('#client-ready-indicator').data('client-id', clientId);
-            //$('#client-ready-indicator').data('client-name', clientName);
-            
-            // Mostrar mensaje de cliente listo para seleccionar
-            //toastr.success(`Cliente "${clientName}" listo para seleccionar`, 'Cliente listo');
         }
+
 
         function selectClientFromModal(clientId, clientName) {
             // Si no se pasan parámetros, obtenerlos del indicador
+            console.log("clientId", clientId)
+            console.log("clientName", clientName)
             if (!clientId || !clientName) {
                 const indicator = $('#client-ready-indicator');
                 clientId = indicator.data('client-id');
                 clientName = indicator.data('client-name');
             }
-            
+
             if (!clientId || !clientName) {
                 toastr.error('No hay cliente listo para seleccionar', 'Error de selección');
                 return;
             }
-            
+
             // Seleccionar el cliente en el modal de nueva orden
             if ($('#createOrderModal').hasClass('show')) {
                 // Si el modal de nueva orden está abierto, seleccionar el cliente ahí
                 $('#client_id').val(clientId);
-                
+
                 // Actualizar el texto del select
                 const clientOption = $(`#client_id option[value="${clientId}"]`);
                 if (clientOption.length) {
@@ -2656,16 +2898,16 @@
                     );
                     $('#client_id').append(newOption);
                 }
-                
+
                 // Cerrar modal de cliente
                 $('#createClientModal').modal('hide');
-                
+
                 // Mostrar confirmación
                 toastr.success(`Cliente "${clientName}" seleccionado para la orden`, 'Cliente seleccionado');
-                
+
                 // Restaurar botón original
                 restoreOriginalButton();
-                
+
             } else {
                 // Si no hay modal de orden abierto, mostrar mensaje
                 toastr.info('Abra el modal de nueva orden para seleccionar el cliente', 'Modal no abierto');
@@ -2677,15 +2919,22 @@
             const saveButton = $('#createClientModal .btn-success');
             saveButton.html('<i class="fas fa-save mr-1"></i>Guardar Cliente');
             saveButton.removeClass('btn-success').addClass('btn-info');
-            saveButton.attr('onclick', 'saveNewClient()');
+
+            // Limpiar eventos anteriores y asignar el original
+            saveButton.off('click').on('click', function () {
+                saveNewClient();
+            });
             saveButton.attr('title', 'Guardar nuevo cliente');
-            
+
             // Restaurar header del modal
-            $('#createClientModal .modal-header').removeClass('bg-success').addClass('bg-info');
-            
+            $('#createClientModal .modal-header')
+                .removeClass('bg-success')
+                .addClass('bg-info');
+
             // Ocultar indicador de cliente listo
             $('#client-ready-indicator').hide();
         }
+
 
         function clearClientFields() {
             // Limpiar todos los campos del formulario de cliente
@@ -2693,16 +2942,16 @@
             $('#new_client_address').val('');
             $('#new_client_phone').val('');
             $('#new_client_email').val('');
-            
+
             // Limpiar indicadores visuales
             $('#new_client_number').removeClass('is-valid is-invalid loading');
             $('.search-indicator').remove();
-            
+
             // Limpiar tooltips
             if ($('#new_client_number').data('bs.tooltip')) {
                 $('#new_client_number').tooltip('hide');
             }
-            
+
             // Restaurar botón original
             restoreOriginalButton();
         }
@@ -2715,7 +2964,7 @@
                 toastr.error('Debe seleccionar el tipo de documento y escribir el número', 'Error de validación');
                 return;
             }
-            
+
             // Validar formato del documento antes de consultar
             if (documentType === '01' && documentNumber.length !== 8) {
                 toastr.error('El DNI debe tener exactamente 8 dígitos', 'Error de validación');
@@ -2724,18 +2973,18 @@
                 toastr.error('El RUC debe tener exactamente 11 dígitos', 'Error de validación');
                 return;
             }
-            
+
             // Mostrar loading
             const numberField = $('#new_client_number');
             const originalValue = numberField.val();
             numberField.prop('disabled', true);
             numberField.addClass('loading');
-            
+
             // Agregar indicador visual de búsqueda
             if (!numberField.next('.search-indicator').length) {
                 numberField.after('<span class="search-indicator ml-2"><i class="fas fa-spinner fa-spin text-primary"></i> Buscando...</span>');
             }
-            
+
             $.ajax({
                 url: '{% url "apps.sales:get_api_person" %}',
                 type: 'GET',
@@ -2748,7 +2997,7 @@
                     $('.search-indicator').remove();
                     numberField.prop('disabled', false);
                     numberField.removeClass('loading');
-                    
+
                     if (response.pk) {
                         // Cliente encontrado (en BD o API)
                         if (response.message === 'Cliente encontrado en BD') {
@@ -2767,11 +3016,11 @@
                             changeButtonToSelect(response.pk, response.names);
                             // Limpiar campos
                             //clearClientFields();
-                            
+
                         } else {
                             // Cliente encontrado en API externa
                             toastr.success('Cliente encontrado y registrado automáticamente', '¡Cliente encontrado!');
-                            
+
                             // Llenar campos con la información obtenida
                             if (documentType === '01') {
                                 // DNI - Persona natural
@@ -2782,22 +3031,22 @@
                                 $('#new_client_name').val(response.names || '');
                                 $('#new_client_address').val(response.address || '');
                             }
-                            
+
                             // Marcar como válido
                             numberField.addClass('is-valid');
                             numberField.removeClass('is-invalid');
-                            
+
                             // Cambiar botón a "Seleccionar" y guardar ID del cliente
                             changeButtonToSelect(response.pk, response.names);
                         }
                     } else {
                         // No se encontró el cliente
                         toastr.warning('Cliente no encontrado. Complete los datos manualmente.', 'Cliente no encontrado');
-                        
+
                         // Marcar como inválido
                         numberField.addClass('is-invalid');
                         numberField.removeClass('is-valid');
-                        
+
                         // Limpiar campos
                         clearClientFields();
                     }
@@ -2807,9 +3056,9 @@
                     $('.search-indicator').remove();
                     numberField.prop('disabled', false);
                     numberField.removeClass('loading');
-                    
+
                     let errorMessage = 'Error al consultar el documento';
-                    
+
                     if (xhr.responseJSON && xhr.responseJSON.error) {
                         errorMessage = xhr.responseJSON.error;
                     } else if (xhr.status === 500) {
@@ -2817,13 +3066,13 @@
                     } else if (xhr.status === 404) {
                         errorMessage = 'Servicio no disponible';
                     }
-                    
+
                     toastr.error(errorMessage, 'Error en la consulta');
-                    
+
                     // Marcar como inválido
                     numberField.addClass('is-invalid');
                     numberField.removeClass('is-valid');
-                    
+
                     // Limpiar campos
                     clearClientFields();
                 }
@@ -2914,38 +3163,33 @@
                         // Mostrar modal
                         $('#orderDetailModal').modal('show');
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al cargar los detalles de la orden', 'error');
+                    toastr.error('Error al cargar los detalles de la orden', 'Error');
                 }
             });
         }
 
         function downloadTicketPDF(orderId) {
             // Mostrar indicador de descarga
-            Swal.fire({
-                title: 'Generando PDF...',
-                text: 'Por favor espere mientras se genera el ticket',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+            toastr.info('Generando PDF... Por favor espere mientras se genera el ticket', 'Generando PDF');
 
             // Crear un enlace temporal para descargar el PDF
             const downloadLink = document.createElement('a');
             downloadLink.href = `{% url "apps.sales:download_ticket_pdf" 0 %}`.replace('0', orderId);
             downloadLink.download = `ticket_${orderId}.pdf`;
-            
+
             // Simular clic en el enlace
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
 
-            // Cerrar el indicador de descarga
-            Swal.close();
+            // Mostrar confirmación
+            setTimeout(() => {
+                toastr.success('PDF generado y descargado exitosamente', 'Descarga Completada');
+            }, 1000);
         }
 
         function editOrder(orderId) {
@@ -2981,12 +3225,15 @@
 
                         // Mostrar modal
                         $('#editOrderModal').modal('show');
+
+                        // Verificar si hay un cliente pendiente de selección
+                        checkPendingClientSelection();
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al cargar los datos de la orden', 'error');
+                    toastr.error('Error al cargar los datos de la orden', 'Error');
                 },
                 complete: function () {
                     $('#loading-overlay').hide();
@@ -3019,16 +3266,16 @@
 
             if (orderData.details && orderData.details.length > 0) {
                 orderData.details.forEach(detail => {
-                                    const newDetail = {
-                    id: ++editDetailCounter,
-                    product_id: detail.product_id,
-                    product_name: detail.product_name,
-                    quantity: detail.quantity,
-                    price_unit: detail.price_unit,
-                    unit: detail.unit || '',
-                    observation: detail.observation || '',
-                    subtotal: detail.subtotal
-                };
+                    const newDetail = {
+                        id: ++editDetailCounter,
+                        product_id: detail.product_id,
+                        product_name: detail.product_name,
+                        quantity: detail.quantity,
+                        price_unit: detail.price_unit,
+                        unit: detail.unit || '',
+                        observation: detail.observation || '',
+                        subtotal: detail.subtotal
+                    };
                     editOrderDetails.push(newDetail);
                 });
             }
@@ -3051,8 +3298,10 @@
                     success: function (response) {
                         if (response.success && response.clients.length > 0) {
                             const client = response.clients[0];
-                            const documentType = client.document === '01' ? 'DNI' : 'RUC';
-                            $('#edit_client_search_input').val(`${client.full_name} - ${documentType}: ${client.number}`);
+                            const documentType = client.document === '01' ? 'DNI' :
+                                client.document === '06' ? 'RUC' : 'S/D';
+                            const documentNumber = client.number || 'S/N';
+                            $('#edit_client_search_input').val(`${client.full_name} - ${documentType}: ${documentNumber}`);
                             $('#edit_client_search_input').addClass('client-selected');
                             $('#edit_client_search_input').attr('readonly', true);
                             $('.btn-clear-client').show();
@@ -3204,7 +3453,7 @@
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al buscar productos', 'error');
+                    toastr.error('Error al buscar productos', 'Error');
                 }
             });
         }
@@ -3289,7 +3538,7 @@
 
             // Validar que haya al menos un detalle
             if (editOrderDetails.length === 0) {
-                Swal.fire('Error', 'Debe agregar al menos un producto o servicio', 'error');
+                toastr.error('Debe agregar al menos un producto o servicio', 'Error');
                 return;
             }
 
@@ -3328,18 +3577,11 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Éxito!',
-                            text: response.message,
-                            showConfirmButton: true,
-                            confirmButtonColor: '#28a745'
-                        }).then((result) => {
-                            $('#editOrderModal').modal('hide');
-                            loadOrders();
-                        });
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#editOrderModal').modal('hide');
+                        loadOrders();
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function (xhr) {
@@ -3347,7 +3589,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    Swal.fire('Error', errorMessage, 'error');
+                    toastr.error(errorMessage, 'Error');
                 },
                 complete: function () {
                     $('#loading-overlay').hide();
@@ -3361,7 +3603,7 @@
             for (const field of requiredFields) {
                 const value = $(`#${field}`).val();
                 if (!value) {
-                    Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+                    toastr.error('Por favor complete todos los campos obligatorios', 'Error');
                     $(`#${field}`).focus();
                     return false;
                 }
@@ -3377,25 +3619,25 @@
         });
 
         function updateOrderStatus(orderId, newStatus) {
-            //const selectElement = $(`.status-select[data-order-id="${orderId}"]`);
-            //const originalValue = selectElement.val();
+            const selectElement = $(`.status-select[data-order-id="${orderId}"]`);
+            const originalValue = selectElement.attr('data-order-status');
 
             // Si no hay cambio de estado, no hacer nada
-            /*if (newStatus === originalValue) {
+            if (newStatus === originalValue) {
                 return;
-            }*/
+            }
 
             // Manejar diferentes estados
             if (newStatus === 'C') {
                 // Abrir modal para completar orden
                 openCompleteOrderModal(orderId);
                 // Restaurar valor original en el select
-                //selectElement.val(originalValue);
+                selectElement.val(originalValue);
             } else if (newStatus === 'A') {
                 // Abrir modal para anular orden
                 openCancelOrderModal(orderId);
                 // Restaurar valor original en el select
-                //selectElement.val(originalValue);
+                selectElement.val(originalValue);
             } else if (newStatus === 'P') {
                 // Cambiar a pendiente (confirmación simple)
                 confirmStatusChange(orderId, newStatus, selectElement, originalValue);
@@ -3408,23 +3650,12 @@
                 'P': 'PENDIENTE'
             };
 
-            Swal.fire({
-                title: '¿Confirmar cambio de estado?',
-                text: `¿Está seguro que desea cambiar el estado de la orden a ${statusMessages[newStatus]}?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#007bff',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, cambiar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    processStatusUpdate(orderId, newStatus, selectElement, originalValue);
-                } else {
-                    // Restaurar valor original si se cancela
-                    selectElement.val(originalValue);
-                }
-            });
+            if (confirm(`¿Está seguro que desea cambiar el estado de la orden a ${statusMessages[newStatus]}?`)) {
+                processStatusUpdate(orderId, newStatus, selectElement, originalValue);
+            } else {
+                // Restaurar valor original si se cancela
+                selectElement.val(originalValue);
+            }
         }
 
         // Función para procesar la actualización de estado
@@ -3444,18 +3675,12 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Estado Actualizado!',
-                            text: response.message,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
+                        toastr.success(response.message, '¡Estado Actualizado!');
 
                         // Recargar la lista de órdenes
                         loadOrders();
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                         selectElement.val(originalValue);
                         selectElement.prop('disabled', false);
                     }
@@ -3465,7 +3690,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    Swal.fire('Error', errorMessage, 'error');
+                    toastr.error(errorMessage, 'Error');
                     selectElement.val(originalValue);
                     selectElement.prop('disabled', false);
                 }
@@ -3482,21 +3707,21 @@
                 success: function (response) {
                     if (response.success) {
                         const order = response.order;
-                        
+
                         // Llenar información del modal
                         $('#complete_order_id').val(orderId);
                         $('#complete_order_balance').val(order.balance);
                         $('#complete_order_total').val(order.total);
                         $('#complete_payment_amount').val(order.balance);
                         $('#complete_payment_date').val(getServerDate());
-                        
+
                         // Guardar información del cliente
                         $('#complete_client_document').val(order.client.document);
                         $('#complete_client_name').val(order.client.full_name);
-                        
+
                         // Calcular y mostrar totales
                         calculateOrderTotals(order.total);
-                        
+
                         // Mostrar información de la orden
                         const orderInfo = `
                             <strong>Orden:</strong> ${order.serial}-${order.correlative.toString().padStart(3, '0')}<br>
@@ -3506,18 +3731,18 @@
                             <strong>Saldo:</strong> S/ ${order.balance}
                         `;
                         $('#complete-order-info').html(orderInfo);
-                        
+
                         // Limpiar campos del comprobante electrónico
                         resetElectronicDocumentFields();
-                        
+
                         // Mostrar modal
                         $('#completeOrderModal').modal('show');
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al cargar la información de la orden', 'error');
+                    toastr.error('Error al cargar la información de la orden', 'Error');
                 }
             });
         }
@@ -3532,12 +3757,12 @@
                 success: function (response) {
                     if (response.success) {
                         const order = response.order;
-                        
+
                         // Llenar información del modal
                         $('#cancel_order_id').val(orderId);
                         $('#cancel_order_advance').val(order.cash_advance);
                         $('#refund_amount').val(order.cash_advance);
-                        
+
                         // Mostrar información de la orden
                         const orderInfo = `
                             <strong>Orden:</strong> ${order.serial}-${order.correlative.toString().padStart(3, '0')}<br>
@@ -3546,21 +3771,21 @@
                             <strong>Adelanto:</strong> S/ ${order.cash_advance}
                         `;
                         $('#cancel-order-info').html(orderInfo);
-                        
+
                         // Limpiar campos
                         $('#cancellation_reason').val('');
                         $('#refund_advance').prop('checked', false);
                         $('#refund_cash_account').val('');
                         $('#refund-details').hide();
-                        
+
                         // Mostrar modal
                         $('#cancelOrderModal').modal('show');
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function () {
-                    Swal.fire('Error', 'Error al cargar la información de la orden', 'error');
+                    toastr.error('Error al cargar la información de la orden', 'Error');
                 }
             });
         }
@@ -3570,7 +3795,7 @@
             const totalAmount = parseFloat(total) || 0;
             const subtotal = totalAmount / 1.18; // Calcular subtotal sin IGV
             const igv = totalAmount - subtotal; // Calcular IGV
-            
+
             // Mostrar totales en el modal
             $('#complete_subtotal').val(subtotal.toFixed(2));
             $('#complete_igv').val(igv.toFixed(2));
@@ -3585,7 +3810,7 @@
             $('#client_full_name').val('');
             $('#client_address').val('');
             $('#electronic-document-panel').hide();
-            
+
             // Limpiar validaciones
             $('#document_type').removeClass('is-invalid');
             $('#document_number').removeClass('is-invalid');
@@ -3595,17 +3820,17 @@
         // Función para validar campos del comprobante electrónico
         function validateElectronicDocument() {
             const emitDocument = $('#emit_electronic_document').is(':checked');
-            
+
             if (!emitDocument) {
                 return true; // No es obligatorio si no se marca el checkbox
             }
-            
+
             const documentType = $('#document_type').val();
             const documentNumber = $('#document_number').val();
             const clientName = $('#client_full_name').val();
-            
+
             let isValid = true;
-            
+
             // Validar tipo de documento
             if (!documentType) {
                 $('#document_type').addClass('is-invalid');
@@ -3613,7 +3838,7 @@
             } else {
                 $('#document_type').removeClass('is-invalid');
             }
-            
+
             // Validar número de documento
             if (!documentNumber) {
                 $('#document_number').addClass('is-invalid');
@@ -3621,7 +3846,7 @@
             } else {
                 $('#document_number').removeClass('is-invalid');
             }
-            
+
             // Validar nombre del cliente
             if (!clientName) {
                 $('#client_full_name').addClass('is-invalid');
@@ -3629,7 +3854,7 @@
             } else {
                 $('#client_full_name').removeClass('is-invalid');
             }
-            
+
             return isValid;
         }
 
@@ -3641,30 +3866,19 @@
             const cashAccountId = $('#complete_cash_account').val();
 
             if (!orderId || !paymentAmount || !paymentDate || !cashAccountId) {
-                Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+                toastr.error('Por favor complete todos los campos obligatorios', 'Error');
                 return;
             }
 
             // Validar campos del comprobante electrónico si está marcado
             if (!validateElectronicDocument()) {
-                Swal.fire('Error', 'Por favor complete todos los campos del comprobante electrónico', 'error');
+                toastr.error('Por favor complete todos los campos del comprobante electrónico', 'Error');
                 return;
             }
 
-            Swal.fire({
-                title: '¿Está seguro de completar la orden?',
-                text: 'Se registrará el pago del saldo faltante y se marcará la orden como completada',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, completar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId);
-                }
-            });
+            if (confirm('¿Está seguro de completar la orden?\n\nSe registrará el pago del saldo faltante y se marcará la orden como completada')) {
+                completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId);
+            }
         }
 
         // Función para completar orden con pago
@@ -3678,7 +3892,7 @@
             // Preparar datos del comprobante electrónico si está marcado
             const emitDocument = $('#emit_electronic_document').is(':checked');
             const documentData = {};
-            
+
             if (emitDocument) {
                 documentData.emit_document = true;
                 documentData.document_type = $('#document_type').val();
@@ -3703,24 +3917,17 @@
                 success: function (response) {
                     if (response.success) {
                         let successMessage = response.message;
-                        
+
                         // Agregar información del comprobante si se generó
                         if (emitDocument && response.document_info) {
                             successMessage += `\n\nComprobante electrónico generado: ${response.document_info}`;
                         }
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Orden Completada!',
-                            text: successMessage,
-                            showConfirmButton: true,
-                            confirmButtonColor: '#28a745'
-                        }).then(() => {
-                            $('#completeOrderModal').modal('hide');
-                            loadOrders();
-                        });
+
+                        toastr.success(successMessage, '¡Orden Completada!');
+                        $('#completeOrderModal').modal('hide');
+                        loadOrders();
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function (xhr) {
@@ -3728,7 +3935,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    Swal.fire('Error', errorMessage, 'error');
+                    toastr.error(errorMessage, 'Error');
                 },
                 complete: function () {
                     // Restaurar botón
@@ -3747,29 +3954,18 @@
             const refundCashAccountId = $('#refund_cash_account').val();
 
             if (!orderId || !cancellationReason) {
-                Swal.fire('Error', 'Por favor complete todos los campos', 'error');
+                toastr.error('Por favor complete todos los campos', 'Error');
                 return;
             }
 
             if (refundAdvance && !refundCashAccountId) {
-                Swal.fire('Error', 'Debe seleccionar una cuenta de caja para la devolución', 'error');
+                toastr.error('Debe seleccionar una cuenta de caja para la devolución', 'Error');
                 return;
             }
 
-            Swal.fire({
-                title: '¿Está seguro de anular la orden?',
-                text: 'Se registrará el motivo de anulación y se marcará la orden como anulada',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, anular',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    cancelOrderWithReason(orderId, cancellationReason, refundAdvance, refundAmount, refundCashAccountId);
-                }
-            });
+            if (confirm('¿Está seguro de anular la orden?\n\nSe registrará el motivo de anulación y se marcará la orden como anulada')) {
+                cancelOrderWithReason(orderId, cancellationReason, refundAdvance, refundAmount, refundCashAccountId);
+            }
         }
 
         // Función para anular orden con motivo
@@ -3795,18 +3991,11 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Orden Anulada!',
-                            text: response.message,
-                            showConfirmButton: true,
-                            confirmButtonColor: '#dc3545'
-                        }).then(() => {
-                            $('#cancelOrderModal').modal('hide');
-                            loadOrders();
-                        });
+                        toastr.success(response.message, '¡Orden Anulada!');
+                        $('#cancelOrderModal').modal('hide');
+                        loadOrders();
                     } else {
-                        Swal.fire('Error', response.message, 'error');
+                        toastr.error(response.message, 'Error');
                     }
                 },
                 error: function (xhr) {
@@ -3814,7 +4003,7 @@
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    Swal.fire('Error', errorMessage, 'error');
+                    toastr.error(errorMessage, 'Error');
                 },
                 complete: function () {
                     // Restaurar botón
@@ -3828,10 +4017,10 @@
         function loadClientDataForDocument() {
             const clientDocument = $('#complete_client_document').val();
             const clientName = $('#complete_client_name').val();
-            
+
             // Cargar nombre del cliente
             $('#client_full_name').val(clientName);
-            
+
             // Cargar documento del cliente
             if (clientDocument) {
                 $('#document_number').val(clientDocument);
@@ -3842,26 +4031,26 @@
         function updateDocumentFields(documentType) {
             const documentNumber = $('#document_number').val();
             const documentHelp = $('#document_help');
-            
+
             if (documentType === 'B') {
                 // BOLETA - DNI
                 documentHelp.text('Ingrese el DNI del cliente (8 dígitos)');
                 $('#document_number').attr('placeholder', 'DNI del cliente');
                 $('#document_number').attr('maxlength', '8');
-                
+
                 // Validar formato DNI si ya hay un número
                 if (documentNumber && documentNumber.length !== 8) {
                     $('#document_number').addClass('is-invalid');
                 } else {
                     $('#document_number').removeClass('is-invalid');
                 }
-                
+
             } else if (documentType === 'F') {
                 // FACTURA - RUC
                 documentHelp.text('Ingrese el RUC del cliente (11 dígitos)');
                 $('#document_number').attr('placeholder', 'RUC del cliente');
                 $('#document_number').attr('maxlength', '11');
-                
+
                 // Validar formato RUC si ya hay un número
                 if (documentNumber && documentNumber.length !== 11) {
                     $('#document_number').addClass('is-invalid');
@@ -3898,17 +4087,17 @@
             const deliverySelect = document.querySelector(`select.delivery-select[data-order-id="${orderId}"]`);
             const statusSelect = document.querySelector(`select.status-select[data-order-id="${orderId}"]`);
             const originalValue = deliverySelect.value;
-            
+
             // Validación del lado del cliente: No permitir ENTREGADO si el status es PENDIENTE o ANULADO
             if (newDeliveryStatus === 'E' && statusSelect && statusSelect.value in ['P', 'A']) {
                 showToast('warning', 'No se puede marcar como ENTREGADO una orden que está PENDIENTE o ANULADA. Primero debe completar la orden.');
                 deliverySelect.value = originalValue;
                 return;
             }
-            
+
             // Deshabilitar el select mientras se procesa
             deliverySelect.disabled = true;
-            
+
             // Realizar la petición AJAX
             fetch('/sales/orders/update-delivery-status/', {
                 method: 'POST',
@@ -3918,43 +4107,43 @@
                 },
                 body: `order_id=${orderId}&delivery_status=${newDeliveryStatus}`
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Actualizar el atributo data-delivery-status
-                    deliverySelect.setAttribute('data-delivery-status', newDeliveryStatus);
-                    
-                    // Aplicar estilos visuales según el nuevo estado
-                    updateDeliverySelectStyles(deliverySelect, newDeliveryStatus);
-                    
-                    // Si el estado es ENTREGADO o CANCELADO, deshabilitar el select
-                    if (newDeliveryStatus === 'E' || newDeliveryStatus === 'C') {
-                        deliverySelect.disabled = true;
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar el atributo data-delivery-status
+                        deliverySelect.setAttribute('data-delivery-status', newDeliveryStatus);
+
+                        // Aplicar estilos visuales según el nuevo estado
+                        updateDeliverySelectStyles(deliverySelect, newDeliveryStatus);
+
+                        // Si el estado es ENTREGADO o CANCELADO, deshabilitar el select
+                        if (newDeliveryStatus === 'E' || newDeliveryStatus === 'C') {
+                            deliverySelect.disabled = true;
+                        }
+
+                        // Mostrar mensaje de éxito
+                        showToast('success', data.message);
+
+                    } else {
+                        // Restaurar el valor original en caso de error
+                        deliverySelect.value = originalValue;
+                        deliverySelect.disabled = false;
+
+                        // Mostrar mensaje de error o advertencia
+                        if (data.validation_error) {
+                            showToast('warning', data.message);
+                        } else {
+                            showToast('error', data.message || 'Error al actualizar el estado de entrega');
+                        }
                     }
-                    
-                    // Mostrar mensaje de éxito
-                    showToast('success', data.message);
-                    
-                } else {
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     // Restaurar el valor original en caso de error
                     deliverySelect.value = originalValue;
                     deliverySelect.disabled = false;
-                    
-                    // Mostrar mensaje de error o advertencia
-                    if (data.validation_error) {
-                        showToast('warning', data.message);
-                    } else {
-                        showToast('error', data.message || 'Error al actualizar el estado de entrega');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Restaurar el valor original en caso de error
-                deliverySelect.value = originalValue;
-                deliverySelect.disabled = false;
-                showToast('error', 'Error de conexión al actualizar el estado de entrega');
-            });
+                    showToast('error', 'Error de conexión al actualizar el estado de entrega');
+                });
         }
 
         /**
@@ -3965,9 +4154,9 @@
         function updateDeliverySelectStyles(selectElement, newStatus) {
             // Remover clases de estado anteriores
             selectElement.classList.remove('delivery-select-pending', 'delivery-select-delivered', 'delivery-select-cancelled');
-            
+
             // Agregar nueva clase de estado
-            switch(newStatus) {
+            switch (newStatus) {
                 case 'P':
                     selectElement.classList.add('delivery-select-pending');
                     break;
@@ -4011,10 +4200,10 @@
                 toastr[type](message);
             } else {
                 // Fallback simple si toastr no está disponible
-                const alertClass = type === 'success' ? 'alert-success' : 
-                                  type === 'error' ? 'alert-danger' : 
-                                  type === 'warning' ? 'alert-warning' : 'alert-info';
-                
+                const alertClass = type === 'success' ? 'alert-success' :
+                    type === 'error' ? 'alert-danger' :
+                        type === 'warning' ? 'alert-warning' : 'alert-info';
+
                 const alertDiv = document.createElement('div');
                 alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
                 alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
@@ -4024,9 +4213,9 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 `;
-                
+
                 document.body.appendChild(alertDiv);
-                
+
                 // Auto-remover después de 5 segundos
                 setTimeout(() => {
                     if (alertDiv.parentNode) {
@@ -4042,7 +4231,7 @@
          */
         function initializeDeliverySelects() {
             const deliverySelects = document.querySelectorAll('.delivery-select');
-            
+
             deliverySelects.forEach(select => {
                 const currentStatus = select.getAttribute('data-delivery-status');
                 updateDeliverySelectStyles(select, currentStatus);
@@ -4144,6 +4333,34 @@
             border-left: 3px solid #007bff;
         }
 
+        .product-item.selected {
+            background-color: #007bff !important;
+            color: white !important;
+            border-left: 3px solid #0056b3;
+        }
+
+        .product-item.selected strong,
+        .product-item.selected small {
+            color: white !important;
+        }
+
+        .product-item.selected .badge {
+            background-color: white !important;
+            color: #007bff !important;
+        }
+
+        /* Estilos para campos deshabilitados */
+        .disabled-field {
+            background-color: #e9ecef !important;
+            color: #6c757d !important;
+            cursor: not-allowed;
+        }
+
+        .disabled-field:focus {
+            box-shadow: none !important;
+            border-color: #ced4da !important;
+        }
+
         .product-item:last-child {
             border-bottom: none !important;
         }
@@ -4169,7 +4386,7 @@
             #order_details_table, #edit_order_details_table {
                 font-size: 0.8rem;
             }
-            
+
             #order_details_table th, #edit_order_details_table th,
             #order_details_table td, #edit_order_details_table td {
                 padding: 0.375rem;
@@ -4180,12 +4397,12 @@
             #order_details_table, #edit_order_details_table {
                 font-size: 0.75rem;
             }
-            
+
             #order_details_table th, #edit_order_details_table th,
             #order_details_table td, #edit_order_details_table td {
                 padding: 0.25rem;
             }
-            
+
             /* Ocultar columna de observación en móviles pequeños */
             #order_details_table th:nth-child(3),
             #order_details_table td:nth-child(3),
@@ -4193,7 +4410,7 @@
             #edit_order_details_table td:nth-child(3) {
                 display: none;
             }
-            
+
             /* Ajustar colspan en móviles */
             #order_details_table tfoot td[colspan="5"],
             #edit_order_details_table tfoot td[colspan="5"] {
@@ -4205,7 +4422,7 @@
             #order_details_table, #edit_order_details_table {
                 font-size: 0.7rem;
             }
-            
+
             /* Ocultar más columnas en móviles muy pequeños */
             #order_details_table th:nth-child(3),
             #order_details_table td:nth-child(3),
@@ -4213,7 +4430,7 @@
             #edit_order_details_table td:nth-child(3) {
                 display: none;
             }
-            
+
             /* Ajustar colspan en móviles muy pequeños */
             #order_details_table tfoot td[colspan="5"],
             #edit_order_details_table tfoot td[colspan="5"] {
@@ -4502,37 +4719,37 @@
                 max-width: 98% !important;
                 margin: 0.5rem !important;
             }
-            
+
             .modal-body {
                 padding: 1rem !important;
             }
-            
+
             /* Ajustar formularios en móviles */
             .form-group {
                 margin-bottom: 1rem !important;
             }
-            
+
             /* Ajustar botones en móviles */
             .btn {
                 padding: 0.5rem 1rem !important;
                 font-size: 0.9rem !important;
             }
-            
+
             /* Ajustar inputs en móviles */
             .form-control {
                 font-size: 16px !important; /* Evita zoom en iOS */
             }
-            
+
             /* Mejorar visualización de tablas en móviles */
             .table-responsive {
                 border-radius: 10px !important;
                 margin-bottom: 1rem;
             }
-            
+
             .table {
                 font-size: 0.8rem !important;
             }
-            
+
             .table th, .table td {
                 padding: 0.375rem !important;
             }
@@ -4545,20 +4762,20 @@
                 margin: 0 !important;
                 border-radius: 0 !important;
             }
-            
+
             .modal-header, .modal-footer {
                 padding: 0.75rem !important;
             }
-            
+
             .modal-body {
                 padding: 0.75rem !important;
             }
-            
+
             /* Ajustar grid de filtros */
             .col-md-2, .col-md-3 {
                 margin-bottom: 0.5rem;
             }
-            
+
             /* Ajustar botones de filtro */
             .btn-sm {
                 padding: 0.5rem 1rem !important;
@@ -5896,15 +6113,15 @@
                 max-height: 150px;
                 font-size: 0.8rem;
             }
-            
+
             .client-autocomplete-item {
                 padding: 0.5rem;
             }
-            
+
             .client-autocomplete-item .client-name {
                 font-size: 0.8rem;
             }
-            
+
             .client-autocomplete-item .client-document,
             .client-autocomplete-item .client-address,
             .client-autocomplete-item .client-phone {
@@ -5948,7 +6165,7 @@
             .col-md-3 {
                 margin-bottom: 0.5rem;
             }
-            
+
             .client-suggestions {
                 max-height: 150px;
             }
@@ -6096,12 +6313,12 @@
                 margin: 0.5rem;
                 max-width: calc(100% - 1rem);
             }
-            
+
             #completeOrderModal .modal-body,
             #cancelOrderModal .modal-body {
                 padding: 1rem;
             }
-            
+
             #refund-details {
                 padding: 0.75rem;
             }
@@ -6235,19 +6452,19 @@
                 padding: 0.2rem 0.4rem;
                 min-width: 100px;
             }
-            
+
             .d-flex.flex-column.align-items-center {
                 min-width: 120px;
             }
         }
-        
+
         /* Estilos para estados bloqueados */
         .delivery-select.delivery-select-delivered,
         .delivery-select.delivery-select-cancelled {
             opacity: 0.8;
             cursor: not-allowed;
         }
-        
+
         /* Estilos para validación de estado */
         .delivery-select.validation-error {
             border-color: #dc3545;
@@ -6255,11 +6472,17 @@
             color: #721c24;
             animation: shake 0.5s ease-in-out;
         }
-        
+
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            75% {
+                transform: translateX(5px);
+            }
         }
 
         /* Animaciones de transición */
@@ -6313,7 +6536,6 @@
         #new_client_number + .input-group-append .btn:focus {
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
-
 
 
         /* Estilos para el modal cuando cambia a modo selección */
@@ -6421,11 +6643,11 @@
                 max-width: 95%;
                 margin: 0.5rem auto;
             }
-            
+
             #electronic-document-panel .card-body {
                 padding: 1rem;
             }
-            
+
             .col-md-4, .col-md-6 {
                 margin-bottom: 1rem;
             }

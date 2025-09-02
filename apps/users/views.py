@@ -6,8 +6,9 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.generic import ListView, CreateView, UpdateView
 from django.views.generic.edit import FormView
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponseRedirect, JsonResponse
+from django.contrib import messages
 from .forms import FormLogin
 from django.shortcuts import render, redirect
 
@@ -29,6 +30,22 @@ class Login(FormView):
     def form_valid(self, form):
         login(self.request, form.get_user())
         return super(Login, self).form_valid(form)
+
+    def form_invalid(self, form):
+        # Verificar si el usuario existe pero está inactivo
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password')
+        
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if user and not user.is_active:
+                # Usuario existe pero está inactivo
+                form.add_error(None, 'Usuario inactivo. Contacte con administración.')
+            else:
+                # Usuario o contraseña incorrectos
+                form.add_error(None, 'Usuario o contraseña incorrectos')
+        
+        return super().form_invalid(form)
 
 
 def logout_user(request):
