@@ -953,21 +953,26 @@ def order_list(request):
                     'total': str(round(order.total, 2)),
                     'cash_advance': str(round(order.cash_advance, 2)),
                     # Información de completado
-                    'completed_by': order.completed_by.first_name + ' ' + order.completed_by.last_name if order.completed_by else None,
+                    'completed_by': order.completed_by.first_name if order.completed_by else None,
                     'completed_at': order.completed_at,
                     # Información de entrega
-                    'delivered_by': order.delivered_by.first_name + ' ' + order.delivered_by.last_name if order.delivered_by else None,
+                    'delivered_by': order.delivered_by.first_name if order.delivered_by else None,
                     'delivered_at': order.delivered_at,
                     # 'is_paid': order.cash_pay >= order.total if order.cash_pay > 0 else False,
                     # 'has_advance': order.cash_advance > 0,
                     # 'payment_status': 'PAID' if order.cash_pay >= order.total else 'PARTIAL' if order.cash_pay > 0 else 'PENDING'
                 }
                 for detail in order.orderdetail_set.all():
+                    product_id = ''
+                    product_name = ''
+                    if detail.product:
+                        product_id = detail.product.id
+                        product_name = detail.product.name
                     detail_data = {
                         'id': detail.id,
-                        'product': detail.product.id,
+                        'product': product_id,
                         'quantity': str(round(detail.quantity, 0)),
-                        'product_name': detail.product.name,
+                        'product_name': product_name,
                         'description': detail.product_name,
                         'observation': detail.observation,
                     }
@@ -1001,6 +1006,7 @@ def order_list(request):
             }, status=HTTPStatus.OK)
         
         except Exception as e:
+            print(e)
             return JsonResponse({
                 'success': False,
                 'message': f'Error al cargar las órdenes: {str(e)}'
