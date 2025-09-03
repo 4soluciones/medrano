@@ -1033,20 +1033,87 @@
                         <input type="hidden" id="complete_client_document" name="client_document" value="">
                         <input type="hidden" id="complete_client_name" name="client_name" value="">
 
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Información de la Orden:</strong>
-                            <div id="complete-order-info" class="mt-2"></div>
+                        <!-- Información de la orden en dos columnas -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0 py-2">
+                                    <div class="row">
+                                        <div class="col-md-1 text-center">
+                                            <i class="fas fa-info-circle fa-lg text-primary"></i>
+                                        </div>
+                                        <div class="col-md-11">
+                                            <strong class="small">Información de la Orden:</strong>
+                                            <div id="complete-order-info" class="mt-1 small"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos principales en dos columnas -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="complete_payment_amount" class="form-label">
+                                        <i class="fas fa-money-bill-wave mr-1"></i>Saldo a Pagar
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">S/</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="complete_payment_amount" name="payment_amount" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="complete_payment_date" class="form-label">
+                                        <i class="fas fa-calendar mr-1"></i>Fecha del Pago <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" class="form-control" id="complete_payment_date" name="payment_date" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="completed_by" class="form-label">
+                                        <i class="fas fa-user mr-1"></i>Completado por <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="completed_by" name="completed_by" required>
+                                        <option value="">Seleccionar empleado...</option>
+                                        {% for user in user_set %}
+                                            <option value="{{ user.id }}" {% if user.id == request.user.id %}selected{% endif %}>
+                                                {{ user.first_name }} {{ user.last_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="complete_cash_account" class="form-label">
+                                        <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="complete_cash_account" name="cash_account" required>
+                                        <option value="">Seleccione una cuenta</option>
+                                        {% for cash in cash_accounts %}
+                                            <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Totales de la orden -->
                         <div class="row mb-3">
                             <div class="col-12">
                                 <div class="card">
-                                    <div class="card-header bg-light">
+                                    <div class="card-header bg-light py-2">
                                         <h6 class="mb-0"><i class="fas fa-calculator mr-2"></i>Totales de la Orden</h6>
                                     </div>
-                                    <div class="card-body">
+                                    <div class="card-body py-2">
                                         <div class="row">
                                             <div class="col-md-4">
                                                 <div class="form-group mb-0">
@@ -1093,73 +1160,28 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="complete_payment_amount" class="form-label">
-                                <i class="fas fa-money-bill-wave mr-1"></i>Saldo Pendiente a Pagar
-                            </label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">S/</span>
-                                </div>
-                                <input type="number" class="form-control" id="complete_payment_amount"
-                                       name="payment_amount" readonly>
-                            </div>
-                            <small class="form-text text-muted">
-                                Este es el saldo faltante que debe ser pagado para completar la orden
-                            </small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="complete_payment_date" class="form-label">
-                                <i class="fas fa-calendar mr-1"></i>Fecha del Pago <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" class="form-control" id="complete_payment_date"
-                                   name="payment_date" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="complete_cash_account" class="form-label">
-                                <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-control" id="complete_cash_account" name="cash_account" required>
-                                <option value="">Seleccione una cuenta</option>
-                                {% for cash in cash_accounts %}
-                                    <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <small class="form-text text-muted">
-                                Seleccione la cuenta donde se registrará el ingreso
-                            </small>
-                        </div>
-
                         <!-- Checkbox para emitir comprobante electrónico -->
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document"
-                                       name="emit_electronic_document">
+                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document" name="emit_electronic_document">
                                 <label class="custom-control-label" for="emit_electronic_document">
                                     <i class="fas fa-file-invoice mr-1"></i>Emitir Comprobante Electrónico
                                 </label>
                             </div>
-                            <small class="form-text text-muted">
-                                Marque esta opción si desea generar un comprobante electrónico (Boleta o Factura)
-                            </small>
                         </div>
 
                         <!-- Panel de comprobante electrónico (inicialmente oculto) -->
                         <div id="electronic-document-panel" style="display: none;">
                             <div class="card">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante
-                                        Electrónico</h6>
+                                <div class="card-header bg-primary text-white py-2">
+                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante Electrónico</h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="document_type" class="form-label">
-                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span
-                                                        class="text-danger">*</span>
+                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
                                                 </label>
                                                 <select class="form-control" id="document_type" name="document_type">
                                                     <option value="">Seleccione tipo</option>
@@ -1171,11 +1193,16 @@
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="document_number" class="form-label">
-                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span
-                                                        class="text-danger">*</span>
+                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
                                                 </label>
-                                                <input type="text" class="form-control" id="document_number"
-                                                       name="document_number" placeholder="DNI o RUC del cliente">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="document_number" name="document_number" placeholder="DNI o RUC del cliente">
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="searchClientInElectronicDocument()">
+                                                            <i class="fas fa-search"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                                 <small class="form-text text-muted">
                                                     <span id="document_help">Ingrese el documento del cliente</span>
                                                 </small>
@@ -1187,12 +1214,9 @@
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="client_full_name" class="form-label">
-                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span
-                                                        class="text-danger">*</span>
+                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
                                                 </label>
-                                                <input type="text" class="form-control" id="client_full_name"
-                                                       name="client_full_name"
-                                                       placeholder="Nombre completo o razón social">
+                                                <input type="text" class="form-control" id="client_full_name" name="client_full_name" placeholder="Nombre completo o razón social">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -1200,8 +1224,7 @@
                                                 <label for="client_address" class="form-label">
                                                     <i class="fas fa-map-marker-alt mr-1"></i>Dirección
                                                 </label>
-                                                <input type="text" class="form-control" id="client_address"
-                                                       name="client_address" placeholder="Dirección del cliente">
+                                                <input type="text" class="form-control" id="client_address" name="client_address" placeholder="Dirección del cliente">
                                             </div>
                                         </div>
                                     </div>
@@ -1217,6 +1240,83 @@
                     <button type="button" class="btn btn-success" onclick="confirmCompleteOrder()">
                         <i class="fas fa-check mr-1"></i>Completar Orden
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar estado de entrega -->
+    <div class="modal fade" id="orderDeliveryStatusModal" tabindex="-1" role="dialog"
+         aria-labelledby="orderDeliveryStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content roboto-condensed-regular">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderDeliveryStatusModalLabel">Cambiar Estado de Entrega</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="orderDeliveryStatusForm">
+                        <input type="hidden" id="orderDeliveryStatusId" name="order_id">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="orderDeliveryCode">Código de Orden:</label>
+                                    <input type="text" class="form-control" id="orderDeliveryCode" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="deliveryClientName">Cliente:</label>
+                                    <input type="text" class="form-control" id="deliveryClientName" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="currentDeliveryStatus">Estado de Entrega Actual:</label>
+                                    <input type="text" class="form-control" id="currentDeliveryStatus" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="newDeliveryStatus">Nuevo Estado de Entrega: <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-control" id="newDeliveryStatus" name="delivery_status" required>
+                                        <option value="">Seleccionar estado...</option>
+                                        <option value="P">PENDIENTE</option>
+                                        <option value="E">ENTREGADO</option>
+                                        <option value="C">CANCELADO</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="deliveredBy">Entregado por: <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="deliveredBy" name="delivered_by" required>
+                                        <option value="">Seleccionar empleado...</option>
+                                        {% for user in user_set %}
+                                            <option value="{{ user.id }}"
+                                                    {% if user.id == request.user.id %}selected{% endif %}>
+                                                {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveOrderDeliveryStatus">Guardar Cambios</button>
                 </div>
             </div>
         </div>
@@ -1318,6 +1418,321 @@
             <span class="sr-only">Cargando...</span>
         </div>
     </div>
+
+    <!-- Modal para cambio de estado de entrega -->
+    <div class="modal fade" id="orderDeliveryStatusModal" tabindex="-1" role="dialog" aria-labelledby="orderDeliveryStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderDeliveryStatusModalLabel">Cambiar Estado de Entrega</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="orderDeliveryStatusForm">
+                        <input type="hidden" id="orderDeliveryStatusId" name="order_id">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="orderDeliveryCode">Código de Orden:</label>
+                                    <input type="text" class="form-control" id="orderDeliveryCode" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="deliveryClientName">Cliente:</label>
+                                    <input type="text" class="form-control" id="deliveryClientName" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="currentDeliveryStatus">Estado de Entrega Actual:</label>
+                                    <input type="text" class="form-control" id="currentDeliveryStatus" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="newDeliveryStatus">Nuevo Estado de Entrega: <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="newDeliveryStatus" name="delivery_status" required>
+                                        <option value="">Seleccionar estado...</option>
+                                        <option value="P">PENDIENTE</option>
+                                        <option value="E">ENTREGADO</option>
+                                        <option value="C">CANCELADO</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="deliveredBy">Entregado por: <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="deliveredBy" name="delivered_by" required>
+                                        <option value="">Seleccionar empleado...</option>
+                                        {% for user in user_set %}
+                                            <option value="{{ user.id }}" {% if user.id == request.user.id %}selected{% endif %}>
+                                                {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveOrderDeliveryStatus">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para convertir orden a orden de servicio -->
+    <div class="modal fade" id="convertOrderModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exchange-alt mr-2"></i>Convertir a Orden de Servicio
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="convert-order-form">
+                        <input type="hidden" id="convert_order_id" name="order_id" value="">
+                        
+                        <!-- Información General -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-info-circle mr-2"></i>Información de la Orden a Convertir
+                                </h6>
+                            </div>
+                        </div>
+
+                        <!-- Información de la orden actual -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-hashtag mr-1"></i>Código Actual
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_current_code" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-user mr-1"></i>Cliente
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_client_name" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-calendar mr-1"></i>Fecha de Registro
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_register_date" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-money-bill-wave mr-1"></i>Total Actual
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_current_total" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Separador -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-cog mr-2"></i>Configuración de la Nueva Orden de Servicio
+                                </h6>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de la nueva orden -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="convert_subsidiary_id" class="form-label">
+                                        <i class="fas fa-building mr-1"></i>Sucursal <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="convert_subsidiary_id" name="subsidiary_id" required>
+                                        <option value="">Seleccione sucursal</option>
+                                        {% for subsidiary in subsidiary_set %}
+                                            <option value="{{ subsidiary.id }}" data-serial="{{ subsidiary.serial }}">
+                                                {{ subsidiary.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="convert_serial" class="form-label">
+                                        <i class="fas fa-hashtag mr-1"></i>Serie
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_serial" name="serial" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="convert_correlative" class="form-label">
+                                        <i class="fas fa-sort-numeric-up mr-1"></i>Correlativo
+                                    </label>
+                                    <input type="text" class="form-control" id="convert_correlative" name="correlative" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="convert_register_date_new" class="form-label">
+                                        <i class="fas fa-calendar mr-1"></i>Fecha de Registro <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" class="form-control" id="convert_register_date_new" name="register_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="convert_delivery_date" class="form-label">
+                                        <i class="fas fa-truck mr-1"></i>Fecha de Entrega
+                                    </label>
+                                    <input type="date" class="form-control" id="convert_delivery_date" name="delivery_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="convert_way_to_pay" class="form-label">
+                                        <i class="fas fa-credit-card mr-1"></i>Forma de Pago <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="convert_way_to_pay" name="way_to_pay" required>
+                                        <option value="">Seleccione forma de pago</option>
+                                        <option value="E">Efectivo</option>
+                                        <option value="Y">Yape</option>
+                                        <option value="D">Depósito y/o Transferencia</option>
+                                        <option value="C">Crédito</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="convert_cash_advance" class="form-label">
+                                        <i class="fas fa-money-bill-wave mr-1"></i>Adelanto (S/)
+                                    </label>
+                                    <input type="number" class="form-control" id="convert_cash_advance" name="cash_advance" 
+                                           step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="convert_observation" class="form-label">
+                                        <i class="fas fa-comment mr-1"></i>Observaciones
+                                    </label>
+                                    <textarea class="form-control" id="convert_observation" name="observation" 
+                                              rows="3" placeholder="Observaciones adicionales..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Productos/Servicios -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="text-info border-bottom pb-2">
+                                    <i class="fas fa-list mr-2"></i>Productos/Servicios
+                                </h6>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="convert-products-table">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 50%;">Descripción</th>
+                                        <th style="width: 15%;">Cantidad</th>
+                                        <th style="width: 15%;">Precio Unit.</th>
+                                        <th style="width: 15%;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="convert-products-tbody">
+                                    <!-- Los productos se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Totales -->
+                        <div class="row">
+                            <div class="col-md-8"></div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <strong>Subtotal:</strong>
+                                            </div>
+                                            <div class="col-6 text-right">
+                                                <span id="convert-subtotal">S/ 0.00</span>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <strong>IGV (18%):</strong>
+                                            </div>
+                                            <div class="col-6 text-right">
+                                                <span id="convert-igv">S/ 0.00</span>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <strong>Total:</strong>
+                                            </div>
+                                            <div class="col-6 text-right">
+                                                <span id="convert-total" class="font-weight-bold text-primary">S/ 0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="convertToServiceOrder()">
+                        <i class="fas fa-exchange-alt mr-1"></i>Convertir a Orden de Servicio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 {% endblock body %}
 
 {% block extrajs %}
@@ -1326,6 +1741,92 @@
         // Función para obtener la fecha del servidor (zona horaria de Perú)
         // Esta función resuelve el problema de zona horaria usando la fecha
         // que viene del backend en lugar de calcularla en JavaScript
+        
+        // Función para actualizar el color del select según el estado
+        function updateSelectColor(selectElement) {
+            const value = selectElement.value;
+            const isStatusSelect = selectElement.classList.contains('status-select');
+            const isDeliverySelect = selectElement.classList.contains('delivery-select');
+            
+            // Remover clases de color anteriores
+            selectElement.removeAttribute('data-status');
+            selectElement.removeAttribute('data-delivery-status');
+            
+            if (isStatusSelect) {
+                selectElement.setAttribute('data-status', value);
+            } else if (isDeliverySelect) {
+                selectElement.setAttribute('data-delivery-status', value);
+            }
+        }
+        
+        // Función para inicializar colores de todos los selects
+        function initializeSelectColors() {
+            // Inicializar colores de status-select
+            $('.status-select').each(function() {
+                updateSelectColor(this);
+            });
+            
+            // Inicializar colores de delivery-select
+            $('.delivery-select').each(function() {
+                updateSelectColor(this);
+            });
+        }
+        
+        // Evento para el botón de guardar estado de entrega
+        $(document).ready(function() {
+            // Inicializar colores al cargar la página
+            initializeSelectColors();
+            
+            // Evento para cambio de estado de pago
+            $(document).on('change', '.status-select', function() {
+                updateSelectColor(this);
+            });
+            
+            // Evento para cambio de estado de entrega
+            $(document).on('change', '.delivery-select', function() {
+                updateSelectColor(this);
+            });
+            
+            $('#saveOrderDeliveryStatus').click(function() {
+                var form = $('#orderDeliveryStatusForm');
+                var formData = form.serialize();
+                
+                // Validar que se haya seleccionado un estado
+                if (!$('#newDeliveryStatus').val()) {
+                    toastr.error('Debe seleccionar un nuevo estado de entrega');
+                    return;
+                }
+                
+                // Validar que se haya seleccionado un empleado
+                if (!$('#deliveredBy').val()) {
+                    toastr.error('Debe seleccionar un empleado');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/sales/orders/update-delivery-status/',
+                    type: 'POST',
+                    data: formData,
+                    headers: {
+                        'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            $('#orderDeliveryStatusModal').modal('hide');
+                            // Recargar la tabla de órdenes
+                            loadOrders();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        toastr.error('Error al actualizar el estado de entrega');
+                        console.error('Error:', error);
+                    }
+                });
+            });
+        });
         function getServerDate() {
             // Usar la fecha que viene del backend ({{ date_now }})
             // que ya está en zona horaria de Perú (GMT-5)
@@ -1411,7 +1912,7 @@
                 const phone = client.phone || 'Sin teléfono';
 
                 html += `
-                    <div class="client-autocomplete-item" 
+                    <div class="client-autocomplete-item"
                          onclick="selectClientFromAutocomplete(${client.id}, '${client.full_name}', '${documentType}: ${client.number}', '${address}', ${isEdit})">
                         <div class="client-info">
                             <div class="client-name">${client.full_name}</div>
@@ -1580,7 +2081,7 @@
             clients.forEach(client => {
                 const documentType = client.document === '01' ? 'DNI' : 'RUC';
                 html += `
-                    <div class="client-suggestion-item" 
+                    <div class="client-suggestion-item"
                          onclick="selectClientForFilters(${client.id}, '${client.full_name}', '${documentType}: ${client.number}')">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -1931,6 +2432,25 @@
                 $('#cancel_order_advance').val('');
                 $('#refund-details').hide();
                 $('#refund_cash_account').prop('required', false);
+            });
+
+            // Limpiar modal de entrega al cerrarlo y restaurar select original
+            $('#orderDeliveryStatusModal').on('hidden.bs.modal', function () {
+                // Obtener el ID de la orden del modal
+                const orderId = $('#orderDeliveryStatusId').val();
+                if (orderId) {
+                    // Buscar el select de entrega correspondiente
+                    const deliverySelect = document.querySelector(`select.delivery-select[data-order-id="${orderId}"]`);
+                    if (deliverySelect) {
+                        // Restaurar el valor original
+                        const originalValue = deliverySelect.getAttribute('data-original-value');
+                        deliverySelect.value = originalValue;
+                        // Restaurar los estilos visuales
+                        updateDeliverySelectStyles(deliverySelect, originalValue);
+                    }
+                }
+                // Limpiar el formulario
+                $('#orderDeliveryStatusForm')[0].reset();
             });
 
             // Event listeners para el modal de completar orden
@@ -2470,10 +2990,10 @@
             // Preparar datos
             const formData = new FormData($('#order-form')[0]);
 
-                        // Verificar si el adelanto es igual al total para marcar como completado
+            // Verificar si el adelanto es igual al total para marcar como completado
             const total = parseFloat($('#total_final').text().replace('S/ ', '').replace(',', '')) || 0;
             const advance = parseFloat($('#advance_input').val()) || 0;
-            
+
             if (advance >= total && total > 0) {
                 formData.append('auto_complete', 'true');
                 console.log('Orden marcada como completada automáticamente - Adelanto cubre el total');
@@ -2498,18 +3018,31 @@
                 success: function (response) {
                     console.log(response)
                     if (response.success) {
-                        // Si hay contenido del PDF, abrirlo en nueva pestaña
+                        // Si hay contenido del PDF, descargarlo automáticamente
                         if (response.pdf_content) {
-                            toastr.success(response.message + '\n\nSe abrirá el PDF del ticket en una nueva pestaña.', '¡Éxito!');
+                            toastr.success(response.message + '\n\nSe descargará el PDF del ticket automáticamente.', '¡Éxito!');
                             $('#createOrderModal').modal('hide');
                             loadOrders();
 
-                            // Crear y abrir PDF desde base64 en nueva pestaña
+                            // Descargar PDF automáticamente desde base64
                             const pdfBlob = base64ToBlob(response.pdf_content, 'application/pdf');
                             const pdfUrl = URL.createObjectURL(pdfBlob);
-                            window.open(pdfUrl, '_blank');
+                            
+                            // Crear enlace de descarga temporal
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = pdfUrl;
+                            downloadLink.download = response.pdf_filename || `ticket_${response.order_code}.pdf`;
+                            
+                            // Simular clic para descargar
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                            
                             // Limpiar el objeto URL después de un tiempo
                             setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+                            
+                            // Código comentado para apertura en nueva pestaña (por si se necesita en el futuro)
+                            // window.open(pdfUrl, '_blank');
                         } else {
                             toastr.success(response.message, '¡Éxito!');
                             $('#createOrderModal').modal('hide');
@@ -2564,6 +3097,11 @@
 
                     // Actualizar conteo de órdenes
                     updateOrdersCount();
+                    
+                    // Inicializar colores de los selects después de cargar la tabla
+                    setTimeout(function() {
+                        initializeSelectColors();
+                    }, 100);
                 },
                 error: function (xhr, status, error) {
                     $('#loading-overlay').hide();
@@ -3864,8 +4402,9 @@
             const paymentAmount = $('#complete_payment_amount').val();
             const paymentDate = $('#complete_payment_date').val();
             const cashAccountId = $('#complete_cash_account').val();
+            const completedBy = $('#completed_by').val();
 
-            if (!orderId || !paymentAmount || !paymentDate || !cashAccountId) {
+            if (!orderId || !paymentAmount || !paymentDate || !cashAccountId || !completedBy) {
                 toastr.error('Por favor complete todos los campos obligatorios', 'Error');
                 return;
             }
@@ -3877,12 +4416,12 @@
             }
 
             if (confirm('¿Está seguro de completar la orden?\n\nSe registrará el pago del saldo faltante y se marcará la orden como completada')) {
-                completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId);
+                completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId, completedBy);
             }
         }
 
         // Función para completar orden con pago
-        function completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId) {
+        function completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId, completedBy) {
             // Mostrar loading
             const confirmButton = $('#completeOrderModal .btn-success');
             const originalText = confirmButton.html();
@@ -3909,6 +4448,7 @@
                     'payment_amount': paymentAmount,
                     'payment_date': paymentDate,
                     'cash_account_id': cashAccountId,
+                    'completed_by': completedBy,
                     ...documentData
                 },
                 headers: {
@@ -4015,16 +4555,119 @@
 
         // Función para cargar datos del cliente en el comprobante electrónico
         function loadClientDataForDocument() {
-            const clientDocument = $('#complete_client_document').val();
-            const clientName = $('#complete_client_name').val();
+            // Los campos se mantienen vacíos para permitir búsqueda manual
+            // $('#client_full_name').val('');
+            // $('#document_number').val('');
+        }
 
-            // Cargar nombre del cliente
-            $('#client_full_name').val(clientName);
+        // Función para buscar cliente en el comprobante electrónico
+        function searchClientInElectronicDocument() {
+            const documentType = $('#document_type').val();
+            const documentNumber = $('#document_number').val();
 
-            // Cargar documento del cliente
-            if (clientDocument) {
-                $('#document_number').val(clientDocument);
+            if (!documentType || !documentNumber) {
+                toastr.error('Debe seleccionar el tipo de comprobante y escribir el número de documento', 'Error de validación');
+                return;
             }
+
+            // Determinar el tipo de documento según el tipo de comprobante
+            let apiDocumentType = '';
+            if (documentType === 'B') {
+                // Para boleta, usar DNI (tipo 01)
+                apiDocumentType = '01';
+            } else if (documentType === 'F') {
+                // Para factura, usar RUC (tipo 06)
+                apiDocumentType = '06';
+            }
+
+            // Validar formato del documento antes de consultar
+            if (apiDocumentType === '01' && documentNumber.length !== 8) {
+                toastr.error('El DNI debe tener exactamente 8 dígitos', 'Error de validación');
+                return;
+            } else if (apiDocumentType === '06' && documentNumber.length !== 11) {
+                toastr.error('El RUC debe tener exactamente 11 dígitos', 'Error de validación');
+                return;
+            }
+
+            // Mostrar loading
+            const numberField = $('#document_number');
+            const searchButton = numberField.next('.input-group-append').find('button');
+            const originalButtonContent = searchButton.html();
+            
+            numberField.prop('disabled', true);
+            searchButton.prop('disabled', true);
+            searchButton.html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '{% url "apps.sales:get_api_person" %}',
+                type: 'GET',
+                data: {
+                    'nro_document': documentNumber,
+                    'type': apiDocumentType
+                },
+                success: function (response) {
+                    // Restaurar botón
+                    numberField.prop('disabled', false);
+                    searchButton.prop('disabled', false);
+                    searchButton.html(originalButtonContent);
+
+                    if (response.pk) {
+                        // Cliente encontrado (en BD o API)
+                        if (response.message === 'Cliente encontrado en BD') {
+                            // Cliente ya existe en la base de datos
+                            toastr.info('Cliente encontrado en la base de datos', 'Cliente existente');
+                        } else {
+                            // Cliente encontrado en API externa
+                            toastr.success('Cliente encontrado y registrado automáticamente', '¡Cliente encontrado!');
+                        }
+
+                        // Llenar campos con la información obtenida
+                        $('#client_full_name').val(response.names || '');
+                        $('#client_address').val(response.address || '');
+
+                        // Marcar como válido
+                        numberField.addClass('is-valid');
+                        numberField.removeClass('is-invalid');
+                    } else {
+                        // No se encontró el cliente
+                        toastr.warning('Cliente no encontrado. Complete los datos manualmente.', 'Cliente no encontrado');
+
+                        // Marcar como inválido
+                        numberField.addClass('is-invalid');
+                        numberField.removeClass('is-valid');
+
+                        // Limpiar campos
+                        $('#client_full_name').val('');
+                        $('#client_address').val('');
+                    }
+                },
+                error: function (xhr) {
+                    // Restaurar botón
+                    numberField.prop('disabled', false);
+                    searchButton.prop('disabled', false);
+                    searchButton.html(originalButtonContent);
+
+                    let errorMessage = 'Error al consultar el documento';
+
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error interno del servidor';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Servicio no disponible';
+                    }
+
+                    toastr.error(errorMessage, 'Error en la consulta');
+
+                    // Marcar como inválido
+                    numberField.addClass('is-invalid');
+                    numberField.removeClass('is-valid');
+
+                    // Limpiar campos
+                    $('#client_full_name').val('');
+                    $('#client_address').val('');
+                }
+            });
         }
 
         // Función para actualizar campos según el tipo de comprobante
@@ -4082,11 +4725,55 @@
          * @param {number} orderId - ID de la orden
          * @param {string} newDeliveryStatus - Nuevo estado de entrega
          */
-        function updateOrderDeliveryStatus(orderId, newDeliveryStatus) {
-            // Obtener el select de entrega y el select de estado
+        // Manejo centralizado: funciona con selects existentes y futuros (DOM dinámico)
+        document.addEventListener('change', function (e) {
+            const el = e.target;
+
+            // Solo si es un delivery-select
+            if (!el.classList || !el.classList.contains('delivery-select')) return;
+            if (el.disabled) return;
+
+            const orderId = el.getAttribute('data-order-id');
+            const originalValue = el.getAttribute('data-original-value');
+            const newDeliveryStatus = el.value;
+            console.log("orderId",orderId)
+            console.log("originalValue",originalValue)
+            console.log("newDeliveryStatus",newDeliveryStatus)
+
+            // Si no hubo cambio real, salir
+            if (newDeliveryStatus === originalValue) return;
+
+            // Seleccion relacionado por order-id
+            const statusSelect = document.querySelector(`select.status-select[data-order-id="${orderId}"]`);
+
+            // Regla: no permitir ENTREGADO si status está en P o A
+            if (newDeliveryStatus === 'E' && statusSelect && ['P', 'A'].includes(statusSelect.value)) {
+                showToast('warning', 'No se puede marcar como ENTREGADO una orden que está PENDIENTE o ANULADA. Primero debe completar la orden.');
+                el.value = originalValue; // revertir visualmente
+                // Revertir también los estilos visuales
+                updateDeliverySelectStyles(el, originalValue);
+                return;
+            }
+
+            // Abrir tu modal/flujo de confirmación
+            openDeliveryStatusModal(orderId, newDeliveryStatus);
+
+            // Mantener valor original hasta confirmar en el modal
+            el.value = originalValue;
+        });
+
+        /*function updateOrderDeliveryStatus(orderId, newDeliveryStatus) {
             const deliverySelect = document.querySelector(`select.delivery-select[data-order-id="${orderId}"]`);
             const statusSelect = document.querySelector(`select.status-select[data-order-id="${orderId}"]`);
-            const originalValue = deliverySelect.value;
+            const originalValue = deliverySelect.dataset.originalValue;
+
+            console.log("deliverySelect", deliverySelect)
+            console.log("statusSelect", statusSelect)
+            console.log("originalValue", originalValue)
+            // Si no hay cambio de estado, no hacer nada
+            if (newDeliveryStatus === originalValue) {
+                return;
+            }
 
             // Validación del lado del cliente: No permitir ENTREGADO si el status es PENDIENTE o ANULADO
             if (newDeliveryStatus === 'E' && statusSelect && statusSelect.value in ['P', 'A']) {
@@ -4095,55 +4782,90 @@
                 return;
             }
 
-            // Deshabilitar el select mientras se procesa
-            deliverySelect.disabled = true;
+            // Abrir modal para cambiar estado de entrega
+            openDeliveryStatusModal(orderId, newDeliveryStatus);
 
-            // Realizar la petición AJAX
-            fetch('/sales/orders/update-delivery-status/', {
-                method: 'POST',
+            // Restaurar valor original en el select
+            deliverySelect.value = originalValue;
+        }*/
+
+        /**
+         * Función para abrir el modal de cambio de estado de entrega
+         * @param {number} orderId - ID de la orden
+         * @param {string} newDeliveryStatus - Nuevo estado de entrega
+         */
+        function openDeliveryStatusModal(orderId, newDeliveryStatus) {
+            // Obtener información de la orden desde la tabla
+            const orderRow = $(`#tbody-grid tr[order="${orderId}"]`);
+            if (orderRow.length === 0) {
+                toastr.error('No se pudo encontrar la información de la orden');
+                return;
+            }
+            const orderCode = orderRow.find('td').eq(2).find('span').text().trim();
+            const clientName = orderRow.find('td').eq(3).find('strong').text().trim();
+            const currentDeliveryStatus = orderRow.find('.delivery-select option:selected').text().trim();
+
+            /*console.log('Datos de la orden:', {
+                orderId: orderId,
+                orderCode: orderCode,
+                clientName: clientName,
+                currentDeliveryStatus: currentDeliveryStatus
+            });*/
+
+            // Llenar el modal con los datos
+            $('#orderDeliveryStatusId').val(orderId);
+            $('#orderDeliveryCode').val(orderCode);
+            $('#deliveryClientName').val(clientName);
+            $('#currentDeliveryStatus').val(currentDeliveryStatus);
+            $('#newDeliveryStatus').val(newDeliveryStatus || '');
+            $('#deliveredBy').val('');
+
+            // Mostrar el modal
+            $('#orderDeliveryStatusModal').modal('show');
+        }
+
+        /**
+         * Función para guardar el cambio de estado de entrega
+         * @param {number} orderId - ID de la orden
+         */
+        function saveDeliveryStatusChange(orderId) {
+            const form = $('#orderDeliveryStatusForm');
+            const formData = form.serialize();
+
+            // Validar que se haya seleccionado un estado
+            if (!$('#newDeliveryStatus').val()) {
+                toastr.error('Debe seleccionar un nuevo estado de entrega');
+                return;
+            }
+
+            // Validar que se haya seleccionado un empleado
+            if (!$('#deliveredBy').val()) {
+                toastr.error('Debe seleccionar un empleado');
+                return;
+            }
+
+            $.ajax({
+                url: '/sales/orders/update-delivery-status/',
+                type: 'POST',
+                data: formData,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: `order_id=${orderId}&delivery_status=${newDeliveryStatus}`
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Actualizar el atributo data-delivery-status
-                        deliverySelect.setAttribute('data-delivery-status', newDeliveryStatus);
-
-                        // Aplicar estilos visuales según el nuevo estado
-                        updateDeliverySelectStyles(deliverySelect, newDeliveryStatus);
-
-                        // Si el estado es ENTREGADO o CANCELADO, deshabilitar el select
-                        if (newDeliveryStatus === 'E' || newDeliveryStatus === 'C') {
-                            deliverySelect.disabled = true;
-                        }
-
-                        // Mostrar mensaje de éxito
-                        showToast('success', data.message);
-
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#orderDeliveryStatusModal').modal('hide');
+                        // Recargar la tabla de órdenes
+                        loadOrders();
                     } else {
-                        // Restaurar el valor original en caso de error
-                        deliverySelect.value = originalValue;
-                        deliverySelect.disabled = false;
-
-                        // Mostrar mensaje de error o advertencia
-                        if (data.validation_error) {
-                            showToast('warning', data.message);
-                        } else {
-                            showToast('error', data.message || 'Error al actualizar el estado de entrega');
-                        }
+                        toastr.error(response.message);
                     }
-                })
-                .catch(error => {
+                },
+                error: function (xhr, status, error) {
+                    toastr.error('Error al actualizar el estado de entrega');
                     console.error('Error:', error);
-                    // Restaurar el valor original en caso de error
-                    deliverySelect.value = originalValue;
-                    deliverySelect.disabled = false;
-                    showToast('error', 'Error de conexión al actualizar el estado de entrega');
-                });
+                }
+            });
         }
 
         /**
@@ -4237,6 +4959,49 @@
                 updateDeliverySelectStyles(select, currentStatus);
             });
         }
+
+
+        $(document).on('click', '#saveOrderDeliveryStatus', function () {
+            var form = $('#orderDeliveryStatusForm');
+            var formData = form.serialize();
+
+            // Validar que se haya seleccionado un estado
+            if (!$('#newDeliveryStatus').val()) {
+                toastr.error('Debe seleccionar un nuevo estado de entrega');
+                return;
+            }
+
+            // Validar que se haya seleccionado un empleado
+            if (!$('#deliveredBy').val()) {
+                toastr.error('Debe seleccionar un empleado');
+                return;
+            }
+
+            $.ajax({
+                url: '/sales/orders/update-delivery-status/',
+                type: 'POST',
+                data: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#orderDeliveryStatusModal').modal('hide');
+                        // Recargar la tabla de órdenes
+                        loadOrders();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    toastr.error('Error al actualizar el estado de entrega');
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+
     </script>
 
     <style>
@@ -6694,6 +7459,200 @@
             }
         }
     </style>
+
+    <script>
+        // =============================================================================
+        // FUNCIONES PARA CONVERTIR ÓRDENES A ÓRDENES DE SERVICIO
+        // =============================================================================
+
+        /**
+         * Función para abrir el modal de conversión de orden
+         * @param {number} orderId - ID de la orden a convertir
+         */
+        function openConvertOrderModal(orderId) {
+            // Limpiar formulario
+            $('#convert-order-form')[0].reset();
+            $('#convert_order_id').val(orderId);
+            
+            // Obtener datos de la orden
+            $.ajax({
+                url: '{% url "apps.sales:get_order_for_conversion" %}',
+                type: 'GET',
+                data: {
+                    'order_id': orderId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const order = response.order;
+                        
+                        // Llenar información de la orden actual
+                        $('#convert_current_code').val(order.code);
+                        $('#convert_client_name').val(order.client_name);
+                        $('#convert_register_date').val(order.register_date);
+                        $('#convert_current_total').val('S/ ' + order.total.toFixed(2));
+                        
+                        // Llenar configuración de la nueva orden
+                        $('#convert_register_date_new').val(order.register_date);
+                        $('#convert_delivery_date').val(order.delivery_date);
+                        $('#convert_way_to_pay').val(order.way_to_pay);
+                        $('#convert_cash_advance').val(order.cash_advance);
+                        $('#convert_observation').val(order.observation);
+                        
+                        // Seleccionar sucursal si existe
+                        if (order.subsidiary_id) {
+                            $('#convert_subsidiary_id').val(order.subsidiary_id);
+                            updateConvertCorrelative();
+                        }
+                        
+                        // Cargar productos/servicios
+                        loadConvertOrderDetails(order.details);
+                        
+                        // Mostrar modal
+                        $('#convertOrderModal').modal('show');
+                    } else {
+                        showToast('error', response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al obtener datos de la orden:', error);
+                    showToast('error', 'Error al cargar los datos de la orden');
+                }
+            });
+        }
+
+        /**
+         * Función para actualizar el correlativo cuando se selecciona una sucursal
+         */
+        function updateConvertCorrelative() {
+            const subsidiaryId = $('#convert_subsidiary_id').val();
+            
+            if (subsidiaryId) {
+                const selectedOption = $('#convert_subsidiary_id option:selected');
+                const serial = selectedOption.data('serial');
+                
+                $('#convert_serial').val(serial);
+                
+                // Obtener correlativo para orden de servicio
+                $.ajax({
+                    url: '{% url "apps.sales:get_correlative_order" %}',
+                    type: 'GET',
+                    data: {
+                        'doc_type': 'O',
+                        'subsidiary_id': subsidiaryId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#convert_correlative').val(response.correlative);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error al obtener correlativo:', error);
+                    }
+                });
+            } else {
+                $('#convert_serial').val('');
+                $('#convert_correlative').val('');
+            }
+        }
+
+        /**
+         * Función para cargar los detalles de la orden en la tabla
+         * @param {Array} details - Array de detalles de la orden
+         */
+        function loadConvertOrderDetails(details) {
+            const tbody = $('#convert-products-tbody');
+            tbody.empty();
+            
+            let subtotal = 0;
+            
+            details.forEach((detail, index) => {
+                const row = `
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${detail.product_name}</td>
+                        <td class="text-center">${detail.quantity}</td>
+                        <td class="text-right">S/ ${detail.price_unit.toFixed(2)}</td>
+                        <td class="text-right">S/ ${detail.total.toFixed(2)}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+                subtotal += detail.total;
+            });
+            
+            // Calcular totales
+            const igv = subtotal * 0.18;
+            const total = subtotal;
+            
+            $('#convert-subtotal').text('S/ ' + (subtotal / 1.18).toFixed(2));
+            $('#convert-igv').text('S/ ' + igv.toFixed(2));
+            $('#convert-total').text('S/ ' + total.toFixed(2));
+        }
+
+        /**
+         * Función para convertir la orden a orden de servicio
+         */
+        function convertToServiceOrder() {
+            // Validar formulario
+            const form = $('#convert-order-form')[0];
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Mostrar confirmación
+            Swal.fire({
+                title: '¿Confirmar conversión?',
+                text: '¿Está seguro que desea convertir esta cotización a Orden de Servicio?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, convertir',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Enviar datos
+                    const formData = new FormData($('#convert-order-form')[0]);
+                    
+                    $.ajax({
+                        url: '{% url "apps.sales:convert_order_to_service" %}',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            if (response.success) {
+                                showToast('success', response.message);
+                                $('#convertOrderModal').modal('hide');
+                                
+                                // Recargar la lista de órdenes
+                                loadOrders();
+                                
+                                // Mostrar mensaje de éxito con el nuevo código
+                                Swal.fire({
+                                    title: '¡Conversión exitosa!',
+                                    text: `La orden ha sido convertida exitosamente. Nuevo código: ${response.new_code}`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#28a745'
+                                });
+                            } else {
+                                showToast('error', response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error al convertir orden:', error);
+                            showToast('error', 'Error al convertir la orden');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Event listener para el cambio de sucursal en el modal de conversión
+        $(document).on('change', '#convert_subsidiary_id', function() {
+            updateConvertCorrelative();
+        });
+    </script>
 
 
 {% endblock extrajs %}

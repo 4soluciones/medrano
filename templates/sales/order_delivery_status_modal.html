@@ -1,0 +1,117 @@
+<div class="modal fade" id="orderDeliveryStatusModal" tabindex="-1" role="dialog" aria-labelledby="orderDeliveryStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDeliveryStatusModalLabel">Cambiar Estado de Entrega</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="orderDeliveryStatusForm">
+                    <input type="hidden" id="orderDeliveryStatusId" name="order_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="orderDeliveryCode">Código de Orden:</label>
+                                <input type="text" class="form-control" id="orderDeliveryCode" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="deliveryClientName">Cliente:</label>
+                                <input type="text" class="form-control" id="deliveryClientName" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="currentDeliveryStatus">Estado de Entrega Actual:</label>
+                                <input type="text" class="form-control" id="currentDeliveryStatus" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="newDeliveryStatus">Nuevo Estado de Entrega: <span class="text-danger">*</span></label>
+                                <select class="form-control" id="newDeliveryStatus" name="delivery_status" required>
+                                    <option value="">Seleccionar estado...</option>
+                                    <option value="P">PENDIENTE</option>
+                                    <option value="E">ENTREGADO</option>
+                                    <option value="C">CANCELADO</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="deliveredBy">Entregado por: <span class="text-danger">*</span></label>
+                                <select class="form-control" id="deliveredBy" name="delivered_by" required>
+                                    <option value="">Seleccionar empleado...</option>
+                                    {% for user in user_set %}
+                                        <option value="{{ user.id }}" {% if user.id == request.user.id %}selected{% endif %}>
+                                            {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveOrderDeliveryStatus">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Guardar cambios de estado de entrega
+    $('#saveOrderDeliveryStatus').click(function() {
+        var form = $('#orderDeliveryStatusForm');
+        var formData = form.serialize();
+        
+        // Validar que se haya seleccionado un estado
+        if (!$('#newDeliveryStatus').val()) {
+            toastr.error('Debe seleccionar un nuevo estado de entrega');
+            return;
+        }
+        
+        // Validar que se haya seleccionado un empleado
+        if (!$('#deliveredBy').val()) {
+            toastr.error('Debe seleccionar un empleado');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "sales:update_order_delivery_status" %}',
+            type: 'POST',
+            data: formData,
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#orderDeliveryStatusModal').modal('hide');
+                    // Recargar la tabla de órdenes
+                    loadOrders();
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                toastr.error('Error al actualizar el estado de entrega');
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>

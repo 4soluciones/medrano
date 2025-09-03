@@ -340,128 +340,25 @@ def get_correlative_order_by_subsidiary(subsidiary_obj=None, type_document=None)
     return result
 
 
-def save_order(request):
-    if request.method == 'GET':
-        order_json = request.GET.get('order', '')
-        order_data = json.loads(order_json)
-        # QUOTATION
-        order_quotation_obj = None
-        order_id = order_data["Order"]
-        if order_id:
-            order_quotation_obj = Order.objects.get(id=int(order_id))
-        # QUOTATION
-        # code = order_data["code"]
-        user = int(order_data["employee"])
-        type_order = str(order_data["type_order"])
-        way_to_pay = str(order_data["way_to_pay"])
-        register_date = order_data["register_date"]
-        district = str(order_data["district"])
-        type_plan = order_data["id_type_plan"]
-        type_construction = str(order_data["id_type_construction_site"])
-        type_file_site = str(order_data["type_file_site"])
-        land_area = order_data["land_area"]
-        covered_area_level = order_data["covered_area_level"]
-        nro_level_design = order_data["nro_level_design"]
-        nro_level_different = order_data["nro_level_different"]
-        total_area = order_data["total_area"]
-        coin = str(order_data["coin"])
-        subsidiary = str(order_data["subsidiary"])
-        subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary))
-        correlative = get_correlative_order_by_subsidiary(subsidiary_obj=subsidiary_obj, type_document=type_order)
-        code = 'PY-' + str(correlative) + '-2023-' + str(subsidiary_obj.serial)
-        sum_amount_direct = decimal.Decimal(order_data["sum_amount_direct"])
-        discount = decimal.Decimal(order_data["discount"])
-        igv = decimal.Decimal(order_data["igv"])
-        sum_amount_static = decimal.Decimal(order_data["sum_amount_static"])
-        sum_discount_input = decimal.Decimal(order_data["sum_discount_input"])
-        # sum_amount_without_igv = decimal.Decimal(order_data["sum_amount_without_igv"])
-        sum_total_input = decimal.Decimal(order_data["sum_total_input"])
-
-        client_id = order_data["client_id"]
-
-        user_obj = CustomUser.objects.get(id=user)
-        # type_file_obj = TypeFile.objects.get(id=type_file_site)
-
-        client_obj = None
-        if client_id:
-            client_set = Person.objects.filter(id=int(client_id))
-            if client_set.exists():
-                client_obj = client_set.last()
-            else:
-                client_name = str(order_data["client_name"])
-                client_document_type = str(order_data["client_document_type"])
-                client_document_number = str(order_data["client_document_number"])
-                client_phone = str(order_data["client_phone"])
-                client_email = str(order_data["client_email"])
-
-                client_obj = Person(
-                    type='C',
-                    document=client_document_type,
-                    number=client_document_number,
-                    full_name=client_name,
-                    phone1=client_phone,
-                    email=client_email
-                )
-                client_obj.save()
-
-        order_obj = Order(
-            code=code,
-            type=type_order,
-            client=client_obj,
-            register_date=register_date,
-            user=user_obj,
-            coin=coin,
-            correlative=correlative,
-            subsidiary=subsidiary_obj,
-            way_to_pay=way_to_pay,
-            district=district,
-            type_plan=type_plan,
-            type_construction_site=type_construction,
-            # type_file=type_file_obj,
-            type_projects=type_file_site,
-            land_area=land_area,
-            covered_area_level=covered_area_level,
-            nro_level_design=nro_level_design,
-            nro_level_different=nro_level_different,
-            total_area=total_area,
-            discount=discount,
-            subtotal=sum_amount_direct,
-            igv=igv,
-            total=sum_total_input,
-            quotation=order_quotation_obj,
-            total_without_discount=sum_amount_static
-        )
-        order_obj.save()
-
-        for d in order_data['Details']:
-            specialty_id = int(d['specialty_id'])
-            group_id = int(d['group_id'])
-            element_id = int(d['element_id'])
-            code = str(d['code'])
-            check = str(d['check'])
-            quantity = decimal.Decimal(d['quantity'])
-            price_unit = decimal.Decimal(d['price'])
-            amount = str(d['amount'])
-            include = False
-            if check == '1':
-                include = True
-
-            order_detail_obj = OrderDetail(
-                code=code,
-                quantity=quantity,
-                include=include,
-                price_unit=price_unit,
-                order=order_obj
-            )
-            order_detail_obj.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': order_obj.get_type_display().upper() + 'REGISTRADA CORRECTAMENTE',
-            'orderID': order_obj.id,
-            'typeOrder': order_obj.type,
-        }, status=HTTPStatus.OK)
-    return JsonResponse({'message': 'Error de peticion.'}, status=HTTPStatus.BAD_REQUEST)
+def get_last_correlative_by_order_type(order_type=None, subsidiary_obj=None):
+    """
+    Obtiene el último correlativo filtrado por tipo de orden y sucursal
+    """
+    if not order_type:
+        return None
+    
+    # Filtrar órdenes por tipo y sucursal
+    orders = Order.objects.filter(type=order_type)
+    if subsidiary_obj:
+        orders = orders.filter(subsidiary=subsidiary_obj)
+    
+    # Obtener la última orden ordenada por correlativo descendente
+    last_order = orders.order_by('-correlative').first()
+    
+    if last_order and last_order.correlative:
+        return last_order.correlative + 1
+    else:
+        return 1
 
 
 def order_client(request):
@@ -954,7 +851,7 @@ def order_list(request):
     """Vista principal del listado de órdenes"""
     if request.method == 'GET':
         subsidiary_set = Subsidiary.objects.all()
-        user_set = CustomUser.objects.filter(is_staff=False)
+        user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
         client_set = Person.objects.filter(type='C')
         # Usar zona horaria de Perú (GMT-5)
         peru_tz = pytz.timezone('America/Lima')
@@ -962,10 +859,14 @@ def order_list(request):
         date_now = my_date.strftime("%Y-%m-%d")
         product_set = Product.objects.filter(is_enabled=True).select_related('product_category')
         
-        # Obtener cuentas de caja para los modales
+        # Obtener cuentas de caja para los modales (solo de la sucursal del usuario)
         try:
             from apps.accounting.models import Cash
-            cash_accounts = Cash.objects.all().select_related('subsidiary')
+            if request.user.subsidiary:
+                cash_accounts = Cash.objects.filter(subsidiary=request.user.subsidiary).select_related('subsidiary')
+            else:
+                # Si el usuario no tiene sucursal asignada, mostrar todas las cuentas
+                cash_accounts = Cash.objects.all().select_related('subsidiary')
         except ImportError:
             cash_accounts = []
         
@@ -1015,7 +916,7 @@ def order_list(request):
                 if date_to:
                     orders = orders.filter(register_date__lte=date_to).order_by('id')
 
-            orders = orders.select_related('client', 'user', 'subsidiary').prefetch_related('orderdetail_set')
+            orders = orders.select_related('client', 'user', 'subsidiary', 'completed_by', 'delivered_by').prefetch_related('orderdetail_set')
 
             # Crear diccionario con cálculos de saldo para cada orden
             order_dict = []
@@ -1051,6 +952,12 @@ def order_list(request):
                     'cash_pay': str(round(order.cash_pay, 2)),
                     'total': str(round(order.total, 2)),
                     'cash_advance': str(round(order.cash_advance, 2)),
+                    # Información de completado
+                    'completed_by': order.completed_by.first_name + ' ' + order.completed_by.last_name if order.completed_by else None,
+                    'completed_at': order.completed_at,
+                    # Información de entrega
+                    'delivered_by': order.delivered_by.first_name + ' ' + order.delivered_by.last_name if order.delivered_by else None,
+                    'delivered_at': order.delivered_at,
                     # 'is_paid': order.cash_pay >= order.total if order.cash_pay > 0 else False,
                     # 'has_advance': order.cash_advance > 0,
                     # 'payment_status': 'PAID' if order.cash_pay >= order.total else 'PARTIAL' if order.cash_pay > 0 else 'PENDING'
@@ -1129,9 +1036,11 @@ def order_save(request):
             user_obj = CustomUser.objects.get(id=int(user_id))
             subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
             
-            # Generar código único
-            correlative = get_correlative_order_by_subsidiary(subsidiary_obj, order_type)
-            code = f'{subsidiary_obj.serial}-{str(correlative).zfill(3)}'
+            # Obtener el último correlativo filtrado por tipo de orden
+            last_correlative = get_last_correlative_by_order_type(order_type, subsidiary_obj)
+            
+            # correlative = get_correlative_order_by_subsidiary(subsidiary_obj, order_type)
+            code = f'0{subsidiary_obj.serial}-{str(last_correlative).zfill(4)}'
             
             # Verificar si el adelanto es igual al total para marcar como completado
             cash_advance_decimal = decimal.Decimal(str(cash_advance)) if cash_advance else decimal.Decimal('0.00')
@@ -1139,8 +1048,8 @@ def order_save(request):
             # Crear la orden
             order_obj = Order(
                 code=code,
-                serial=subsidiary_obj.serial,
-                correlative=correlative,
+                serial=f'0{subsidiary_obj.serial}',
+                correlative=last_correlative,
                 type=order_type,
                 client=client_obj,
                 user=user_obj,
@@ -1219,38 +1128,42 @@ def order_save(request):
                             # Fallback a fecha actual si hay error
                             from datetime import datetime
                             date_str = datetime.now().strftime('%Y-%m-%d')
-                    
-                    pdf_filename = f"ticket_{order_obj.code}_{date_str}.pdf"
+
+                    order_type = 'Order' if order_obj.type == 'O' else 'Cotizacion'
+
+                    pdf_filename = f"{order_type}_{order_obj.code}.pdf"
                     
                     # Convertir el contenido del PDF a base64 para enviarlo en la respuesta
                     import base64
                     pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
                     
-                    print(f"PDF generado exitosamente: {pdf_filename}")
-                    
+
                     return JsonResponse({
                         'success': True,
                         'message': f'{order_obj.get_type_display()} registrada correctamente',
                         'order_id': order_obj.id,
                         'order_code': order_obj.code,
+                        'last_correlative': last_correlative,
                         'pdf_content': pdf_base64,
                         'pdf_filename': pdf_filename
                     }, status=HTTPStatus.OK)
                 else:
-                    print("Error: No se pudo generar el PDF del ticket")
+
                     return JsonResponse({
                         'success': True,
                         'message': f'{order_obj.get_type_display()} registrada correctamente',
                         'order_id': order_obj.id,
-                        'order_code': order_obj.code
+                        'order_code': order_obj.code,
+                        'last_correlative': last_correlative
                     }, status=HTTPStatus.OK)
             except Exception as e:
-                print(f"Error generando PDF del ticket: {str(e)}")
+
                 return JsonResponse({
                     'success': True,
                     'message': f'{order_obj.get_type_display()} registrada correctamente',
                     'order_id': order_obj.id,
-                    'order_code': order_obj.code
+                    'order_code': order_obj.code,
+                    'last_correlative': last_correlative
                 }, status=HTTPStatus.OK)
             
         except Exception as e:
@@ -1260,31 +1173,6 @@ def order_save(request):
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
     
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
-
-
-def order_edit(request, order_id):
-    """Vista para editar orden existente"""
-    try:
-        order_obj = Order.objects.select_related(
-            'client', 'user', 'subsidiary'
-        ).prefetch_related('orderdetail_set__product').get(id=order_id)
-        
-        subsidiary_set = Subsidiary.objects.all()
-        user_set = CustomUser.objects.filter(is_active=True)
-        product_set = Product.objects.filter(is_enabled=True).select_related('product_category')
-        
-        return render(request, 'sales/order_edit.html', {
-            'order': order_obj,
-            'subsidiary_set': subsidiary_set,
-            'user_set': user_set,
-            'product_set': product_set,
-        })
-        
-    except Order.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Orden no encontrada'
-        }, status=HTTPStatus.NOT_FOUND)
 
 
 def get_order_for_edit(request):
@@ -1663,6 +1551,38 @@ def search_clients_autocomplete(request):
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 
+def order_status_modal(request):
+    """Vista para mostrar modal de cambio de estado de orden"""
+    if request.method == 'GET':
+        order_id = request.GET.get('order_id')
+        if order_id:
+            try:
+                order_obj = Order.objects.select_related('client').get(id=int(order_id))
+                user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
+                
+                t = loader.get_template('sales/order_status_modal.html')
+                context = {
+                    'order': order_obj,
+                    'user_set': user_set
+                }
+                
+                return JsonResponse({
+                    'success': True,
+                    'form': t.render(context, request),
+                })
+                
+            except Order.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Orden no encontrada'
+                }, status=HTTPStatus.NOT_FOUND)
+        
+        return JsonResponse({
+            'success': False,
+            'message': 'ID de orden no proporcionado'
+        }, status=HTTPStatus.BAD_REQUEST)
+
+
 @csrf_exempt
 def update_order_status(request):
     """Vista para actualizar el estado de una orden"""
@@ -1670,8 +1590,10 @@ def update_order_status(request):
         try:
             order_id = request.POST.get('order_id')
             new_status = request.POST.get('status')
+            completed_by_id = request.POST.get('completed_by')
+            cancellation_reason = request.POST.get('cancellation_reason', '')
             
-            if not order_id or not new_status:
+            if not order_id or not new_status or not completed_by_id:
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -1685,10 +1607,29 @@ def update_order_status(request):
                     'message': 'Estado no válido'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Obtener y actualizar la orden
+            # Si es anulación, validar que se haya proporcionado el motivo
+            if new_status == 'A' and not cancellation_reason.strip():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe proporcionar el motivo de la anulación'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la orden y el usuario
             order_obj = Order.objects.get(id=int(order_id))
+            completed_by_user = CustomUser.objects.get(id=int(completed_by_id))
+            
             old_status = order_obj.status
             order_obj.status = new_status
+            
+            # Si se está completando la orden, guardar quien la completó y cuándo
+            if new_status == 'C':
+                order_obj.completed_by = completed_by_user
+                order_obj.completed_at = datetime.now()
+            
+            # Si se está anulando, guardar el motivo
+            if new_status == 'A':
+                order_obj.cancellation_reason = cancellation_reason
+            
             order_obj.save()
             
             # Mensaje de confirmación
@@ -1698,9 +1639,13 @@ def update_order_status(request):
                 'A': 'ANULADO'
             }
             
+            message = f'Estado de la orden actualizado de {status_display[old_status]} a {status_display[new_status]}'
+            if new_status == 'C':
+                message += f' por {completed_by_user.first_name} {completed_by_user.last_name}'
+            
             return JsonResponse({
                 'success': True,
-                'message': f'Estado de la orden actualizado de {status_display[old_status]} a {status_display[new_status]}',
+                'message': message,
                 'order_id': order_id,
                 'old_status': old_status,
                 'new_status': new_status
@@ -1710,6 +1655,11 @@ def update_order_status(request):
             return JsonResponse({
                 'success': False,
                 'message': 'Orden no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Usuario no encontrado'
             }, status=HTTPStatus.NOT_FOUND)
         except Exception as e:
             return JsonResponse({
@@ -2031,8 +1981,9 @@ def complete_order_with_payment(request):
             payment_amount = request.POST.get('payment_amount')
             payment_date = request.POST.get('payment_date')
             cash_account_id = request.POST.get('cash_account_id')
+            completed_by_id = request.POST.get('completed_by')
             
-            if not all([order_id, payment_amount, payment_date, cash_account_id]):
+            if not all([order_id, payment_amount, payment_date, cash_account_id, completed_by_id]):
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -2063,6 +2014,15 @@ def complete_order_with_payment(request):
                 return JsonResponse({
                     'success': False,
                     'message': 'Cuenta de caja no encontrada'
+                }, status=HTTPStatus.NOT_FOUND)
+            
+            # Obtener el usuario que completó la orden
+            try:
+                completed_by_user = CustomUser.objects.get(id=int(completed_by_id))
+            except CustomUser.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Usuario no encontrado'
                 }, status=HTTPStatus.NOT_FOUND)
             
             # Calcular el saldo faltante
@@ -2104,11 +2064,13 @@ def complete_order_with_payment(request):
             # Actualizar el estado de la orden a completado
             order.status = 'C'
             order.cash_pay = payment_amount_decimal  # Guardar el monto pagado
+            order.completed_by = completed_by_user  # Guardar quién completó la orden
+            order.completed_at = datetime.now()  # Guardar cuándo se completó
             order.save()
             
             return JsonResponse({
                 'success': True,
-                'message': f'Orden completada exitosamente. Pago de S/ {payment_amount} registrado en {cash_account.name}',
+                'message': f'Orden completada exitosamente por {completed_by_user.first_name} {completed_by_user.last_name}. Pago de S/ {payment_amount} registrado en {cash_account.name}',
                 'order_id': order_id,
                 'cashflow_id': cashflow_entry.id
             }, status=HTTPStatus.OK)
@@ -2234,6 +2196,39 @@ def cancel_order_with_reason(request):
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 
+# Vista comentada - ya no se usa porque el modal está integrado en order_list.html
+# def delivery_status_modal(request):
+#     """Vista para mostrar modal de cambio de estado de entrega de orden"""
+#     if request.method == 'GET':
+#         order_id = request.GET.get('order_id')
+#         if order_id:
+#             try:
+#                 order_obj = Order.objects.select_related('client').get(id=int(order_id))
+#                 user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
+# 
+#                 t = loader.get_template('sales/order_delivery_status_modal.html')
+#                 context = {
+#                     'order': order_obj,
+#                     'user_set': user_set
+#                 }
+# 
+#                 return JsonResponse({
+#                     'success': True,
+#                     'form': t.render(context, request),
+#                 })
+#                 
+#             except Order.DoesNotExist:
+#                 return JsonResponse({
+#                     'success': False,
+#                     'message': 'Orden no encontrada'
+#                 }, status=HTTPStatus.NOT_FOUND)
+#         
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'ID de orden no proporcionado'
+#         }, status=HTTPStatus.BAD_REQUEST)
+
+
 @csrf_exempt
 def update_order_delivery_status(request):
     """Vista para actualizar el estado de entrega de una orden"""
@@ -2241,8 +2236,9 @@ def update_order_delivery_status(request):
         try:
             order_id = request.POST.get('order_id')
             new_delivery_status = request.POST.get('delivery_status')
+            delivered_by_id = request.POST.get('delivered_by')
             
-            if not order_id or not new_delivery_status:
+            if not order_id or not new_delivery_status or not delivered_by_id:
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -2256,8 +2252,9 @@ def update_order_delivery_status(request):
                     'message': 'Estado de entrega no válido'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Obtener la orden
+            # Obtener la orden y el usuario
             order_obj = Order.objects.get(id=int(order_id))
+            delivered_by_user = CustomUser.objects.get(id=int(delivered_by_id))
             old_delivery_status = order_obj.delivery_status
             
             # VALIDACIÓN: No permitir cambiar a ENTREGADO si el status es PENDIENTE o ANULADO
@@ -2273,6 +2270,12 @@ def update_order_delivery_status(request):
             
             # Actualizar el estado de entrega
             order_obj.delivery_status = new_delivery_status
+            
+            # Si se está marcando como entregado, guardar quien lo entregó y cuándo
+            if new_delivery_status == 'E':
+                order_obj.delivered_by = delivered_by_user
+                order_obj.delivered_at = datetime.now()
+            
             order_obj.save()
             
             # Mensaje de confirmación
@@ -2282,9 +2285,13 @@ def update_order_delivery_status(request):
                 'C': 'CANCELADO'
             }
             
+            message = f'Estado de entrega actualizado de {status_display[old_delivery_status]} a {status_display[new_delivery_status]}'
+            if new_delivery_status == 'E':
+                message += f' por {delivered_by_user.first_name} {delivered_by_user.last_name}'
+            
             return JsonResponse({
                 'success': True,
-                'message': f'Estado de entrega actualizado de {status_display[old_delivery_status]} a {status_display[new_delivery_status]}',
+                'message': message,
                 'order_id': order_id,
                 'old_delivery_status': old_delivery_status,
                 'new_delivery_status': new_delivery_status
@@ -2295,6 +2302,11 @@ def update_order_delivery_status(request):
                 'success': False,
                 'message': 'Orden no encontrada'
             }, status=HTTPStatus.NOT_FOUND)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Usuario no encontrado'
+            }, status=HTTPStatus.NOT_FOUND)
         except Exception as e:
             return JsonResponse({
                 'success': False,
@@ -2304,6 +2316,171 @@ def update_order_delivery_status(request):
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 
+def get_order_for_conversion(request):
+    """Vista para obtener los datos de una orden para convertir a orden de servicio"""
+    if request.method == 'GET':
+        try:
+            order_id = request.GET.get('order_id')
+            
+            if not order_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'ID de orden no proporcionado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la orden con sus detalles
+            order_obj = Order.objects.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set').get(id=int(order_id))
+            
+            # Verificar que la orden sea una cotización (type='C')
+            if order_obj.type != 'C':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Solo se pueden convertir cotizaciones a órdenes de servicio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener los detalles de la orden
+            order_details = []
+            for detail in order_obj.orderdetail_set.all():
+                order_details.append({
+                    'id': detail.id,
+                    'product_name': detail.product_name,
+                    'quantity': float(detail.quantity),
+                    'price_unit': float(detail.price_unit),
+                    'total': float(detail.multiply()),
+                    'observation': detail.observation or ''
+                })
+            
+            # Preparar los datos de la orden
+            order_data = {
+                'id': order_obj.id,
+                'code': f"{order_obj.serial}-{order_obj.correlative:03d}",
+                'client_name': str(order_obj.client) if order_obj.client else '',
+                'client_id': order_obj.client.id if order_obj.client else None,
+                'register_date': order_obj.register_date.strftime('%Y-%m-%d') if order_obj.register_date else '',
+                'delivery_date': order_obj.delivery_date.strftime('%Y-%m-%d') if order_obj.delivery_date else '',
+                'subtotal': float(order_obj.subtotal),
+                'igv': float(order_obj.igv),
+                'total': float(order_obj.total),
+                'way_to_pay': order_obj.way_to_pay,
+                'cash_advance': float(order_obj.cash_advance),
+                'observation': order_obj.observation or '',
+                'subsidiary_id': order_obj.subsidiary.id if order_obj.subsidiary else None,
+                'subsidiary_name': str(order_obj.subsidiary) if order_obj.subsidiary else '',
+                'details': order_details
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'order': order_data
+            })
+            
+        except Order.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Orden no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error al obtener los datos de la orden: ' + str(e)
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido'
+    }, status=HTTPStatus.METHOD_NOT_ALLOWED)
+
+
+@csrf_exempt
+def convert_order_to_service(request):
+    """Vista para convertir una cotización a orden de servicio"""
+    if request.method == 'POST':
+        try:
+            order_id = request.POST.get('order_id')
+            subsidiary_id = request.POST.get('subsidiary_id')
+            register_date = request.POST.get('register_date')
+            delivery_date = request.POST.get('delivery_date')
+            way_to_pay = request.POST.get('way_to_pay')
+            cash_advance = request.POST.get('cash_advance', 0)
+            observation = request.POST.get('observation', '')
+            
+            # Validaciones básicas
+            if not order_id or not subsidiary_id or not register_date or not way_to_pay:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Faltan datos obligatorios'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la orden original
+            order_obj = Order.objects.get(id=int(order_id))
+            
+            # Verificar que sea una cotización
+            if order_obj.type != 'C':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Solo se pueden convertir cotizaciones a órdenes de servicio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la sucursal
+            subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
+            
+            # Obtener el correlativo para la nueva orden de servicio
+            correlative = get_correlative_order_by_subsidiary(subsidiary_obj, 'O')
+            
+            # Actualizar la orden existente
+            order_obj.type = 'O'  # Cambiar a Orden de Servicio
+            order_obj.serial = subsidiary_obj.serial
+            order_obj.correlative = correlative
+            order_obj.subsidiary = subsidiary_obj
+            order_obj.register_date = datetime.strptime(register_date, '%Y-%m-%d').date()
+            order_obj.delivery_date = datetime.strptime(delivery_date, '%Y-%m-%d').date() if delivery_date else None
+            order_obj.way_to_pay = way_to_pay
+            order_obj.cash_advance = Decimal(cash_advance) if cash_advance else Decimal('0.00')
+            order_obj.observation = observation
+            order_obj.status = 'P'  # Poner como pendiente
+            order_obj.delivery_status = 'P'  # Poner como pendiente de entrega
+            
+            # Recalcular totales
+            order_obj.calculate_totals()
+            
+            # Guardar los cambios
+            order_obj.save()
+            
+            # Generar el código de la nueva orden
+            new_code = f"{order_obj.serial}-{order_obj.correlative:03d}"
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Orden convertida exitosamente a Orden de Servicio',
+                'new_code': new_code,
+                'order_id': order_obj.id
+            })
+            
+        except Order.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Orden no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Subsidiary.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Sucursal no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except ValueError as e:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error en el formato de fecha: ' + str(e)
+            }, status=HTTPStatus.BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': 'Error al convertir la orden: ' + str(e)
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido'
+    }, status=HTTPStatus.METHOD_NOT_ALLOWED)
 
 
 

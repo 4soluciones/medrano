@@ -226,14 +226,24 @@ def generate_ticket_pdf(order_id):
             fontName='Helvetica-Bold',
             fontSize=8
         ))
+        styles.add(ParagraphStyle(
+            name='TicketSubtitleSmall',
+            alignment=TA_CENTER,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=7
+        ))
         
         # Encabezado del ticket
-        # Logo en la parte superior
+        # Logo en la parte superior - usar logo de la sucursal
         try:
-            logo_path = "static/assets/img/log_medrano_no_bg.png"
+            if order.subsidiary and order.subsidiary.photo:
+                logo_path = order.subsidiary.photo.path
+            else:
+                logo_path = "static/assets/img/log_medrano_no_bg.png"
             logo_img = Image(logo_path)
-            logo_img.drawHeight = 0.6 * inch
-            logo_img.drawWidth = 0.8 * inch
+            logo_img.drawHeight = 1.2 * inch
+            logo_img.drawWidth = 1.4 * inch
             elements.append(logo_img)
             elements.append(Spacer(3, 3))
         except:
@@ -246,20 +256,30 @@ def generate_ticket_pdf(order_id):
             elements.append(Paragraph(order.subsidiary.business_name.upper(), styles['Helvetica_Bold_Center_10']))
         else:
             elements.append(Paragraph("EMPRESA", styles['Helvetica_Bold_Center_10']))
-        elements.append(Spacer(3, 3))
-        
-        # Dirección de la empresa
-        if order.subsidiary and order.subsidiary.address:
-            elements.append(Paragraph(order.subsidiary.address.upper(), styles['TicketSubtitle']))
-        elements.append(Spacer(3, 3))
-        
-        # RUC de la empresa
+        elements.append(Spacer(2, 2))
+
+        # RUC de la empresa (más pequeño)
         if order.subsidiary and order.subsidiary.ruc:
-            elements.append(Paragraph(f"RUC {order.subsidiary.ruc}", styles['TicketSubtitle']))
-        elements.append(Spacer(3, 3))
+            elements.append(Paragraph(f"RUC {order.subsidiary.ruc}", styles['TicketSubtitleSmall']))
+        elements.append(Spacer(1, 1))
+
+        # Razón social (más pequeña)
+        if order.subsidiary and order.subsidiary.name:
+            elements.append(Paragraph(order.subsidiary.representative_name.upper(), styles['TicketSubtitleSmall']))
+        elements.append(Spacer(1, 1))
+        
+        # Dirección de la empresa (más pequeña)
+        if order.subsidiary and order.subsidiary.address:
+            elements.append(Paragraph(order.subsidiary.address.upper(), styles['TicketSubtitleSmall']))
+        elements.append(Spacer(1, 1))
+
+        # Teléfono de la sucursal (más pequeño)
+        if order.subsidiary and order.subsidiary.phone:
+            elements.append(Paragraph(f"TEL: {order.subsidiary.phone}", styles['TicketSubtitleSmall']))
+        elements.append(Spacer(2, 2))
         
         # Título del documento
-        elements.append(Paragraph("TICKET DE ORDEN", styles['TicketHeader']))
+        elements.append(Paragraph(order.get_type_display(), styles['TicketHeader']))
         elements.append(Spacer(3, 3))
         
         # Número del documento (serie-correlativo)
@@ -273,10 +293,13 @@ def generate_ticket_pdf(order_id):
         # Información del cliente
         elements.append(Paragraph("CLIENTE", styles['Helvetica_Bold_Left_8']))
         if order.client:
-            if order.client.document == '01':
-                elements.append(Paragraph(f"DNI: {order.client.number}", styles['Helvetica_Left_8']))
+            if order.client.number and order.client.number.strip():
+                if order.client.document == '01':
+                    elements.append(Paragraph(f"DNI: {order.client.number}", styles['Helvetica_Left_8']))
+                else:
+                    elements.append(Paragraph(f"RUC: {order.client.number}", styles['Helvetica_Left_8']))
             else:
-                elements.append(Paragraph(f"RUC: {order.client.number}", styles['Helvetica_Left_8']))
+                elements.append(Paragraph("SIN DOCUMENTO", styles['Helvetica_Left_8']))
             elements.append(Paragraph(order.client.full_name.upper(), styles['Helvetica_Left_8']))
         elements.append(Spacer(1, 1))
         
@@ -340,8 +363,8 @@ def generate_ticket_pdf(order_id):
             Paragraph(f"S/ {order.total:.2f}", styles['Helvetica_Right_8'])
         ])
         
-        # Agregar adelanto si existe
-        if hasattr(order, 'cash_advance') and order.cash_advance and order.cash_advance > 0:
+        # Solo mostrar adelanto y faltante para órdenes de servicio (tipo 'O')
+        if order.type == 'O' and hasattr(order, 'cash_advance') and order.cash_advance and order.cash_advance > 0:
             totales_data.append([
                 Paragraph("ADELANTO:", styles['Helvetica_Bold_Right_8']),
                 Paragraph(f"S/ {order.cash_advance:.2f}", styles['Helvetica_Right_8'])
@@ -389,8 +412,9 @@ def generate_ticket_pdf(order_id):
         elements.append(Spacer(3, 3))
         
         # Pie de página centrado
-        elements.append(Paragraph("Conserve el Ticket para el recojo de su orden", styles['Helvetica_Bold_Center_8']))
-        elements.append(Paragraph("**No es un comprante tributario**", styles['Helvetica_Bold_Center_6']))
+        if order.type == 'O':
+            elements.append(Paragraph("Conserve el Ticket para el recojo de su orden", styles['Helvetica_Bold_Center_8']))
+        elements.append(Paragraph("**Este documento no tiene validez fiscal, puede ser cambiada por una boleta o factura**", styles['Helvetica_Bold_Center_6']))
 
         # Construir el PDF
         doc.build(elements)
@@ -423,7 +447,12 @@ def download_ticket_pdf(request, order_id):
         if pdf_content:
             # Crear respuesta HTTP con el PDF
             response = HttpResponse(pdf_content, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="ticket_{order.code}.pdf"'
+            # Forzar descarga automática del PDF
+            if order.type == 'O':
+                order_type = 'Order'
+            else:
+                order_type = 'Cotizacion'
+            response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)

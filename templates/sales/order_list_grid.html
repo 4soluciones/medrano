@@ -21,7 +21,7 @@
                 <th style="width: 5%; font-size: 10px">Acciones</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="tbody-grid">
             {% for order in order_dict %}
                 <tr order="{{ order.id }}">
                     <td class="text-center align-items-center">{{ forloop.counter }}</td>
@@ -48,7 +48,7 @@
                             <small class="text-muted">{{ order.type_order_display }}</small>
                         {% endif %}
                         <span class="badge badge-success">
-                            {{ order.serial }}-{{ order.correlative|stringformat:"03d" }}
+                            {{ order.serial }}-{{ order.correlative|stringformat:"04d" }}
                         </span>
                     </td>
                     <td>
@@ -125,15 +125,22 @@
                                     <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
                                     <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>
                                 </select>
+                                {% if order.status == 'C' and order.completed_by and order.completed_at %}
+                                    
+                                    <small class="text-muted mt-1" style="font-size: 0.7em">
+                                        <i class="fas fa-user-check mr-1"></i>{{ order.completed_by }}<br>
+                                        <i class="fas fa-calendar mr-1"></i>{{ order.completed_at|date:"d/m/Y H:i" }}
+                                    </small>
+
+                                {% endif %}
                             </div>
                         </td>
                         <td class="text-center">
                         <div class="d-flex flex-column align-items-center">
                             <select class="form-control form-control-sm delivery-select mb-1"
                                     data-order-id="{{ order.id }}"
-                                    data-delivery-status="{{ order.delivery_status }}"
-                                    onchange="updateOrderDeliveryStatus({{ order.id }}, this.value)"
-                                    {% if order.delivery_status == 'E' or order.delivery_status == 'C' %}disabled{% endif %}>
+                                    data-original-value="{{ order.delivery_status }}"
+                            >
                                 <option value="P" {% if order.delivery_status == 'P' %}selected{% endif %}>PENDIENTE
                                 </option>
                                 <option value="E" {% if order.delivery_status == 'E' %}selected{% endif %}>ENTREGADO
@@ -141,11 +148,30 @@
                                 <option value="C" {% if order.delivery_status == 'C' %}selected{% endif %}>CANCELADO
                                 </option>
                             </select>
+                            {% if order.delivery_status == 'E' and order.delivered_by and order.delivered_at %}
+                                <small class="text-muted mt-1" style="font-size: 0.7em">
+                                    <i class="fas fa-truck mr-1"></i>{{ order.delivered_by }}<br>
+                                    <i class="fas fa-calendar mr-1"></i>{{ order.delivered_at|date:"d/m/Y H:i" }}
+                                </small>
+                            {% endif %}
+{#                            <select class="form-control form-control-sm delivery-select mb-1"#}
+{#                                    data-order-id="{{ order.id }}"#}
+{#                                    data-delivery-status="{{ order.delivery_status }}"#}
+{#                                    onchange="updateOrderDeliveryStatus({{ order.id }}, this.value)"#}
+{#                                    {% if order.delivery_status == 'E' or order.delivery_status == 'C' %}disabled{% endif %}>#}
+{#                                <option value="P" {% if order.delivery_status == 'P' %}selected{% endif %}>PENDIENTE#}
+{#                                </option>#}
+{#                                <option value="E" {% if order.delivery_status == 'E' %}selected{% endif %}>ENTREGADO#}
+{#                                </option>#}
+{#                                <option value="C" {% if order.delivery_status == 'C' %}selected{% endif %}>CANCELADO#}
+{#                                </option>#}
+{#                            </select>#}
                         </div>
                     </td>
                     {% else %}
                         <td class="text-center" colspan="2">
-                            <button type="button" class="btn btn-success btn-sm">Convertir a Orden
+                            <button type="button" class="btn btn-success btn-sm" onclick="openConvertOrderModal({{ order.id }})">
+                                <i class="fas fa-exchange-alt mr-1"></i>Convertir a Orden
                             </button>
                         </td>
                     {% endif %}
@@ -521,9 +547,81 @@
         min-width: 140px;
     }
 
+    /* Estilos para el select de estado de entrega */
+    .delivery-select {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        border: 2px solid #ced4da;
+        background-color: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-width: 120px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .delivery-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+
+    .delivery-select:disabled {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.8;
+        border-color: #ced4da;
+    }
+
+    /* Estilos específicos para cada estado de entrega */
+    .delivery-select option[value="P"] {
+        color: #856404;
+        background-color: #fff3cd;
+        font-weight: 600;
+    }
+
+    .delivery-select option[value="E"] {
+        color: #155724;
+        background-color: #d4edda;
+        font-weight: 600;
+    }
+
+    .delivery-select option[value="C"] {
+        color: #721c24;
+        background-color: #f8d7da;
+        font-weight: 600;
+    }
+
+    /* Indicadores visuales para cada estado de entrega */
+    .delivery-select[data-delivery-status="P"] {
+        border-color: #ffc107;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .delivery-select[data-delivery-status="E"] {
+        border-color: #28a745;
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .delivery-select[data-delivery-status="C"] {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Hover effects para delivery-select */
+    .delivery-select:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
     /* Responsive para el select de estado */
     @media (max-width: 768px) {
-        .status-select {
+        .status-select, .delivery-select {
             font-size: 0.7rem;
             padding: 0.2rem 0.4rem;
             min-width: 100px;

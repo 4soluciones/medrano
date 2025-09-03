@@ -1,0 +1,143 @@
+<div class="modal fade" id="orderStatusModal" tabindex="-1" role="dialog" aria-labelledby="orderStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderStatusModalLabel">Cambiar Estado de Orden</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="orderStatusForm">
+                    <input type="hidden" id="orderStatusId" name="order_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="orderCode">Código de Orden:</label>
+                                <input type="text" class="form-control" id="orderCode" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="clientName">Cliente:</label>
+                                <input type="text" class="form-control" id="clientName" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="currentStatus">Estado Actual:</label>
+                                <input type="text" class="form-control" id="currentStatus" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="newStatus">Nuevo Estado: <span class="text-danger">*</span></label>
+                                <select class="form-control" id="newStatus" name="status" required>
+                                    <option value="">Seleccionar estado...</option>
+                                    <option value="P">PENDIENTE</option>
+                                    <option value="C">COMPLETADO</option>
+                                    <option value="A">ANULADO</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="completedBy">Completado por: <span class="text-danger">*</span></label>
+                                <select class="form-control" id="completedBy" name="completed_by" required>
+                                    <option value="">Seleccionar empleado...</option>
+                                    {% for user in user_set %}
+                                        <option value="{{ user.id }}" {% if user.id == request.user.id %}selected{% endif %}>
+                                            {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="cancellationReasonRow" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="cancellationReason">Motivo de Anulación: <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="cancellationReason" name="cancellation_reason" rows="3" placeholder="Ingrese el motivo de la anulación..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveOrderStatus">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Mostrar/ocultar campo de motivo de anulación
+    $('#newStatus').change(function() {
+        if ($(this).val() === 'A') {
+            $('#cancellationReasonRow').show();
+            $('#cancellationReason').prop('required', true);
+        } else {
+            $('#cancellationReasonRow').hide();
+            $('#cancellationReason').prop('required', false);
+        }
+    });
+    
+    // Guardar cambios de estado
+    $('#saveOrderStatus').click(function() {
+        var form = $('#orderStatusForm');
+        var formData = form.serialize();
+        
+        // Validar que se haya seleccionado un estado
+        if (!$('#newStatus').val()) {
+            toastr.error('Debe seleccionar un nuevo estado');
+            return;
+        }
+        
+        // Validar que se haya seleccionado un empleado
+        if (!$('#completedBy').val()) {
+            toastr.error('Debe seleccionar un empleado');
+            return;
+        }
+        
+        // Si es anulación, validar que se haya ingresado el motivo
+        if ($('#newStatus').val() === 'A' && !$('#cancellationReason').val().trim()) {
+            toastr.error('Debe ingresar el motivo de la anulación');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "sales:update_order_status" %}',
+            type: 'POST',
+            data: formData,
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#orderStatusModal').modal('hide');
+                    // Recargar la tabla de órdenes
+                    loadOrders();
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                toastr.error('Error al actualizar el estado de la orden');
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>

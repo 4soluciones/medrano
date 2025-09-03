@@ -61,6 +61,14 @@ class Order(models.Model):
     cancellation_reason = models.CharField('Motivo de cancelacion', max_length=500, null=True, blank=True)
     delivery_status = models.CharField(max_length=1, choices=DELIVERY_CHOICES, default='P')
     cash_pay = models.DecimalField('Pago Adelanto', max_digits=10, decimal_places=2, default=0)
+    
+    # Campos para el usuario que completó la orden
+    completed_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders_completed')
+    completed_at = models.DateTimeField('Fecha y hora de completado', null=True, blank=True)
+    
+    # Campos para el usuario que entregó la orden
+    delivered_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders_delivered')
+    delivered_at = models.DateTimeField('Fecha y hora de entrega', null=True, blank=True)
 
     def __str__(self):
         return str(self.id)

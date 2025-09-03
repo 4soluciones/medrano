@@ -14,7 +14,6 @@ urlpatterns = [
     path('update_client/', login_required(update_client), name='update_client'),
 
     # URLs existentes para órdenes (legacy)
-    path('save_order/', login_required(save_order), name='save_order'),
     path('order_client/', login_required(order_client), name='order_client'),
     path('get_order_by_client/', login_required(get_order_by_client), name='get_order_by_client'),
     path('get_correlative_order/', login_required(get_correlative_order), name='get_correlative_order'),
@@ -36,17 +35,20 @@ urlpatterns = [
     # =============================================================================
     path('orders/', login_required(order_list), name='order_list'),
     path('orders/save/', login_required(order_save), name='order_save'),
-    path('orders/<int:order_id>/edit/', login_required(order_edit), name='order_edit'),
     path('orders/update/', login_required(order_update), name='order_update'),
     path('orders/detail/', login_required(order_detail_modal), name='order_detail_modal'),
     path('orders/correlative/', login_required(get_correlative_order), name='get_correlative_order'),
     path('orders/serial/', login_required(get_serial_order), name='get_serial_order'),
     path('orders/products/', login_required(get_products_for_order), name='get_products_for_order'),
     path('orders/get-for-edit/', login_required(get_order_for_edit), name='get_order_for_edit'),
+    path('orders/status-modal/', login_required(order_status_modal), name='order_status_modal'),
     path('orders/update-status/', login_required(update_order_status), name='update_order_status'),
     path('orders/update-delivery-status/', login_required(update_order_delivery_status), name='update_order_delivery_status'),
+    path('orders/get-for-conversion/', login_required(get_order_for_conversion), name='get_order_for_conversion'),
+    path('orders/convert-to-service/', login_required(convert_order_to_service), name='convert_order_to_service'),
     path('clients/create/', login_required(create_client), name='create_client'),
     path('clients/search-autocomplete/', login_required(search_clients_autocomplete), name='search_clients_autocomplete'),
+    # path('order_delivery_status_modal', login_required(order_delivery_status_modal), name='order_delivery_status_modal'),
 
     # =============================================================================
     # URLs PARA MANEJO DE ESTADOS DE ÓRDENES CON CASHFLOW
