@@ -90,6 +90,9 @@ def generate_ticket_pdf(order_id):
         order = Order.objects.select_related('client', 'subsidiary', 'user').get(id=order_id)
         order_details = OrderDetail.objects.filter(order=order)
         
+        # Obtener todas las sucursales para mostrar sus direcciones
+        all_subsidiaries = Subsidiary.objects.all()
+        
         # Crear el buffer para el PDF
         buffer = io.BytesIO()
         
@@ -97,8 +100,13 @@ def generate_ticket_pdf(order_id):
         details = order.orderdetail_set.all()
         _counter = details.count()
         _wt = 2.94 * inch - 4 * 0.05 * inch
+        
+        # Calcular altura adicional para las direcciones de sucursales
+        subsidiaries_with_address = all_subsidiaries.filter(address__isnull=False).exclude(address='').count()
+        additional_height = subsidiaries_with_address * 0.2 * inch  # Espacio adicional por sucursal
+        
         # pz_thermal = (3.14961 * inch, (11.6 * inch + (_counter * 0.13 * inch)))
-        pz_thermal = (2.94 * inch, (11.6 * inch + (_counter * 0.13 * inch)))
+        pz_thermal = (2.94 * inch, (11.6 * inch + (_counter * 0.13 * inch) + additional_height))
 
         ml = 0.05 * inch
         mr = 0.05 * inch
@@ -142,6 +150,20 @@ def generate_ticket_pdf(order_id):
             fontSize=6
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Justify_6',
+            alignment=TA_JUSTIFY,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Right_6',
+            alignment=TA_RIGHT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Bold_Left_8',
             alignment=TA_LEFT,
             leading=9,  # Espaciado reducido
@@ -149,11 +171,60 @@ def generate_ticket_pdf(order_id):
             fontSize=8
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Left_6',
+            alignment=TA_LEFT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Right_6',
+            alignment=TA_RIGHT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Left_8',
             alignment=TA_LEFT,
             leading=9,  # Espaciado reducido
             fontName='Helvetica',
             fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Left_7',
+            alignment=TA_LEFT,
+            leading=8,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=7
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Center_7',
+            alignment=TA_CENTER,
+            leading=8,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=7
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Left_6',
+            alignment=TA_LEFT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Left_5',
+            alignment=TA_LEFT,
+            leading=6,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=5
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Center_5',
+            alignment=TA_CENTER,
+            leading=6,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=5
         ))
         styles.add(ParagraphStyle(
             name='Helvetica_Right_8',
@@ -252,12 +323,79 @@ def generate_ticket_pdf(order_id):
             elements.append(Spacer(3, 3))
         
         # Nombre de la empresa
-        if order.subsidiary and order.subsidiary.business_name:
-            elements.append(Paragraph(order.subsidiary.business_name.upper(), styles['Helvetica_Bold_Center_10']))
-        else:
-            elements.append(Paragraph("EMPRESA", styles['Helvetica_Bold_Center_10']))
+        # if order.subsidiary and order.subsidiary.business_name:
+        #     elements.append(Paragraph(order.subsidiary.business_name.upper(), styles['Helvetica_Bold_Center_10']))
+        # else:
+        # elements.append(Paragraph("PUBLICIDAD BELYGRAF & MEDRANO", styles['Helvetica_Bold_Center_10']))
+        # elements.append(Spacer(2, 2))
+
+        elements.append(Paragraph("REALIZAMOS LOS SERVICIOS DE", styles['Helvetica_Bold_Center_6']))
         elements.append(Spacer(2, 2))
 
+        elements.append(Paragraph("LETREROS 3D, LETREROS LUMINOSOS, LETREROS CON FORMA, CARPAS FIJAS, "
+                                  "CARPAS ENRROLLABLES, LOGOTIPOS, MODULOS PVC, ROLL SCREEN, SEÑALETICAS,"
+                                  " TARJETAS PERSONALES, VOLANTES, AFICHES, FORMATOS, OTROS", styles['Helvetica_Center_5']))
+        elements.append(Spacer(2, 2))
+
+        elements.append(Paragraph(order.subsidiary.address.upper(), styles['Helvetica_Center_5']))
+        # for index, subsidiary in enumerate(all_subsidiaries):
+        #     if subsidiary.address and subsidiary.address.strip():
+        #         # Crear tabla para mostrar icono + texto en la misma línea
+        #         location_data = []
+        #
+        #         # Cargar el icono de ubicación
+        #         try:
+        #             location_icon = Image("media/image_location.png")
+        #             location_icon.drawHeight = 0.08 * inch  # Icono más pequeño
+        #             location_icon.drawWidth = 0.08 * inch   # Icono más pequeño
+        #
+        #             # Determinar el texto a mostrar
+        #             if index == 0:  # Primera sucursal
+        #                 text_to_show = f"PRINCIPAL: {subsidiary.address.upper()}"
+        #             else:  # Demás sucursales
+        #                 text_to_show = subsidiary.address.upper()
+        #
+        #             # Crear fila con icono y texto
+        #             location_data.append([
+        #                 location_icon,
+        #                 Paragraph(text_to_show, styles['Helvetica_Left_5'])
+        #             ])
+        #
+        #             # Crear tabla para alinear icono y texto (más compacta)
+        #             _wt2 = 1.84 * inch - 4 * 0.05 * inch
+        #             location_table = Table(location_data, colWidths=[0.1 * inch, _wt2 - 0.1 * inch])
+        #             location_table.setStyle(TableStyle([
+        #                 ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+        #                 ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+        #                 ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+        #                 ('LEFTPADDING', (0, 0), (0, 0), 0),      # Sin padding izquierdo en icono
+        #                 ('RIGHTPADDING', (0, 0), (0, 0), 0),     # Sin padding derecho en icono
+        #                 ('LEFTPADDING', (1, 0), (1, 0), 2),      # Pequeño padding izquierdo en texto
+        #                 ('RIGHTPADDING', (1, 0), (1, 0), 0),     # Sin padding derecho en texto
+        #                 ('TOPPADDING', (0, 0), (-1, 0), 0),
+        #                 ('BOTTOMPADDING', (0, 0), (-1, 0), 1),
+        #                 # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        #             ]))
+        #
+        #             elements.append(location_table)
+        #             elements.append(Spacer(0.3, 0.3))
+        #
+        #         except Exception as e:
+        #             # Si no se puede cargar la imagen, usar símbolo de texto como respaldo
+        #             if index == 0:  # Primera sucursal
+        #                 text_to_show = f"• PRINCIPAL: {subsidiary.address.upper()}"
+        #             else:  # Demás sucursales
+        #                 text_to_show = f"• {subsidiary.address.upper()}"
+        #
+        #             elements.append(Paragraph(text_to_show, styles['Helvetica_Center_5']))
+        #             elements.append(Spacer(0.5, 0.5))
+
+        elements.append(Spacer(2, 2))
+
+        # Teléfono de la sucursal (más pequeño)
+        if order.subsidiary and order.subsidiary.phone:
+            elements.append(Paragraph(f"CEL: {order.subsidiary.phone}", styles['Helvetica_Center_5']))
+        elements.append(Spacer(2, 2))
         # RUC de la empresa (más pequeño)
         if order.subsidiary and order.subsidiary.ruc:
             elements.append(Paragraph(f"RUC {order.subsidiary.ruc}", styles['TicketSubtitleSmall']))
@@ -267,17 +405,6 @@ def generate_ticket_pdf(order_id):
         if order.subsidiary and order.subsidiary.name:
             elements.append(Paragraph(order.subsidiary.representative_name.upper(), styles['TicketSubtitleSmall']))
         elements.append(Spacer(1, 1))
-        
-        # Dirección de la empresa (más pequeña)
-        if order.subsidiary and order.subsidiary.address:
-            elements.append(Paragraph(order.subsidiary.address.upper(), styles['TicketSubtitleSmall']))
-        elements.append(Spacer(1, 1))
-
-        # Teléfono de la sucursal (más pequeño)
-        if order.subsidiary and order.subsidiary.phone:
-            elements.append(Paragraph(f"TEL: {order.subsidiary.phone}", styles['TicketSubtitleSmall']))
-        elements.append(Spacer(2, 2))
-        
         # Título del documento
         elements.append(Paragraph(order.get_type_display(), styles['TicketHeader']))
         elements.append(Spacer(3, 3))
@@ -290,25 +417,72 @@ def generate_ticket_pdf(order_id):
         elements.append(Paragraph("_" * 43, styles['TicketSeparatorLine']))
         elements.append(Spacer(3, 3))
         
-        # Información del cliente
-        elements.append(Paragraph("CLIENTE", styles['Helvetica_Bold_Left_8']))
-        if order.client:
-            if order.client.number and order.client.number.strip():
-                if order.client.document == '01':
-                    elements.append(Paragraph(f"DNI: {order.client.number}", styles['Helvetica_Left_8']))
-                else:
-                    elements.append(Paragraph(f"RUC: {order.client.number}", styles['Helvetica_Left_8']))
-            else:
-                elements.append(Paragraph("SIN DOCUMENTO", styles['Helvetica_Left_8']))
-            elements.append(Paragraph(order.client.full_name.upper(), styles['Helvetica_Left_8']))
-        elements.append(Spacer(1, 1))
+        # Información del cliente y fechas en tabla
+        client_data = []
         
-        # Fechas y moneda
+        # Fila del cliente
+        client_data.append([
+            Paragraph("CLIENTE", styles['Helvetica_Left_8']),
+            Paragraph(":", styles['Helvetica_Left_8']),
+            Paragraph(order.client.full_name.upper() if order.client else "SIN CLIENTE", styles['Helvetica_Left_8'])
+        ])
+        
+        # Fila del documento (DNI/RUC)
+        if order.client and order.client.number and order.client.number.strip():
+            if order.client.document == '01':
+                client_data.append([
+                    Paragraph("DNI", styles['Helvetica_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(order.client.number, styles['Helvetica_Left_8'])
+                ])
+            else:
+                client_data.append([
+                    Paragraph("RUC", styles['Helvetica_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(order.client.number, styles['Helvetica_Left_8'])
+                ])
+        
+        # Fila de fecha de emisión
         if order.register_date:
-            elements.append(Paragraph(f"FECHA EMISIÓN: {order.register_date.strftime('%d/%m/%Y')}", styles['Helvetica_Left_8']))
+            client_data.append([
+                Paragraph("FECHA EMISIÓN", styles['Helvetica_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(order.register_date.strftime('%d/%m/%Y'), styles['Helvetica_Left_8'])
+            ])
+        
+        # Fila de fecha de entrega
         if order.delivery_date:
-            elements.append(Paragraph(f"FECHA ENTREGA: {order.delivery_date.strftime('%d/%m/%Y')}", styles['Helvetica_Left_8']))
-        elements.append(Spacer(-5, -5))
+            client_data.append([
+                Paragraph("FECHA ENTREGA", styles['Helvetica_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(order.delivery_date.strftime('%d/%m/%Y'), styles['Helvetica_Left_8'])
+            ])
+        if order.user:
+            client_data.append([
+                Paragraph("VENDEDOR", styles['Helvetica_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(order.user.first_name, styles['Helvetica_Left_8'])
+            ])
+        # Crear tabla de información del cliente
+        client_table = Table(client_data, colWidths=[_wt * 38 / 100, _wt * 3 / 100, _wt * 59 / 100])
+        client_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),   # Primera columna (etiquetas) a la izquierda
+            ('ALIGN', (1, 0), (1, -1), 'CENTER'), # Segunda columna (dos puntos) centrada
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),   # Tercera columna (valores) a la izquierda
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),  # Etiquetas en negrita
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),       # Dos puntos normal
+            ('FONTNAME', (2, 0), (2, -1), 'Helvetica'),       # Valores normal
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+        
+        elements.append(client_table)
+        elements.append(Spacer(1, 1))
         
         # Línea separadora
         elements.append(Paragraph("_" * 43, styles['TicketSeparatorLine']))
@@ -316,33 +490,55 @@ def generate_ticket_pdf(order_id):
         
         # Encabezados de la tabla de productos
         table_data = []
-        table_data.append([
-            Paragraph("[CANT.] DESCRIPCIÓN", styles['Helvetica_Bold_Left_8']),
-            Paragraph("P/U", styles['Helvetica_Bold_Right_8']),
-            Paragraph("TOTAL", styles['Helvetica_Bold_Right_8'])
-        ])
-        
-        # Agregar productos/servicios
-        for detail in order_details:
-            table_data.append([
-                Paragraph(f"[ {detail.quantity:.0f} ] {detail.product_name}", styles['Helvetica_Left_8']),
-                Paragraph(f"{detail.price_unit:.2f}", styles['TicketTextRight']),
-                Paragraph(f"{detail.multiply():.2f}", styles['TicketTextRight'])
-            ])
-        
-        # Crear tabla
-        table = Table(table_data, colWidths=[_wt * 55 / 100, _wt * 20 / 100, _wt * 25 / 100])
-        table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-            ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+        table_data_title = [[
+            Paragraph("Cant.", styles['Helvetica_Bold_Left_6']),
+            Paragraph("Descripción", styles['Helvetica_Bold_Left_6']),
+            Paragraph("P.U.", styles['Helvetica_Bold_Right_6']),
+            Paragraph("Total", styles['Helvetica_Bold_Right_6'])
+        ]]
+        table_title = Table(table_data_title, colWidths=[_wt * 10 / 100, _wt * 56 / 100, _wt * 17 / 100, _wt * 17 / 100])
+        table_title.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),  # Descripción a la izquierda
+            ('ALIGN', (2, 0), (2, -1), 'RIGHT'),  # Precio unitario a la derecha
+            ('ALIGN', (3, 0), (3, -1), 'RIGHT'),  # Total a la derecha
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 7.4),
-            # ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Padding reducido
-            ('LEFTPADDING', (0, 0), (0, -1), 0),      # Padding reducido
-            # ('BACKGROUND', (0, 0), (0, -1), colors.pink),
+            ('LEFTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (3, -1), (3, -1), 2),
+            # ('GRID', (0, 0), (-1, -1), 0.5, colors.red),
+        ]))
+        elements.append(table_title)
+        elements.append(Spacer(1, -10))
+        elements.append(Paragraph("_" * 43, styles['TicketSeparatorLine']))
+
+        # Agregar productos/servicios
+        for detail in order_details:
+            table_data.append([
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_7']),
+                Paragraph(detail.product_name, styles['Helvetica_Left_6']),
+                Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_6']),
+                Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_6'])
+            ])
+        
+        # Crear tabla con 4 columnas
+        _wt2 = 2.90 * inch - 4 * 0.05 * inch
+        table = Table(table_data, colWidths=[_wt * 10 / 100, _wt * 56 / 100, _wt * 17 / 100, _wt * 17 / 100])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),    # Descripción a la izquierda
+            ('ALIGN', (2, 0), (2, -1), 'RIGHT'),   # Precio unitario a la derecha
+            ('ALIGN', (3, 0), (3, -1), 'RIGHT'),   # Total a la derecha
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
             # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            # ('BACKGROUND', (3, -1), (3, -1), colors.green),
+            ('RIGHTPADDING', (3, -1), (3, -1), 3),
         ]))
         
         elements.append(table)
@@ -386,6 +582,9 @@ def generate_ticket_pdf(order_id):
             ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Padding reducido
             ('TOPPADDING', (0, 0), (-1, -1), 2),      # Padding reducido
+            # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('RIGHTPADDING', (1, 0), (-1, -1), 2),
+            # ('BACKGROUND', (1, 0), (-1, -1), colors.green),
         ]))
         
         elements.append(totales_table)
@@ -405,8 +604,8 @@ def generate_ticket_pdf(order_id):
         else:
             elements.append(Paragraph("OBSERVACIONES:", styles['Helvetica_Bold_Left_8']))
         
-        elements.append(Spacer(2, -5))
-        
+        elements.append(Spacer(1, -5))
+
         # Línea separadora
         elements.append(Paragraph("_" * 43, styles['TicketSeparatorLine']))
         elements.append(Spacer(3, 3))
@@ -415,6 +614,9 @@ def generate_ticket_pdf(order_id):
         if order.type == 'O':
             elements.append(Paragraph("Conserve el Ticket para el recojo de su orden", styles['Helvetica_Bold_Center_8']))
         elements.append(Paragraph("**Este documento no tiene validez fiscal, puede ser cambiada por una boleta o factura**", styles['Helvetica_Bold_Center_6']))
+        elements.append(Paragraph("•Canjee por factura Y/O boleta dentro del mes", styles['Helvetica_Bold_Justify_6']))
+        elements.append(Paragraph("•Todo trabajo sera como mínimo el 50% de adelanto, caso contrario no se realizará el trabajo", styles['Helvetica_Bold_Justify_6']))
+        elements.append(Paragraph("•Tiene un plazo de un mes para recoger su trabajo, caso contrario será desechado", styles['Helvetica_Bold_Justify_6']))
 
         # Construir el PDF
         doc.build(elements)
