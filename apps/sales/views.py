@@ -459,13 +459,13 @@ def get_correlative_order(request):
         subsidiary = request.GET.get('subsidiary', '')
         subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary))
         correlative = get_correlative_order_by_subsidiary(subsidiary_obj=subsidiary_obj, type_document=doc_type)
-        correlative_order_service = 'PY-' + str(correlative).zfill(3) + '-2023-' + str(subsidiary_obj.serial)
+        # correlative_order_service = 'PY-' + str(correlative).zfill(3) + '-2023-' + str(subsidiary_obj.serial)
         return JsonResponse({
             'success': True,
             'message': 'Cambios guardados con exito.',
-            'correlative': correlative,
-            'serial': subsidiary_obj.serial,
-            'correlative_order_service': correlative_order_service
+            'correlative': str(correlative).zfill(4),
+            'serial': f'0{subsidiary_obj.serial}',
+            # 'correlative_order_service': correlative_order_service
         }, status=HTTPStatus.OK)
     return JsonResponse({'message': 'Error de peticion. Actualice'}, status=HTTPStatus.BAD_REQUEST)
 
@@ -880,7 +880,6 @@ def order_list(request):
         })
     elif request.method == 'POST':
         try:
-            # Filtrar órdenes según parámetros
             subsidiary_id = request.POST.get('subsidiary')
             user_id = request.POST.get('user')
             order_type = request.POST.get('order_type')
@@ -888,45 +887,40 @@ def order_list(request):
             date_from = request.POST.get('date_from')
             date_to = request.POST.get('date_to')
             client_id_filter = request.POST.get('client_id_filter')
-            
-            orders = Order.objects.all()
-        
-            if subsidiary_id and subsidiary_id != '0':
-                orders = orders.filter(subsidiary_id=subsidiary_id)
-            if user_id and user_id != '0':
-                orders = orders.filter(user_id=user_id)
-            if order_type and order_type != '0':
-                orders = orders.filter(type=order_type)
-            if status and status != '0':
-                orders = orders.filter(status=status)
+
+            peru_tz = pytz.timezone('America/Lima')
+            current_date = datetime.now(peru_tz).strftime('%Y-%m-%d')
+
+            # Si hay cliente -> solo buscar por cliente (ignora demás filtros)
             if client_id_filter and client_id_filter != '':
-                orders = orders.filter(client_id=client_id_filter)
+                orders = Order.objects.filter(client_id=client_id_filter)
 
-            # Filtros de fecha - Si no se especifican fechas, cargar solo del día actual
-            if not date_from and not date_to:
-                # Usar zona horaria de Perú (GMT-5)
-                peru_tz = pytz.timezone('America/Lima')
-                current_date = datetime.now(peru_tz).strftime('%Y-%m-%d')
-                date_from = current_date
-                date_to = current_date
-                orders = orders.filter(register_date=current_date)
             else:
-                if date_from:
-                    orders = orders.filter(register_date__gte=date_from).order_by('id')
-                if date_to:
-                    orders = orders.filter(register_date__lte=date_to).order_by('id')
+                # Si no hay cliente -> iniciar filtrando por la fecha actual
+                orders = Order.objects.filter(register_date=current_date)
 
-            orders = orders.select_related('client', 'user', 'subsidiary', 'completed_by', 'delivered_by').prefetch_related('orderdetail_set')
+                # Aplicar filtros adicionales
+                if subsidiary_id and subsidiary_id != '0':
+                    orders = orders.filter(subsidiary_id=subsidiary_id)
+                if user_id and user_id != '0':
+                    orders = orders.filter(user_id=user_id)
+                if order_type and order_type != '0':
+                    orders = orders.filter(type=order_type)
+                if status and status != '0':
+                    orders = orders.filter(status=status)
+                if date_from:
+                    orders = orders.filter(register_date__gte=date_from)
+                if date_to:
+                    orders = orders.filter(register_date__lte=date_to)
+
+            # Optimización de consultas
+            orders = orders.select_related(
+                'client', 'user', 'subsidiary', 'completed_by', 'delivered_by'
+            ).prefetch_related('orderdetail_set')
 
             # Crear diccionario con cálculos de saldo para cada orden
             order_dict = []
             for order in orders:
-                # if order.cash_pay > 0:
-                #     balance = order.total - order.cash_pay
-                # else:
-                #     balance = order.total - order.cash_advance
-                # if balance < 0:
-                #     balance = Decimal('0.00')
                 balance = order.total - order.cash_advance
                 if order.cash_advance + order.cash_pay == order.total:
                     balance = decimal.Decimal(0.00)
@@ -958,9 +952,6 @@ def order_list(request):
                     # Información de entrega
                     'delivered_by': order.delivered_by.first_name if order.delivered_by else None,
                     'delivered_at': order.delivered_at,
-                    # 'is_paid': order.cash_pay >= order.total if order.cash_pay > 0 else False,
-                    # 'has_advance': order.cash_advance > 0,
-                    # 'payment_status': 'PAID' if order.cash_pay >= order.total else 'PARTIAL' if order.cash_pay > 0 else 'PENDING'
                 }
                 for detail in order.orderdetail_set.all():
                     product_id = ''
@@ -1025,11 +1016,13 @@ def order_save(request):
             subsidiary_id = request.POST.get('subsidiary_id')
             register_date = request.POST.get('register_date')
             delivery_date = request.POST.get('delivery_date')
-            way_to_pay = request.POST.get('way_to_pay', 'E')
-            cash_advance = request.POST.get('advance_input', 0)
             voucher_type = request.POST.get('voucher_type', 'T')
             observation = request.POST.get('observation', '')
             
+            # Obtener adelantos múltiples
+            advance_payments_data = request.POST.get('advance_payments', '[]')
+            advance_payments = json.loads(advance_payments_data) if advance_payments_data else []
+
             # Validaciones básicas
             if not client_id or not user_id or not subsidiary_id:
                 return JsonResponse({
@@ -1042,14 +1035,33 @@ def order_save(request):
             user_obj = CustomUser.objects.get(id=int(user_id))
             subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
             
+            # Actualizar campos adicionales del cliente si se proporcionan
+            client_address = request.POST.get('client_address', '')
+            client_phone = request.POST.get('client_phone', '')
+            client_email = request.POST.get('client_email', '')
+            
+            # Actualizar solo si se proporcionan valores
+            if client_address:
+                client_obj.address = client_address.upper()
+            if client_phone:
+                client_obj.phone1 = client_phone
+            if client_email:
+                client_obj.email = client_email
+            
+            # Guardar cambios del cliente si hubo actualizaciones
+            if client_address or client_phone or client_email:
+                client_obj.save()
+            
             # Obtener el último correlativo filtrado por tipo de orden
             last_correlative = get_last_correlative_by_order_type(order_type, subsidiary_obj)
             
             # correlative = get_correlative_order_by_subsidiary(subsidiary_obj, order_type)
-            code = f'0{subsidiary_obj.serial}-{str(last_correlative).zfill(4)}'
+            code_order = 'C' if order_type == 'C' else 'O'
+            code = f'{code_order}-0{subsidiary_obj.serial}-{str(last_correlative).zfill(4)}'
             
-            # Verificar si el adelanto es igual al total para marcar como completado
-            cash_advance_decimal = decimal.Decimal(str(cash_advance)) if cash_advance else decimal.Decimal('0.00')
+            # Calcular el total de adelantos
+            total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
+            cash_advance_decimal = decimal.Decimal(str(total_advance))
             
             # Crear la orden
             order_obj = Order(
@@ -1062,7 +1074,6 @@ def order_save(request):
                 subsidiary=subsidiary_obj,
                 register_date=register_date,
                 delivery_date=delivery_date if delivery_date else None,
-                way_to_pay=way_to_pay,
                 cash_advance=cash_advance_decimal,
                 voucher_type=voucher_type,
                 observation=observation.upper(),
@@ -1104,11 +1115,55 @@ def order_save(request):
             # Calcular totales
             order_obj.calculate_totals()
             
-            # Verificar si el adelanto es igual al total para marcar como completado
-            if cash_advance_decimal >= order_obj.total and order_obj.total > 0:
-                order_obj.status = 'C'  # COMPLETADO
-                order_obj.cash_pay = order_obj.total  # El pago total es igual al total
-                order_obj.save()
+            # Procesar adelantos múltiples en CashFlow (solo si NO es cotización)
+            if advance_payments and order_obj.type != 'C':
+                try:
+                    from apps.accounting.models import Cash, CashFlow
+                    from datetime import datetime
+                    
+                    # Registrar cada adelanto en CashFlow
+                    for advance in advance_payments:
+                        advance_amount = decimal.Decimal(str(advance.get('amount', 0)))
+                        way_to_pay_advance = advance.get('way_to_pay', 'E')
+                        advance_cash_account_id = advance.get('cash_account_id', '')
+                        
+                        if advance_amount > 0 and advance_cash_account_id:
+                            # Obtener la cuenta de caja específica para este adelanto
+                            try:
+                                advance_cash_account = Cash.objects.get(id=int(advance_cash_account_id))
+                            except Cash.DoesNotExist:
+                                # Si no se encuentra la cuenta, usar la cuenta principal como fallback
+                                advance_cash_account = Cash.objects.get(id=int(cash_account_id)) if cash_account_id else None
+                            
+                            if advance_cash_account:
+                                # Crear entrada en CashFlow para cada adelanto
+                                cashflow_entry = CashFlow.objects.create(
+                                    transaction_date=datetime.now(),
+                                    created_at=datetime.now(),
+                                    description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
+                                    serial=order_obj.serial,
+                                    n_receipt=order_obj.correlative,
+                                    document_type_attached='O',  # Otro
+                                    type='E',  # Entrada
+                                    subtotal=decimal.Decimal('0.00'),
+                                    total=advance_amount,
+                                    igv=decimal.Decimal('0.00'),
+                                    cash=advance_cash_account,
+                                    order=order_obj,
+                                    user=request.user,
+                                    type_expense='O',  # Otros
+                                    way_to_pay=way_to_pay_advance  # Forma de pago específica
+                                )
+                    
+                    # Verificar si el total de adelantos cubre el total de la orden
+                    if cash_advance_decimal >= order_obj.total and order_obj.total > 0:
+                        order_obj.status = 'C'  # COMPLETADO
+                        order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                        order_obj.save()
+                        
+                except Exception as e:
+                    # Si hay error al registrar en CashFlow, continuar con el proceso
+                    print(f"Error al registrar adelantos en CashFlow: {str(e)}")
             
             # Generar PDF del ticket automáticamente
             try:
@@ -1195,6 +1250,8 @@ def get_order_for_edit(request):
                 order_data = {
                     'id': order_obj.id,
                     'code': order_obj.code,
+                    'serial': order_obj.serial,
+                    'correlative': str(order_obj.correlative).zfill(4),
                     'type': order_obj.type,
                     'client_id': order_obj.client.id if order_obj.client else None,
                     'user_id': order_obj.user.id if order_obj.user else None,
@@ -1270,10 +1327,32 @@ def order_update(request):
             order_obj.subsidiary_id = request.POST.get('subsidiary_id')
             order_obj.register_date = request.POST.get('register_date')
             order_obj.delivery_date = request.POST.get('delivery_date') if request.POST.get('delivery_date') else None
-            order_obj.way_to_pay = request.POST.get('way_to_pay', 'E')
-            order_obj.cash_advance = decimal.Decimal(request.POST.get('cash_advance', 0))
             order_obj.voucher_type = request.POST.get('voucher_type', 'T')
             order_obj.observation = request.POST.get('observation', '')
+            
+            # Obtener adelantos múltiples
+            advance_payments_data = request.POST.get('advance_payments', '[]')
+            advance_payments = json.loads(advance_payments_data) if advance_payments_data else []
+            
+            # Calcular el total de adelantos
+            total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
+            order_obj.cash_advance = decimal.Decimal(str(total_advance))
+            
+            # Actualizar campos adicionales del cliente si se proporcionan
+            client_address = request.POST.get('client_address', '')
+            client_phone = request.POST.get('client_phone', '')
+            client_email = request.POST.get('client_email', '')
+            
+            # Actualizar solo si se proporcionan valores
+            if client_address or client_phone or client_email:
+                client_obj = order_obj.client
+                if client_address:
+                    client_obj.address = client_address.upper()
+                if client_phone:
+                    client_obj.phone1 = client_phone
+                if client_email:
+                    client_obj.email = client_email
+                client_obj.save()
             
             order_obj.save()
             
@@ -1315,6 +1394,60 @@ def order_update(request):
             
             # Calcular totales
             order_obj.calculate_totals()
+            
+            # Procesar adelantos múltiples en CashFlow (solo si NO es cotización)
+            if advance_payments and order_obj.type != 'C':
+                try:
+                    from apps.accounting.models import Cash, CashFlow
+                    from datetime import datetime
+                    
+                    # Eliminar registros de CashFlow existentes para esta orden
+                    CashFlow.objects.filter(order=order_obj, type='E').delete()
+                    
+                    # Los adelantos ahora tienen su propia cuenta de caja
+                    # Registrar cada adelanto en CashFlow
+                    for advance in advance_payments:
+                        advance_amount = decimal.Decimal(str(advance.get('amount', 0)))
+                        way_to_pay_advance = advance.get('way_to_pay', 'E')
+                        advance_cash_account_id = advance.get('cash_account_id', '')
+                        
+                        if advance_amount > 0 and advance_cash_account_id:
+                            # Obtener la cuenta de caja específica para este adelanto
+                            try:
+                                advance_cash_account = Cash.objects.get(id=int(advance_cash_account_id))
+                            except Cash.DoesNotExist:
+                                # Si no se encuentra la cuenta, usar la primera disponible como fallback
+                                advance_cash_account = Cash.objects.first()
+                            
+                            if advance_cash_account:
+                                # Crear entrada en CashFlow para cada adelanto
+                                cashflow_entry = CashFlow.objects.create(
+                                    transaction_date=datetime.now(),
+                                    created_at=datetime.now(),
+                                    description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
+                                    serial=order_obj.serial,
+                                    n_receipt=order_obj.correlative,
+                                    document_type_attached='O',  # Otro
+                                    type='E',  # Entrada
+                                    subtotal=decimal.Decimal('0.00'),
+                                    total=advance_amount,
+                                    igv=decimal.Decimal('0.00'),
+                                    cash=advance_cash_account,
+                                    order=order_obj,
+                                    user=request.user,
+                                    type_expense='O',  # Otros
+                                    way_to_pay=way_to_pay_advance  # Forma de pago específica
+                                )
+                    
+                    # Verificar si el total de adelantos cubre el total de la orden
+                    if order_obj.cash_advance >= order_obj.total and order_obj.total > 0:
+                        order_obj.status = 'C'  # COMPLETADO
+                        order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                        order_obj.save()
+                        
+                except Exception as e:
+                    # Si hay error al registrar en CashFlow, continuar con el proceso
+                    print(f"Error al registrar adelantos en CashFlow: {str(e)}")
             
             return JsonResponse({
                 'success': True,
@@ -1433,10 +1566,39 @@ def create_client(request):
             if document and number:
                 existing_client = Person.objects.filter(document=document, number=number, type='C').first()
                 if existing_client:
-                    # Si ya existe, devolver los datos del cliente existente
+                    # Si ya existe, actualizar con los nuevos datos proporcionados
+                    updated = False
+                    
+                    # Actualizar nombre si es diferente
+                    if full_name and full_name.upper() != existing_client.full_name:
+                        existing_client.full_name = full_name.upper()
+                        updated = True
+                    
+                    # Actualizar dirección si se proporciona
+                    if address and address.upper() != (existing_client.address or ''):
+                        existing_client.address = address.upper()
+                        updated = True
+                    
+                    # Actualizar teléfono si se proporciona
+                    if phone and phone != (existing_client.phone1 or ''):
+                        existing_client.phone1 = phone
+                        updated = True
+                    
+                    # Actualizar email si se proporciona
+                    if email and email != (existing_client.email or ''):
+                        existing_client.email = email
+                        updated = True
+                    
+                    # Guardar cambios si hubo actualizaciones
+                    if updated:
+                        existing_client.save()
+                        message = f'Cliente existente actualizado con {document} número {number}'
+                    else:
+                        message = f'Cliente ya existe con {document} número {number} (sin cambios)'
+                    
                     return JsonResponse({
                         'success': True,
-                        'message': f'Cliente ya existe con {document} número {number}',
+                        'message': message,
                         'client': {
                             'id': existing_client.id,
                             'full_name': existing_client.full_name,
@@ -1446,7 +1608,8 @@ def create_client(request):
                             'phone': existing_client.phone1 or '',
                             'email': existing_client.email or ''
                         },
-                        'existing': True
+                        'existing': True,
+                        'updated': updated
                     }, status=HTTPStatus.OK)
             
             # Crear el cliente si no existe
@@ -1554,6 +1717,41 @@ def search_clients_autocomplete(request):
                 'message': f'Error al buscar clientes: {str(e)}'
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
     
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+def get_client_autocomplete(request):
+    if request.method == 'GET':
+        client_id = request.GET.get('client_id', '')
+
+        try:
+            # Buscar clientes por nombre o documento
+            client_set = Person.objects.filter(type='C').filter(id=client_id).select_related()
+
+            if client_set.exists():
+                client_obj = client_set.first()
+                client_data = [{
+                    'id': client_obj.id,
+                    'full_name': client_obj.full_name,
+                    'document': client_obj.document,
+                    'number': client_obj.number,
+                    'address': client_obj.address or '',
+                    'phone': client_obj.phone1 or '',
+                    'email': client_obj.email or ''
+                }]
+            else:
+                client_data = []
+            return JsonResponse({
+                'success': True,
+                'clients': client_data
+            }, status=HTTPStatus.OK)
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al buscar clientes: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 
@@ -1988,8 +2186,9 @@ def complete_order_with_payment(request):
             payment_date = request.POST.get('payment_date')
             cash_account_id = request.POST.get('cash_account_id')
             completed_by_id = request.POST.get('completed_by')
+            way_to_pay = request.POST.get('way_to_pay')
             
-            if not all([order_id, payment_amount, payment_date, cash_account_id, completed_by_id]):
+            if not all([order_id, payment_amount, payment_date, cash_account_id, completed_by_id, way_to_pay]):
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -2053,7 +2252,7 @@ def complete_order_with_payment(request):
             cashflow_entry = CashFlow.objects.create(
                 transaction_date=payment_datetime,
                 created_at=datetime.now(),
-                description=f"Pago de la orden {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}",
+                description=f"PAGO COMPLETADO DE LA ORDEN {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}",
                 serial=order.subsidiary.serial,
                 n_receipt=order.correlative,
                 document_type_attached='O',  # Otro
@@ -2064,7 +2263,8 @@ def complete_order_with_payment(request):
                 cash=cash_account,
                 order=order,
                 user=request.user,
-                type_expense='O'  # Otros
+                type_expense='O',  # Otros
+                way_to_pay=way_to_pay  # Forma de pago
             )
             
             # Actualizar el estado de la orden a completado
@@ -2360,6 +2560,8 @@ def get_order_for_conversion(request):
             order_data = {
                 'id': order_obj.id,
                 'code': f"{order_obj.serial}-{order_obj.correlative:03d}",
+                'serial': order_obj.serial,
+                'correlative': order_obj.correlative,
                 'client_name': str(order_obj.client) if order_obj.client else '',
                 'client_id': order_obj.client.id if order_obj.client else None,
                 'register_date': order_obj.register_date.strftime('%Y-%m-%d') if order_obj.register_date else '',
@@ -2402,16 +2604,24 @@ def convert_order_to_service(request):
     """Vista para convertir una cotización a orden de servicio"""
     if request.method == 'POST':
         try:
+            import json
+            from decimal import Decimal
+            
             order_id = request.POST.get('order_id')
             subsidiary_id = request.POST.get('subsidiary_id')
             register_date = request.POST.get('register_date')
             delivery_date = request.POST.get('delivery_date')
-            way_to_pay = request.POST.get('way_to_pay')
-            cash_advance = request.POST.get('cash_advance', 0)
             observation = request.POST.get('observation', '')
+            details_json = request.POST.get('details', '[]')
+            subtotal = request.POST.get('subtotal', '0.00')
+            igv = request.POST.get('igv', '0.00')
+            
+            # Obtener adelantos múltiples
+            advance_payments_data = request.POST.get('advance_payments', '[]')
+            advance_payments = json.loads(advance_payments_data) if advance_payments_data else []
             
             # Validaciones básicas
-            if not order_id or not subsidiary_id or not register_date or not way_to_pay:
+            if not order_id or not subsidiary_id or not register_date:
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -2440,17 +2650,94 @@ def convert_order_to_service(request):
             order_obj.subsidiary = subsidiary_obj
             order_obj.register_date = datetime.strptime(register_date, '%Y-%m-%d').date()
             order_obj.delivery_date = datetime.strptime(delivery_date, '%Y-%m-%d').date() if delivery_date else None
-            order_obj.way_to_pay = way_to_pay
-            order_obj.cash_advance = Decimal(cash_advance) if cash_advance else Decimal('0.00')
+            # Calcular el total de adelantos
+            total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
+            order_obj.cash_advance = Decimal(str(total_advance))
             order_obj.observation = observation
             order_obj.status = 'P'  # Poner como pendiente
             order_obj.delivery_status = 'P'  # Poner como pendiente de entrega
+            order_obj.subtotal = Decimal(subtotal)
+            order_obj.igv = Decimal(igv)
             
-            # Recalcular totales
-            order_obj.calculate_totals()
-            
-            # Guardar los cambios
+            # Guardar los cambios de la orden
             order_obj.save()
+            
+            # Actualizar los detalles de productos si se proporcionaron
+            if details_json:
+                try:
+                    details = json.loads(details_json)
+                    
+                    # Eliminar detalles existentes
+                    order_obj.orderdetail_set.all().delete()
+                    
+                    # Crear nuevos detalles
+                    for detail in details:
+                        OrderDetail.objects.create(
+                            order=order_obj,
+                            product_name=detail.get('product_name', ''),
+                            quantity=Decimal(str(detail.get('quantity', 0))),
+                            price_unit=Decimal(str(detail.get('price_unit', 0))),
+                            observation=detail.get('observation', '')
+                        )
+                    
+                    # Recalcular totales
+                    order_obj.calculate_totals()
+                    
+                except (json.JSONDecodeError, ValueError) as e:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Error al procesar los detalles de productos: ' + str(e)
+                    }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Procesar adelantos múltiples en CashFlow (siempre procesar en conversión ya que se convierte a orden de servicio)
+            if advance_payments:
+                try:
+                    from apps.accounting.models import Cash, CashFlow
+                    from datetime import datetime
+                    
+                    # Registrar cada adelanto en CashFlow
+                    for advance in advance_payments:
+                        advance_amount = Decimal(str(advance.get('amount', 0)))
+                        way_to_pay_advance = advance.get('way_to_pay', 'E')
+                        advance_cash_account_id = advance.get('cash_account_id', '')
+                        
+                        if advance_amount > 0 and advance_cash_account_id:
+                            # Obtener la cuenta de caja específica para este adelanto
+                            try:
+                                advance_cash_account = Cash.objects.get(id=int(advance_cash_account_id))
+                            except Cash.DoesNotExist:
+                                # Si no se encuentra la cuenta, usar la primera disponible como fallback
+                                advance_cash_account = Cash.objects.first()
+                            
+                            if advance_cash_account:
+                                # Crear entrada en CashFlow para cada adelanto
+                                cashflow_entry = CashFlow.objects.create(
+                                    transaction_date=datetime.now(),
+                                    created_at=datetime.now(),
+                                    description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
+                                    serial=order_obj.serial,
+                                    n_receipt=order_obj.correlative,
+                                    document_type_attached='O',  # Otro
+                                    type='E',  # Entrada
+                                    subtotal=Decimal('0.00'),
+                                    total=advance_amount,
+                                    igv=Decimal('0.00'),
+                                    cash=advance_cash_account,
+                                    order=order_obj,
+                                    user=request.user,
+                                    type_expense='O',  # Otros
+                                    way_to_pay=way_to_pay_advance  # Forma de pago específica
+                                )
+                    
+                    # Verificar si el total de adelantos cubre el total de la orden
+                    if order_obj.cash_advance >= order_obj.total and order_obj.total > 0:
+                        order_obj.status = 'C'  # COMPLETADO
+                        order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                        order_obj.save()
+                        
+                except Exception as e:
+                    # Si hay error al registrar en CashFlow, continuar con el proceso
+                    print(f"Error al registrar adelantos en CashFlow: {str(e)}")
             
             # Generar el código de la nueva orden
             new_code = f"{order_obj.serial}-{order_obj.correlative:03d}"

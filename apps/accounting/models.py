@@ -23,6 +23,7 @@ class CashFlow(models.Model):
         ('F', 'Factura'), ('B', 'Boleta'), ('T', 'Ticket'), ('O', 'Otro'))
     TYPE_CHOICES = (('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida'), ('D', 'Deposito'))
     TYPE_EXPENSE = (('V', 'GASTOS VARIABLES'), ('F', 'GASTOS FIJOS'), ('P', 'GASTOS PERSONALES'), ('O', 'OTROS'))
+    TYPE_CHOICES_PAYMENT = (('E', 'Efectivo'), ('Y', 'Yape'), ('D', 'Deposito y/o Transferencia'))
     transaction_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
     description = models.CharField('Descripcion', max_length=100, null=True, blank=True)
@@ -40,6 +41,7 @@ class CashFlow(models.Model):
     order = models.ForeignKey('sales.Order', on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey('users.CustomUser', verbose_name='Usuario', on_delete=models.CASCADE, null=True, blank=True)
     type_expense = models.CharField('Tipo de gasto', max_length=1, choices=TYPE_EXPENSE, default='O')
+    way_to_pay = models.CharField('Tipo de pago', max_length=1, choices=TYPE_CHOICES_PAYMENT, default='E')
 
     def __str__(self):
         return str(self.pk)

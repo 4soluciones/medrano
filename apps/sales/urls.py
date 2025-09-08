@@ -48,6 +48,7 @@ urlpatterns = [
     path('orders/convert-to-service/', login_required(convert_order_to_service), name='convert_order_to_service'),
     path('clients/create/', login_required(create_client), name='create_client'),
     path('clients/search-autocomplete/', login_required(search_clients_autocomplete), name='search_clients_autocomplete'),
+    path('clients/get-client-autocomplete/', login_required(get_client_autocomplete), name='get_client_autocomplete'),
     # path('order_delivery_status_modal', login_required(order_delivery_status_modal), name='order_delivery_status_modal'),
 
     # =============================================================================
