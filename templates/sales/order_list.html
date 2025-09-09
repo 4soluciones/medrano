@@ -375,7 +375,7 @@
 
                         <!-- Buscador de Productos -->
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-10">
                                 <div class="form-group mb-0">
                                     <label for="product_search" class="form-label">
                                         <i class="fas fa-search mr-1"></i>Buscar Producto
@@ -2870,27 +2870,21 @@
         }
 
         function addProductToOrder(productId, productName, price, unit) {
-            // Verificar si el producto ya está en la orden
-            const existingDetail = orderDetails.find(detail => detail.product_id === productId);
-            if (existingDetail) {
-                existingDetail.quantity += 1;
-                updateDetailRow(existingDetail);
-            } else {
-                const fullProductName = `${productName}`;
+            // Permitir que los productos se repitan en lugar de incrementar cantidad
+            const fullProductName = `${productName}`;
 
-                const newDetail = {
-                    id: ++detailCounter,
-                    product_id: productId,
-                    product_name: fullProductName,
-                    quantity: 1,
-                    price_unit: price,
-                    unit: unit,
-                    observation: '',
-                    subtotal: price
-                };
-                orderDetails.push(newDetail);
-                addDetailRow(newDetail);
-            }
+            const newDetail = {
+                id: ++detailCounter,
+                product_id: productId,
+                product_name: fullProductName,
+                quantity: 1,
+                price_unit: price,
+                unit: unit,
+                observation: '',
+                subtotal: price
+            };
+            orderDetails.push(newDetail);
+            addDetailRow(newDetail);
 
             updateTotals();
             $('#products_results').hide();
@@ -4405,25 +4399,19 @@
         }
 
         function addEditProductToOrder(productId, productName, price, unit) {
-            // Verificar si el producto ya está en la orden
-            const existingDetail = editOrderDetails.find(detail => detail.product_id === productId);
-            if (existingDetail) {
-                existingDetail.quantity += 1;
-                updateEditDetailRow(existingDetail);
-            } else {
-                const newDetail = {
-                    id: ++editDetailCounter,
-                    product_id: productId,
-                    product_name: productName,
-                    quantity: 1,
-                    price_unit: price,
-                    unit: unit,
-                    observation: '',
-                    subtotal: price
-                };
-                editOrderDetails.push(newDetail);
-                addEditDetailRow(newDetail);
-            }
+            // Permitir que los productos se repitan en lugar de incrementar cantidad
+            const newDetail = {
+                id: ++editDetailCounter,
+                product_id: productId,
+                product_name: productName,
+                quantity: 1,
+                price_unit: price,
+                unit: unit,
+                observation: '',
+                subtotal: price
+            };
+            editOrderDetails.push(newDetail);
+            addEditDetailRow(newDetail);
 
             updateEditTotals();
             $('#edit_products_results').hide();

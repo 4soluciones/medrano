@@ -1376,7 +1376,6 @@ def order_update(request):
                         if product_id:
                             try:
                                 product_obj = Product.objects.get(id=int(product_id))
-                                product_name = product_obj.name
                             except Product.DoesNotExist:
                                 product_obj = None
                         else:

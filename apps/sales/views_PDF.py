@@ -594,9 +594,28 @@ def generate_ticket_pdf(order_id):
         elements.append(Paragraph("_" * 43, styles['TicketSeparatorLine']))
         elements.append(Spacer(3, 3))
 
-        # Forma de pago - texto sin bold, valor con bold
-        payment_method = order.get_way_to_pay_display()
-        elements.append(Paragraph(f"FORMA DE PAGO: {payment_method.upper()}", styles['Helvetica_Left_8']))
+        # Solo mostrar forma de pago para órdenes de servicio (no para cotizaciones)
+        if order.type == 'O':  # Orden de servicio
+            # Verificar si tiene pagos en CashFlow
+            from ..accounting.models import CashFlow
+            cashflow_payments = CashFlow.objects.filter(order=order, type='E').exclude(way_to_pay__isnull=True).exclude(way_to_pay='')
+            
+            if cashflow_payments.exists():
+                # Obtener los tipos de pago únicos de CashFlow
+                payment_types = []
+                for payment in cashflow_payments:
+                    payment_display = payment.get_way_to_pay_display()
+                    if payment_display not in payment_types:
+                        payment_types.append(payment_display)
+                
+                # Mostrar los tipos de pago separados por coma
+                payment_methods_text = ", ".join(payment_types)
+                elements.append(Paragraph(f"FORMA DE PAGO: {payment_methods_text.upper()}", styles['Helvetica_Left_8']))
+            else:
+                # Si no hay pagos en CashFlow, usar el método de pago de la orden
+                payment_method = order.get_way_to_pay_display()
+                elements.append(Paragraph(f"FORMA DE PAGO: {payment_method.upper()}", styles['Helvetica_Left_8']))
+        # Para cotizaciones (type == 'C') no se muestra forma de pago
         
         # Observaciones
         if order.observation:
