@@ -685,7 +685,7 @@ def download_ticket_pdf(request, order_id):
                 order_type = 'Order'
             else:
                 order_type = 'Cotizacion'
-            # response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
+            response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)
