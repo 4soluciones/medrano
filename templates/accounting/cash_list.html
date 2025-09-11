@@ -151,7 +151,7 @@
                                 <label for="cash_name" class="form-label">
                                     <i class="fas fa-university mr-1"></i>Nombre de la Cuenta <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" class="form-control" id="cash_name" name="cash_name" 
+                                <input type="text" class="form-control" id="cash_name" name="cash_name"  autocomplete="off"
                                        required placeholder="Ej: Caja Principal, Banco BCP, etc.">
                             </div>
                         </div>
@@ -196,12 +196,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="initial_balance" class="form-label">
-                                    <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                <label for="account_type" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Tipo de Cuenta <span class="text-danger">*</span>
                                 </label>
-                                <input type="number" class="form-control" id="initial_balance" name="initial_balance" 
-                                       min="0" step="0.01" value="0.00" placeholder="0.00">
-                                <small class="form-text text-muted">Saldo inicial de la cuenta o caja</small>
+                                <select class="form-control" id="account_type" name="account_type" required>
+                                    <option value="">Seleccione tipo</option>
+                                    <option value="C">CAJA CHICA / EFECTIVO</option>
+                                    <option value="B">CUENTA BANCARIA</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -243,7 +245,7 @@
                                 <label for="edit_cash_name" class="form-label">
                                     <i class="fas fa-university mr-1"></i>Nombre de la Cuenta <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" class="form-control" id="edit_cash_name" name="cash_name" 
+                                <input type="text" class="form-control" id="edit_cash_name" name="cash_name" autocomplete="off"
                                        required placeholder="Ej: Caja Principal, Banco BCP, etc.">
                             </div>
                         </div>
@@ -288,12 +290,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_initial_balance" class="form-label">
-                                    <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                <label for="edit_account_type" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Tipo de Cuenta <span class="text-danger">*</span>
                                 </label>
-                                <input type="number" class="form-control" id="edit_initial_balance" name="initial_balance" 
-                                       min="0" step="0.01" value="0.00" placeholder="0.00">
-                                <small class="form-text text-muted">Saldo inicial de la cuenta o caja</small>
+                                <select class="form-control" id="edit_account_type" name="account_type" required>
+                                    <option value="">Seleccione tipo</option>
+                                    <option value="C">CAJA CHICA / EFECTIVO</option>
+                                    <option value="B">CUENTA BANCARIA</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -418,7 +422,7 @@ function saveCash() {
 }
 
 function validateCashForm() {
-    const requiredFields = ['cash_name', 'subsidiary_id', 'currency_type'];
+    const requiredFields = ['cash_name', 'subsidiary_id', 'currency_type', 'account_type'];
 
     for (const field of requiredFields) {
         const value = $(`#${field}`).val();
@@ -498,7 +502,7 @@ function loadCashDataForEdit(cashId) {
                 $('#edit_subsidiary_id').val(cash.subsidiary_id);
                 $('#edit_account_number').val(cash.account_number || '');
                 $('#edit_currency_type').val(cash.currency_type);
-                $('#edit_initial_balance').val(cash.initial);
+                $('#edit_account_type').val(cash.account_type);
                 
                 $('#loading-overlay').hide();
             } else {
@@ -555,7 +559,7 @@ function updateCash() {
 }
 
 function validateEditCashForm() {
-    const requiredFields = ['edit_cash_name', 'edit_subsidiary_id', 'edit_currency_type'];
+    const requiredFields = ['edit_cash_name', 'edit_subsidiary_id', 'edit_currency_type', 'edit_account_type'];
 
     for (const field of requiredFields) {
         const value = $(`#${field}`).val();

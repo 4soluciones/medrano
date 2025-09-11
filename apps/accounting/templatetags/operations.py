@@ -66,3 +66,44 @@ def sum_order_quantities(order):
                 total += detail.quantity
         return total
     return 1  # Valor por defecto si no hay detalles
+
+
+@register.filter(name='filter_order_advances')
+def filter_order_advances(cashflows, order_id):
+    """Filtra los cashflows de adelantos para una orden específica"""
+    if cashflows:
+        return [cf for cf in cashflows if cf.order_id == order_id and cf.type == 'E' and cf.order_type_entry == 'A']
+    return []
+
+
+@register.filter(name='filter_order_payments')
+def filter_order_payments(cashflows, order_id):
+    """Filtra los cashflows de pagos totales para una orden específica"""
+    if cashflows:
+        return [cf for cf in cashflows if cf.order_id == order_id and cf.type == 'E' and cf.order_type_entry == 'T']
+    return []
+
+
+@register.filter(name='sum_total')
+def sum_total(cashflows):
+    """Suma el total de una lista de cashflows"""
+    if cashflows:
+        total = 0
+        for cf in cashflows:
+            if cf.total:
+                total += cf.total
+        return total
+    return 0
+
+
+@register.filter(name='subtract')
+def subtract(value, subtract_value):
+    """Resta dos valores"""
+    if value is not None and subtract_value is not None:
+        try:
+            value_decimal = decimal.Decimal(str(value))
+            subtract_decimal = decimal.Decimal(str(subtract_value))
+            return value_decimal - subtract_decimal
+        except (ValueError, TypeError):
+            return value
+    return value

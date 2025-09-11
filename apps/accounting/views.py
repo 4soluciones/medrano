@@ -108,8 +108,8 @@ def cash_save(request):
             name = request.POST.get('cash_name', '').strip()
             subsidiary_id = request.POST.get('subsidiary_id', '')
             account_number = request.POST.get('account_number', '').strip()
-            initial_balance = request.POST.get('initial_balance', '0.00')
             currency_type = request.POST.get('currency_type', 'S')
+            account_type = request.POST.get('account_type', 'C')
             
             # Validaciones básicas
             if not name:
@@ -137,8 +137,8 @@ def cash_save(request):
                 name=name.upper(),
                 subsidiary=subsidiary_obj,
                 account_number=account_number.upper() if account_number else None,
-                initial=Decimal(str(initial_balance)),
-                currency_type=currency_type
+                currency_type=currency_type,
+                account_type=account_type
             )
             cash_obj.save()
             
@@ -198,7 +198,7 @@ def cash_get(request):
                 'subsidiary_id': cash_obj.subsidiary.id,
                 'account_number': cash_obj.account_number,
                 'currency_type': cash_obj.currency_type,
-                'initial': float(cash_obj.initial),
+                'account_type': cash_obj.account_type,
             }
             
             return JsonResponse({
@@ -238,8 +238,8 @@ def cash_update(request):
             name = request.POST.get('cash_name', '').strip()
             subsidiary_id = request.POST.get('subsidiary_id', '')
             account_number = request.POST.get('account_number', '').strip()
-            initial_balance = request.POST.get('initial_balance', '0.00')
             currency_type = request.POST.get('currency_type', 'S')
+            account_type = request.POST.get('account_type', 'C')
             
             # Validaciones básicas
             if not name:
@@ -266,8 +266,8 @@ def cash_update(request):
             cash_obj.name = name.upper()
             cash_obj.subsidiary = subsidiary_obj
             cash_obj.account_number = account_number.upper() if account_number else None
-            cash_obj.initial = Decimal(str(initial_balance))
             cash_obj.currency_type = currency_type
+            cash_obj.account_type = account_type
             cash_obj.save()
             
             return JsonResponse({
@@ -298,28 +298,44 @@ def cashflow_list(request):
     if request.method == 'GET':
         cash_accounts = Cash.objects.all()
         document_types = CashFlow.DOCUMENT_TYPE_ATTACHED_CHOICES
-        transaction_types = [('E', 'Entrada'), ('S', 'Salida')]  # Solo entrada y salida
+        transaction_types = [('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida')]  # Apertura, cierre, entrada y salida
         expense_types = CashFlow.TYPE_EXPENSE
         user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
-        
+        subsidiary_set = Subsidiary.objects.all()
         # Fecha actual para los filtros
         date_now = datetime.now().strftime('%Y-%m-%d')
+        
+        # Obtener la sucursal del usuario actual
+        user_subsidiary = None
+        first_cash_account = None
+        
+        if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
+            user_subsidiary = request.user.subsidiary
+            # Buscar la primera cuenta de tipo 'E' (Entrada) de la sucursal del usuario
+            first_cash_account = Cash.objects.filter(
+                subsidiary=user_subsidiary,
+                account_type='E'
+            ).first()
+        
+        # Si no hay cuenta de tipo 'E', buscar cualquier cuenta de la sucursal
+        if not first_cash_account and user_subsidiary:
+            first_cash_account = Cash.objects.filter(subsidiary=user_subsidiary).first()
         
         return render(request, 'accounting/cashflow_list.html', {
             'cash_accounts': cash_accounts,
             'document_types': document_types,
             'transaction_types': transaction_types,
             'expense_types': expense_types,
+            'subsidiary_set': subsidiary_set,
             'user_set': user_set,
             'date_now': date_now,
+            'user_subsidiary': user_subsidiary,
+            'first_cash_account': first_cash_account,
         })
     elif request.method == 'POST':
         try:
             # Filtrar gastos según parámetros
             cash_id = request.POST.get('cash_account')
-            transaction_type = request.POST.get('transaction_type')
-            expense_type = request.POST.get('expense_type')
-            user_id = request.POST.get('user')
             date_from = request.POST.get('date_from')
             date_to = request.POST.get('date_to')
             
@@ -327,24 +343,21 @@ def cashflow_list(request):
         
             if cash_id and cash_id != '0':
                 cashflows = cashflows.filter(cash_id=cash_id)
-            if transaction_type and transaction_type != '0':
-                cashflows = cashflows.filter(type=transaction_type)
-            if expense_type and expense_type != '0':
-                cashflows = cashflows.filter(type_expense=expense_type)
-            if user_id and user_id != '0':
-                cashflows = cashflows.filter(user_id=user_id)
 
             # Filtros de fecha
             if date_from:
-                cashflows = cashflows.filter(transaction_date__gte=date_from)
+                cashflows = cashflows.filter(transaction_date__date__gte=date_from)
             if date_to:
-                cashflows = cashflows.filter(transaction_date__lte=date_to)
+                cashflows = cashflows.filter(transaction_date__date__lte=date_to)
 
-            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by('-transaction_date')
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by('id')
 
             # Calcular totales
-            total_income = cashflows.filter(type='E').aggregate(total=Sum('total'))['total'] or 0
+            # Entradas: tipo 'E' (Entrada) + tipo 'A' (Apertura)
+            total_income = cashflows.filter(type__in=['E', 'A']).aggregate(total=Sum('total'))['total'] or 0
+            # Salidas: tipo 'S' (Salida)
             total_expenses = cashflows.filter(type='S').aggregate(total=Sum('total'))['total'] or 0
+            # Balance: Entradas - Salidas
             net_balance = total_income - total_expenses
 
             # Totales por tipo de gasto
@@ -382,7 +395,7 @@ def cashflow_create(request):
     if request.method == 'GET':
         cash_accounts = Cash.objects.all()
         document_types = CashFlow.DOCUMENT_TYPE_ATTACHED_CHOICES
-        transaction_types = [('E', 'Entrada'), ('S', 'Salida')]  # Solo entrada y salida
+        transaction_types = [('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida')]  # Apertura, cierre, entrada y salida
         expense_types = CashFlow.TYPE_EXPENSE
         user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
         
@@ -487,7 +500,7 @@ def cashflow_edit(request, cashflow_id):
         cashflow_obj = CashFlow.objects.select_related('cash', 'user', 'cash__subsidiary').get(id=cashflow_id)
         cash_accounts = Cash.objects.all()
         document_types = CashFlow.DOCUMENT_TYPE_ATTACHED_CHOICES
-        transaction_types = [('E', 'Entrada'), ('S', 'Salida')]  # Solo entrada y salida
+        transaction_types = [('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida')]  # Apertura, cierre, entrada y salida
         expense_types = CashFlow.TYPE_EXPENSE
         user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
         
@@ -614,7 +627,7 @@ def get_cash_accounts_by_subsidiary(request):
                         'id': account.id,
                         'name': account.name,
                         'currency': account.get_currency_type_display(),
-                        'balance': float(account.initial)
+                        # 'balance': float(account.initial)
                     })
                 
                 return JsonResponse({
@@ -665,10 +678,28 @@ def sales_report(request):
         # Fecha actual para el filtro
         date_now = datetime.now().strftime('%Y-%m-%d')
         
+        # Obtener la sucursal del usuario actual
+        user_subsidiary = None
+        first_cash_account = None
+        
+        if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
+            user_subsidiary = request.user.subsidiary
+            # Buscar la primera cuenta de tipo 'C' (Caja Chica/Efectivo) de la sucursal del usuario
+            first_cash_account = Cash.objects.filter(
+                subsidiary=user_subsidiary,
+                account_type='C'
+            ).first()
+        
+        # Si no hay cuenta de tipo 'C', buscar cualquier cuenta de la sucursal
+        if not first_cash_account and user_subsidiary:
+            first_cash_account = Cash.objects.filter(subsidiary=user_subsidiary).first()
+        
         return render(request, 'accounting/sales_report.html', {
             'subsidiary_set': subsidiary_set,
             'cash_accounts': cash_accounts,
             'date_now': date_now,
+            'user_subsidiary': user_subsidiary,
+            'first_cash_account': first_cash_account,
         })
     elif request.method == 'POST':
         try:
@@ -683,34 +714,42 @@ def sales_report(request):
                     'message': 'Debe seleccionar una fecha'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Filtrar órdenes del día
-            orders = Order.objects.filter(
-                register_date=report_date,
-                status__in=['P', 'C']  # Pendiente o Completado
-            )
-            
+            # Filtrar cashflows del día por sucursal
             if subsidiary_id and subsidiary_id != '0':
-                orders = orders.filter(subsidiary_id=subsidiary_id)
+                # Filtrar por sucursal del usuario logueado
+                cashflows = CashFlow.objects.filter(
+                    transaction_date__date=report_date,
+                    cash__subsidiary_id=subsidiary_id
+                )
+            else:
+                # Si no hay sucursal específica, mostrar todos los cashflows del día
+                cashflows = CashFlow.objects.filter(
+                    transaction_date__date=report_date
+                )
             
-            orders = orders.select_related('client', 'user', 'subsidiary').prefetch_related('orderdetail_set')
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
             
-            # Filtrar gastos del día
-            cashflows = CashFlow.objects.filter(
-                transaction_date__date=report_date
-            )
+            # Filtrar cashflows con order_id (ventas) y sin order_id (gastos)
+            order_cashflows = cashflows.filter(order__isnull=False)
             
-            if cash_id and cash_id != '0':
-                cashflows = cashflows.filter(cash_id=cash_id)
+            # Calcular totales desde accounting_cashflow
+            # total_sales: Suma total de todas las órdenes relacionadas con cashflows del día
+            total_sales = sum(cf.order.total for cf in order_cashflows if cf.order) or 0
             
-            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary')
+            # total_cash_advance: Suma de adelantos (tipo 'A') desde accounting_cashflow
+            total_cash_advance = order_cashflows.filter(
+                type='E',  # Entrada
+                order_type_entry='A'  # Adelanto
+            ).aggregate(total=Sum('total'))['total'] or 0
             
-            # Calcular totales de ventas
-            # total_sales: Suma total de todas las ventas del día
-            total_sales = orders.aggregate(total=Sum('total'))['total'] or 0
-            # total_cash_advance: Suma total de todos los adelantos recibidos
-            total_cash_advance = orders.aggregate(total=Sum('cash_advance'))['total'] or 0
-            # total_balance: Saldo pendiente (ventas totales - adelantos totales)
-            total_balance = total_sales - total_cash_advance
+            # total_paid: Suma de pagos totales (tipo 'T') desde accounting_cashflow
+            total_paid = order_cashflows.filter(
+                type='E',  # Entrada
+                order_type_entry='T'  # Pago Total
+            ).aggregate(total=Sum('total'))['total'] or 0
+            
+            # total_balance: Saldo pendiente (ventas totales - adelantos totales - pagos totales)
+            total_balance = total_sales - total_cash_advance - total_paid
             
             # Calcular totales de gastos
             total_income = cashflows.filter(type='E').aggregate(total=Sum('total'))['total'] or 0
@@ -723,27 +762,90 @@ def sales_report(request):
             total_personal_expenses = cashflows.filter(type='S', type_expense='P').aggregate(total=Sum('total'))['total'] or 0
             total_other_expenses = cashflows.filter(type='S', type_expense='O').aggregate(total=Sum('total'))['total'] or 0
             
+            # Calcular ingreso real: A Cuenta + Total Pagado
+            real_income = total_cash_advance + total_paid
+            
             # Calcular caja final
-            # final_cash: Caja final = Saldo pendiente - Gastos netos
+            # final_cash: Caja final = Ingreso real - Gastos netos
             # Donde: Gastos netos = Gastos totales - Ingresos por otros conceptos
-            final_cash = total_balance - net_expenses
+            final_cash = real_income - net_expenses
+
+            # Preparar datos de adelantos (order_type_entry A) agrupados por orden
+            advances_cashflows = order_cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='A'  # Solo adelantos
+            )
+            
+            # Agrupar adelantos por orden para calcular saldo único
+            advances_grouped = {}
+            for cashflow in advances_cashflows:
+                order_id = cashflow.order.id
+                if order_id not in advances_grouped:
+                    advances_grouped[order_id] = {
+                        'order': cashflow.order,
+                        'advances': [],
+                        'total_advances': 0,
+                        'saldo': 0
+                    }
+                advances_grouped[order_id]['advances'].append(cashflow)
+                advances_grouped[order_id]['total_advances'] += float(cashflow.total)
+            
+            # Calcular saldo para cada orden
+            for order_id, data in advances_grouped.items():
+                data['saldo'] = float(data['order'].total) - data['total_advances']
+            
+            # Preparar datos de pagos totales/saldos (order_type_entry T)
+            payments_cashflows = order_cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='T'  # Solo pagos totales
+            )
+            
+            # Preparar datos de cashflows sin order_id (egresos)
+            expenses_cashflows = cashflows.filter(
+                order__isnull=True,
+                type='S'  # Solo salidas (gastos)
+            )
+
+            # Calcular totales para resúmenes
+            total_advances = advances_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            
+            # Calcular totales por tipo de pago
+            advances_efectivo = advances_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            advances_yape = advances_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            advances_deposito = advances_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            
+            payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            payments_deposito = payments_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            
+            # Totales generales
+            total_efectivo = advances_efectivo + payments_efectivo
+            total_yape = advances_yape + payments_yape
+            total_deposito = advances_deposito + payments_deposito
+            total_general = total_efectivo + total_yape + total_deposito
 
             context = {
                 'report_date': report_date,
-                'orders': orders.order_by('id'),
-                'cashflows': cashflows.order_by('id'),
-                'total_sales': total_sales,
-                'total_cash_advance': total_cash_advance,
-                'total_balance': total_balance,
-                'total_income': total_income,
-                'total_expenses': total_expenses,
-                'net_expenses': net_expenses,
-                'final_cash': final_cash,
-                'total_variable_expenses': total_variable_expenses,
-                'total_fixed_expenses': total_fixed_expenses,
-                'total_personal_expenses': total_personal_expenses,
-                'total_other_expenses': total_other_expenses,
-                'subsidiary': orders.first().subsidiary if orders.exists() else None,
+                'advances_grouped': advances_grouped,
+                'advances_cashflows': advances_cashflows.order_by('id'),
+                'payments_cashflows': payments_cashflows.order_by('id'),
+                'expenses_cashflows': expenses_cashflows.order_by('id'),
+                'total_advances': total_advances,
+                'total_payments': total_payments,
+                'total_expenses_amount': total_expenses_amount,
+                'advances_efectivo': advances_efectivo,
+                'advances_yape': advances_yape,
+                'advances_deposito': advances_deposito,
+                'payments_efectivo': payments_efectivo,
+                'payments_yape': payments_yape,
+                'payments_deposito': payments_deposito,
+                'total_efectivo': total_efectivo,
+                'total_yape': total_yape,
+                'total_deposito': total_deposito,
+                'total_general': total_general,
+                'subsidiary': order_cashflows.first().order.subsidiary if order_cashflows.exists() else None,
             }
             
             tpl = loader.get_template('accounting/sales_report_grid.html')
@@ -754,7 +856,9 @@ def sales_report(request):
                 'summary': {
                     'total_sales': float(total_sales),
                     'total_cash_advance': float(total_cash_advance),
+                    'total_paid': float(total_paid),
                     'total_balance': float(total_balance),
+                    'real_income': float(real_income),
                     'total_income': float(total_income),
                     'total_expenses': float(total_expenses),
                     'net_expenses': float(net_expenses),

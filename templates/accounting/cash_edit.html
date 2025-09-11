@@ -130,20 +130,16 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="edit_initial_balance" class="form-label">
-                                                <i class="fas fa-money-bill-wave mr-1"></i>Saldo Inicial
+                                            <label for="edit_account_type" class="form-label">
+                                                <i class="fas fa-university mr-1"></i>Tipo de Cuenta <span class="text-danger">*</span>
                                             </label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text">
-                                                        <i class="fas fa-coins"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="number" class="form-control" id="edit_initial_balance" name="initial_balance" 
-                                                       min="0" step="0.01" value="{{ cash.initial|floatformat:2 }}" placeholder="0.00">
-                                            </div>
+                                            <select class="form-control" id="edit_account_type" name="account_type" required>
+                                                <option value="">Seleccione tipo</option>
+                                                <option value="C" {% if cash.account_type == 'C' %}selected{% endif %}>CAJA CHICA / EFECTIVO</option>
+                                                <option value="B" {% if cash.account_type == 'B' %}selected{% endif %}>CUENTA BANCARIA</option>
+                                            </select>
                                             <small class="form-text text-muted">
-                                                Saldo inicial de la cuenta o caja
+                                                Tipo de cuenta o caja registradora
                                             </small>
                                         </div>
                                     </div>
@@ -263,13 +259,10 @@ $(document).ready(function() {
         validateField('edit_currency_type', this.value);
     });
 
-    // Formatear saldo inicial
-    $('#edit_initial_balance').on('input', function() {
-        let value = this.value;
-        if (value && !isNaN(value)) {
-            this.value = parseFloat(value).toFixed(2);
-        }
+    $('#edit_account_type').on('change', function() {
+        validateField('edit_account_type', this.value);
     });
+
 });
 
 function validateField(fieldName, value) {
@@ -310,6 +303,13 @@ function validateField(fieldName, value) {
                 message = 'Debe seleccionar un tipo de moneda';
             }
             break;
+            
+        case 'edit_account_type':
+            if (!value) {
+                isValid = false;
+                message = 'Debe seleccionar un tipo de cuenta';
+            }
+            break;
     }
     
     if (isValid) {
@@ -324,7 +324,7 @@ function validateField(fieldName, value) {
 
 function updateCash() {
     // Validar todos los campos
-    const fields = ['edit_cash_name', 'edit_subsidiary_id', 'edit_currency_type'];
+    const fields = ['edit_cash_name', 'edit_subsidiary_id', 'edit_currency_type', 'edit_account_type'];
     let isValid = true;
     
     for (const field of fields) {

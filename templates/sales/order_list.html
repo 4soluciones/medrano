@@ -3090,7 +3090,7 @@
                     </td>
                     <td style="padding: 0.3rem;">
                         <input type="number" class="form-control form-control-sm text-right" 
-                               value="${advance.amount}" 
+                               value=""
                                min="0" step="0.01" 
                                onkeyup="updateAdvanceField(${advance.id}, 'amount', this.value)"
                                placeholder="0.00" style="font-size: 0.8rem;">
@@ -3099,7 +3099,7 @@
                         <select class="form-control form-control-sm" onchange="updateAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
                             <option value="">Seleccionar cuenta</option>
                             {% for cash in cash_accounts %}
-                            <option value="{{ cash.id }}" ${advance.cash_account_id == {{ cash.id }} ? 'selected' : ''}>{{ cash.name }}</option>
+                            <option value="{{ cash.id }}" ${advance.cash_account_id === {{ cash.id }} ? 'selected' : ''}>{{ cash.name }}</option>
                             {% endfor %}
                         </select>
                     </td>

@@ -23,7 +23,7 @@ from django.shortcuts import render
 from apps.sales.views_API import query_apis_net_dni_ruc
 from apps.users.models import CustomUser
 from medrano import settings
-from apps.accounting.models import CashFlow
+from apps.accounting.models import CashFlow, Cash
 
 
 class Home(TemplateView):
@@ -602,7 +602,6 @@ def get_payment_periods_list(request):
         })
 
 
-
 def modal_payment_period_create(request):
     """Modal para crear nuevo período de pago"""
     if request.method == 'GET':
@@ -720,9 +719,16 @@ def get_payment_period_detail(request, period_id):
             payment_period = PaymentPeriod.objects.select_related('employee').get(id=period_id)
             daily_payments = payment_period.daily_payments.all().order_by('date')
             
+            # Obtener todas las sucursales para el select
+            subsidiaries = Subsidiary.objects.all().order_by('name')
+            my_date = datetime.now()
+            date_now = my_date.strftime("%Y-%m-%d")
+
             context = {
+                'date_now': date_now,
                 'payment_period': payment_period,
                 'daily_payments': daily_payments,
+                'subsidiaries': subsidiaries,
             }
             return render(request, 'hrm/payment_period_detail.html', context)
             
@@ -784,7 +790,9 @@ def mark_payment_as_paid(request):
         try:
             period_id = request.POST.get('period_id', '')
             payment_date_str = request.POST.get('payment_date', '')
-            
+            cash_id = request.POST.get('cash_id', '')
+            description = request.POST.get('description', '')
+
             if not period_id:
                 return JsonResponse({
                     'success': False,
@@ -804,16 +812,15 @@ def mark_payment_as_paid(request):
             # Crear registro en CashFlow para el pago del período
             try:
                 # Formatear fechas para la descripción
-                start_date_formatted = payment_period.start_date.strftime('%d/%m/%Y')
-                end_date_formatted = payment_period.end_date.strftime('%d/%m/%Y')
-                employee_name = f"{payment_period.employee.first_name} {payment_period.employee.last_name}"
-                
-                # Crear descripción del pago
-                description = f"PAGO SEMANA del {start_date_formatted} AL {end_date_formatted} DE {employee_name}"
+                # start_date_formatted = payment_period.start_date.strftime('%d/%m/%Y')
+                # end_date_formatted = payment_period.end_date.strftime('%d/%m/%Y')
+                # employee_name = f"{payment_period.employee.first_name} {payment_period.employee.last_name}"
+
+                cash_obj = Cash.objects.get(id=int(cash_id))
                 
                 # Crear registro en CashFlow
                 cash_flow = CashFlow(
-                    transaction_date=datetime.now(),
+                    transaction_date=payment_date_str,
                     created_at=datetime.now(),
                     description=description,
                     type='S',  # Salida
@@ -822,6 +829,7 @@ def mark_payment_as_paid(request):
                     subtotal=0,
                     total=payment_period.total_amount,
                     igv=0,
+                    cash=cash_obj,
                     user=request.user
                 )
                 cash_flow.save()

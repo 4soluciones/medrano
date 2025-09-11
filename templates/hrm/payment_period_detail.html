@@ -165,7 +165,7 @@
 
         <!-- Resumen del Período -->
         <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-4">
+            <div class="col-xl-2 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
@@ -179,7 +179,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-4">
+            <div class="col-xl-2 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
@@ -189,6 +189,20 @@
                         </div>
                         <h4 class="text-warning mb-1">{{ payment_period.get_permission_days_count }}</h4>
                         <p class="text-muted mb-0">Días de Permiso</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-danger">
+                                <i class="fas fa-times-circle text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-danger mb-1">{{ payment_period.get_absence_days_count }}</h4>
+                        <p class="text-muted mb-0">Días de Falta</p>
                     </div>
                 </div>
             </div>
@@ -303,6 +317,146 @@
                         </button>
                         <button type="submit" class="btn btn-primary rounded-pill" id="btn-update-daily">
                             <i class="fas fa-save mr-2"></i>Actualizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar pago del empleado -->
+    <div class="modal fade" id="modal-register-payment" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalRegisterPaymentTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient-success text-white border-0">
+                    <h5 class="modal-title">
+                        <i class="fas fa-money-check-alt mr-2"></i>Registrar Pago del Empleado
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                
+                <form id="form-register-payment">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="payment_period_id" name="period_id" value="{{ payment_period.id }}">
+                        
+                        <!-- Información del empleado y período -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary mb-2">
+                                                    <i class="fas fa-user mr-2"></i>Empleado
+                                                </h6>
+                                                <p class="mb-1"><strong>{{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}</strong></p>
+                                                <small class="text-muted">Documento: {{ payment_period.employee.document|default:"Sin documento" }}</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary mb-2">
+                                                    <i class="fas fa-calendar-week mr-2"></i>Período
+                                                </h6>
+                                                <p class="mb-1"><strong>{{ payment_period.start_date|date:'d/m/Y' }} - {{ payment_period.end_date|date:'d/m/Y' }}</strong></p>
+                                                <small class="text-muted">Total: S/ {{ payment_period.total_amount|safe }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Usuario logueado (readonly) -->
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_user" class="form-label">
+                                    <i class="fas fa-user-check mr-2"></i>Usuario Responsable <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="payment_user" 
+                                       value="{{ user.first_name }} {{ user.last_name }}" readonly>
+                                <input type="hidden" id="payment_user_id" name="user_id" value="{{ user.id }}">
+                            </div>
+                            
+                            <!-- Fecha de pago -->
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_date" class="form-label">
+                                    <i class="fas fa-calendar mr-2"></i>Fecha de Pago <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="payment_date" name="payment_date" 
+                                       value="{{ date_now }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Sucursal -->
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_subsidiary" class="form-label">
+                                    <i class="fas fa-building mr-2"></i>Sucursal <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="payment_subsidiary" name="subsidiary_id" required>
+                                    <option value="">Seleccione una sucursal</option>
+                                    {% for subsidiary in subsidiaries %}
+                                        <option value="{{ subsidiary.id }}" {% if forloop.first %}selected{% endif %}>
+                                            {{ subsidiary.name|upper }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Caja/Cuenta -->
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_cash" class="form-label">
+                                    <i class="fas fa-wallet mr-2"></i>Caja/Cuenta <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="payment_cash" name="cash_id" required>
+                                    <option value="">Seleccione una caja</option>
+                                </select>
+                                <div class="invalid-feedback" id="cash-error">
+                                    Debe seleccionar una caja
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="payment_description" class="form-label">
+                                    <i class="fas fa-file-text mr-2"></i>Descripción <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="payment_description" name="description" 
+                                          rows="3" required></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen del pago -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-success border-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-info-circle text-success mr-3 fa-2x"></i>
+                                        <div>
+                                            <h6 class="text-success mb-1">Resumen del Pago</h6>
+                                            <p class="mb-1">
+                                                <strong>Empleado:</strong> {{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}<br>
+                                                <strong>Período:</strong> {{ payment_period.start_date|date:'d/m/Y' }} - {{ payment_period.end_date|date:'d/m/Y' }}<br>
+                                                <strong>Total a Pagar:</strong> S/ {{ payment_period.total_amount|safe }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 bg-light">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success rounded-pill" id="btn-register-payment">
+                            <i class="fas fa-check mr-2"></i>Registrar Pago
                         </button>
                     </div>
                 </form>
@@ -466,9 +620,83 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
         .modal-content {
             border-radius: 15px;
             overflow: hidden;
+        }
+        
+        /* Estilos específicos para el modal de registro de pago */
+        #modal-register-payment .modal-dialog {
+            max-width: 800px;
+        }
+        
+        #modal-register-payment .modal-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 15px 15px 0 0;
+        }
+        
+        #modal-register-payment .modal-body {
+            background: #f8f9fa;
+        }
+        
+        #modal-register-payment .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        
+        #modal-register-payment .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        #modal-register-payment .btn-success:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        #modal-register-payment .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        #modal-register-payment .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        #modal-register-payment .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        #modal-register-payment .form-control[readonly] {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+        
+        #modal-register-payment .invalid-feedback {
+            display: block;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+        
+        #modal-register-payment .is-invalid {
+            border-color: #dc3545;
+        }
+        
+        #modal-register-payment .is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
         }
     </style>
 {% endblock body %}
@@ -477,6 +705,11 @@
     <script type="text/javascript">
         $(document).ready(function() {
             console.log('Detalle del período de pago cargado');
+            
+            // Evento para cargar cajas cuando cambie la sucursal
+            $('#payment_subsidiary').on('change', function() {
+                loadCashAccounts();
+            });
         });
 
         function editDailyPayment(dailyId) {
@@ -501,39 +734,57 @@
         }
 
         function markAsPaid() {
-            if (confirm('¿Estás seguro de que quieres marcar este período como pagado? Esta acción no se puede deshacer.')) {
-                let formData = new FormData();
-                formData.append('period_id', '{{ payment_period.id }}');
-                formData.append('payment_date', new Date().toISOString().split('T')[0]);
-                
-                $.ajax({
-                    url: '{% url "apps.hrm:mark_payment_as_paid" %}',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    beforeSend: function() {
-                        // Mostrar loading
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            toastr.success(response.message, '¡Éxito!');
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1500);
-                        } else {
-                            toastr.error(response.message, 'Error');
-                        }
-                    },
-                    error: function(xhr) {
-                        let message = 'Error al marcar como pagado';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        }
-                        toastr.error(message, 'Error');
-                    }
-                });
+            // Generar descripción automática
+            generatePaymentDescription();
+            
+            // Cargar cajas de la sucursal seleccionada
+            loadCashAccounts();
+            
+            // Mostrar modal
+            $('#modal-register-payment').modal('show');
+        }
+
+        function generatePaymentDescription() {
+            const startDate = '{{ payment_period.start_date|date:"d/m/Y" }}';
+            const endDate = '{{ payment_period.end_date|date:"d/m/Y" }}';
+            const employeeName = '{{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}';
+            
+            const description = `PAGO SEMANA DEL ${startDate} AL ${endDate} DE ${employeeName}`;
+            $('#payment_description').val(description);
+        }
+
+        function loadCashAccounts() {
+            const subsidiaryId = $('#payment_subsidiary').val();
+            const cashSelect = $('#payment_cash');
+            
+            if (!subsidiaryId) {
+                cashSelect.html('<option value="">Seleccione una caja</option>');
+                return;
             }
+            
+            // Mostrar loading
+            cashSelect.html('<option value="">Cargando cajas...</option>');
+            
+            $.ajax({
+                url: '{% url "apps.accounting:get_cash_accounts_by_subsidiary" %}',
+                type: 'GET',
+                data: { subsidiary: subsidiaryId },
+                success: function(response) {
+                    if (response.success) {
+                        cashSelect.html('<option value="">Seleccione una caja</option>');
+                        response.accounts.forEach(function(account) {
+                            cashSelect.append(`<option value="${account.id}">${account.name} (${account.currency})</option>`);
+                        });
+                    } else {
+                        cashSelect.html('<option value="">Error al cargar cajas</option>');
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    cashSelect.html('<option value="">Error al cargar cajas</option>');
+                    toastr.error('Error al cargar las cajas', 'Error');
+                }
+            });
         }
 
         // Actualizar pago diario
@@ -624,12 +875,93 @@
             // Recalcular estadísticas basadas en la tabla
             let workingDays = $('.status-completo').length;
             let permissionDays = $('.status-permiso').length;
+            let absenceDays = $('.status-falta').length;
             let totalAmount = parseFloat($('tfoot h4').text().replace('S/ ', ''));
             
             // Actualizar tarjetas de estadísticas
             $('.icon-circle.bg-primary + h4').text(workingDays);
             $('.icon-circle.bg-warning + h4').text(permissionDays);
+            $('.icon-circle.bg-danger + h4').text(absenceDays);
             $('.icon-circle.bg-success + h4').text(`S/ ${totalAmount.toFixed(2)}`);
+        }
+
+        // Manejo del formulario de registro de pago
+        $('#form-register-payment').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Validar formulario
+            if (!validatePaymentForm()) {
+                return;
+            }
+            
+            let formData = new FormData(this);
+            
+            $.ajax({
+                url: '{% url "apps.hrm:mark_payment_as_paid" %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('#btn-register-payment').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Registrando...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#modal-register-payment').modal('hide');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error al registrar el pago';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    toastr.error(message, 'Error');
+                },
+                complete: function() {
+                    $('#btn-register-payment').prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Registrar Pago');
+                }
+            });
+        });
+
+        function validatePaymentForm() {
+            let isValid = true;
+            
+            // Limpiar validaciones anteriores
+            $('.form-control').removeClass('is-invalid');
+            $('.invalid-feedback').hide();
+            
+            // Validar sucursal
+            if (!$('#payment_subsidiary').val()) {
+                $('#payment_subsidiary').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            // Validar caja
+            if (!$('#payment_cash').val()) {
+                $('#payment_cash').addClass('is-invalid');
+                $('#cash-error').show();
+                isValid = false;
+            }
+            
+            // Validar fecha
+            if (!$('#payment_date').val()) {
+                $('#payment_date').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            // Validar descripción
+            if (!$('#payment_description').val()) {
+                $('#payment_description').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            return isValid;
         }
     </script>
 {% endblock extrajs %}

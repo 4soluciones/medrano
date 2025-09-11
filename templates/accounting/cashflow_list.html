@@ -37,9 +37,17 @@
                                     <h6 class="card-title mb-0">
                                         <i class="fas fa-search mr-2"></i>Filtros de Búsqueda
                                     </h6>
-                                    <button type="button" class="btn btn-success ml-3" onclick="openCreateCashflowModal()">
-                                        <i class="fas fa-plus mr-1"></i>Nuevo Gasto
-                                    </button>
+                                    <div class="ml-3 d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="openCreateCashflowModal()">
+                                            <i class="fas fa-plus mr-1"></i>Nuevo Gasto
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="openCashOpeningModal()">
+                                            <i class="fas fa-door-open mr-1"></i>Apertura
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="openCashClosingModal()">
+                                            <i class="fas fa-door-closed mr-1"></i>Cierre
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="card-tools">
                                     <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-filters" title="Colapsar/Expandir filtros">
@@ -77,7 +85,7 @@
                                             <select class="form-control form-control-sm" id="subsidiary-filter" name="subsidiary">
                                                 <option value="0">Todas las sucursales</option>
                                                 {% for subsidiary in subsidiary_set %}
-                                                    <option value="{{ subsidiary.id }}">{{ subsidiary.name }}</option>
+                                                    <option value="{{ subsidiary.id }}" {% if user_subsidiary and subsidiary.id == user_subsidiary.id %}selected{% endif %}>{{ subsidiary.name|upper }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -87,52 +95,16 @@
                                             <label for="cash-account-filter" class="form-label-sm">Cuenta/Caja</label>
                                             <select class="form-control form-control-sm" id="cash-account-filter" name="cash_account">
                                                 <option value="0">Todas las cuentas</option>
-                                                {% for cash in cash_accounts %}
-                                                    <option value="{{ cash.id }}">{{ cash.name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group mb-1">
-                                            <label for="transaction-type-filter" class="form-label-sm">Tipo Transacción</label>
-                                            <select class="form-control form-control-sm" id="transaction-type-filter" name="transaction_type">
-                                                <option value="0">Todos los tipos</option>
-                                                {% for code, name in transaction_types %}
-                                                    <option value="{{ code }}">{{ name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group mb-1">
-                                            <label for="expense-type-filter" class="form-label-sm">Tipo de Gasto</label>
-                                            <select class="form-control form-control-sm" id="expense-type-filter" name="expense_type">
-                                                <option value="0">Todos los gastos</option>
-                                                {% for code, name in expense_types %}
-                                                    <option value="{{ code }}">{{ name }}</option>
-                                                {% endfor %}
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row g-2 mt-2">
-                                    <div class="col-md-2">
-                                        <div class="form-group mb-1">
-                                            <label for="user-filter" class="form-label-sm">Usuario</label>
-                                            <select class="form-control form-control-sm" id="user-filter" name="user">
-                                                <option value="0">Todos los usuarios</option>
-                                                {% for user in user_set %}
-                                                    <option value="{{ user.id }}">{{ user.first_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="form-group mb-1">
                                             <label class="form-label-sm">&nbsp;</label>
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                            <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
+                                                <button type="submit" class="btn btn-primary btn-sm">
                                                     <i class="fas fa-search mr-1"></i>Buscar
                                                 </button>
                                                 <button type="button" class="btn btn-secondary btn-sm" id="clear-filters">
@@ -140,9 +112,6 @@
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <!-- Espacio para futuras expansiones -->
                                     </div>
                                 </div>
                             </form>
@@ -465,6 +434,219 @@
     </div>
 </div>
 
+<!-- Modal para Apertura de Caja -->
+<div class="modal fade" id="cashOpeningModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content roboto-condensed-regular">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-door-open mr-2"></i>Apertura de Caja
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cash-opening-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="opening_date" class="form-label">
+                                    <i class="fas fa-calendar mr-1"></i>Fecha de Apertura <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="opening_date" name="opening_date"
+                                       value="{{ date_now }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="opening_cash_id" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Cuenta/Caja <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="opening_cash_id" name="opening_cash_id" required>
+                                    <option value="">Seleccione cuenta</option>
+                                    {% for cash in cash_accounts %}
+                                        <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="opening_user_id" class="form-label">
+                                    <i class="fas fa-user mr-1"></i>Usuario <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="opening_user_id" name="opening_user_id" required>
+                                    <option value="">Seleccione usuario</option>
+                                    {% for user in user_set %}
+                                        <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="opening_amount" class="form-label">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Monto de Apertura <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">S/</span>
+                                    </div>
+                                    <input type="number" class="form-control" id="opening_amount" name="opening_amount"
+                                           min="0" step="0.01" value="0.00" placeholder="0.00" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="opening_description" class="form-label">
+                                    <i class="fas fa-comment mr-1"></i>Descripción
+                                </label>
+                                <textarea class="form-control" id="opening_description" name="opening_description" rows="2"
+                                          placeholder="Descripción de la apertura de caja"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCashOpening()">
+                    <i class="fas fa-save mr-1"></i>Guardar Apertura
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cierre de Caja -->
+<div class="modal fade" id="cashClosingModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content roboto-condensed-regular">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-door-closed mr-2"></i>Cierre de Caja
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cash-closing-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="closing_date" class="form-label">
+                                    <i class="fas fa-calendar mr-1"></i>Fecha de Cierre <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="closing_date" name="closing_date"
+                                       value="{{ date_now }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="closing_cash_id" class="form-label">
+                                    <i class="fas fa-university mr-1"></i>Cuenta/Caja <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="closing_cash_id" name="closing_cash_id" required>
+                                    <option value="">Seleccione cuenta</option>
+                                    {% for cash in cash_accounts %}
+                                        <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="closing_user_id" class="form-label">
+                                    <i class="fas fa-user mr-1"></i>Usuario <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control" id="closing_user_id" name="closing_user_id" required>
+                                    <option value="">Seleccione usuario</option>
+                                    {% for user in user_set %}
+                                        <option value="{{ user.id }}">{{ user.first_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="closing_amount" class="form-label">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Monto de Cierre <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">S/</span>
+                                    </div>
+                                    <input type="number" class="form-control" id="closing_amount" name="closing_amount"
+                                           min="0" step="0.01" value="0.00" placeholder="0.00" required>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-info" onclick="calculateClosingAmount()" title="Recalcular monto de cierre basado en las transacciones del día">
+                                            <i class="fas fa-calculator mr-1"></i>Recalcular
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="closing_description" class="form-label">
+                                    <i class="fas fa-comment mr-1"></i>Descripción
+                                </label>
+                                <textarea class="form-control" id="closing_description" name="closing_description" rows="2"
+                                          placeholder="Descripción del cierre de caja"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información sobre el cálculo -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-info-circle fa-2x text-info mr-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="alert-heading">Cálculo Automático del Cierre:</h6>
+                                        <ul class="mb-0">
+                                            <li><strong>Entradas:</strong> Suma de transacciones tipo "Entrada" + "Apertura"</li>
+                                            <li><strong>Salidas:</strong> Suma de transacciones tipo "Salida"</li>
+                                            <li><strong>Balance:</strong> Entradas - Salidas</li>
+                                            <li><strong>Monto de Cierre:</strong> Se calcula automáticamente basado en las transacciones del día</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="saveCashClosing()">
+                    <i class="fas fa-save mr-1"></i>Guardar Cierre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Loading overlay -->
 <div class="loading-overlay" id="loading-overlay" style="display: none;">
     <div class="spinner-border text-primary" role="status">
@@ -479,6 +661,14 @@
 $(document).ready(function() {
     // Cargar gastos al iniciar
     loadCashflows();
+
+    // Cargar cuentas según la sucursal seleccionada
+    const selectedSubsidiary = $('#subsidiary-filter').val();
+    if (selectedSubsidiary && selectedSubsidiary !== '0') {
+        filterCashAccounts();
+    } else {
+        loadAllCashAccounts();
+    }
 
     // Establecer fecha actual en los filtros si están vacíos
     if (!$('#date-from').val()) {
@@ -530,7 +720,7 @@ $(document).ready(function() {
     }
 
     // Filtrar cuentas por sucursal
-    $('#subsidiary_id').on('change', function() {
+    $('#subsidiary-filter').on('change', function() {
         filterCashAccounts();
     });
 
@@ -612,33 +802,50 @@ function openCreateCashflowModal() {
 }
 
 function filterCashAccounts() {
-    const subsidiaryId = $('#subsidiary_id').val();
-    const cashSelect = $('#cash_id');
+    const subsidiaryId = $('#subsidiary-filter').val();
+    const cashSelect = $('#cash-account-filter');
 
-    if (subsidiaryId) {
-        // Filtrar opciones de cuentas por sucursal
-        cashSelect.find('option').each(function() {
-            const option = $(this);
-            const dataSubsidiary = option.data('subsidiary');
-
-            if (dataSubsidiary && dataSubsidiary != subsidiaryId) {
-                option.hide();
-            } else {
-                option.show();
+    if (subsidiaryId && subsidiaryId !== '0') {
+        // Cargar cuentas de la sucursal seleccionada
+        $.ajax({
+            url: '{% url "apps.accounting:get_cash_accounts_by_subsidiary" %}',
+            type: 'GET',
+            data: { subsidiary: subsidiaryId },
+            success: function(response) {
+                if (response.success) {
+                    // Limpiar opciones existentes excepto la primera
+                    cashSelect.find('option:not(:first)').remove();
+                    
+                    // Agregar opciones de cuentas
+                    response.accounts.forEach(function(account) {
+                        cashSelect.append(
+                            `<option value="${account.id}">${account.name}</option>`
+                        );
+                    });
+                    
+                    // Seleccionar la primera cuenta de tipo 'E' si existe
+                    {% if first_cash_account %}
+                    cashSelect.val('{{ first_cash_account.id }}');
+                    {% else %}
+                    // Si no hay cuenta específica, seleccionar la primera disponible
+                    if (response.accounts.length > 0) {
+                        cashSelect.val(response.accounts[0].id);
+                    }
+                    {% endif %}
+                } else {
+                    console.error('Error al cargar las cuentas:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al cargar las cuentas:', error);
             }
         });
-
-        // Resetear selección si la cuenta actual no pertenece a la sucursal
-        const selectedCash = cashSelect.val();
-        if (selectedCash) {
-            const selectedOption = cashSelect.find(`option[value="${selectedCash}"]`);
-            if (selectedOption.data('subsidiary') != subsidiaryId) {
-                cashSelect.val('');
-            }
-        }
     } else {
         // Mostrar todas las cuentas si no hay sucursal seleccionada
-        cashSelect.find('option').show();
+        cashSelect.find('option:not(:first)').remove();
+        {% for cash in cash_accounts %}
+        cashSelect.append('<option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
+        {% endfor %}
     }
 }
 
@@ -775,6 +982,219 @@ function updateExpensesCount() {
     } else {
         $('#expenses-count-text').text(`${expensesCount} gasto${expensesCount !== 1 ? 's' : ''} encontrado${expensesCount !== 1 ? 's' : ''}`);
     }
+}
+
+function loadAllCashAccounts() {
+    const cashSelect = $('#cash-account-filter');
+    
+    // Limpiar opciones existentes excepto la primera
+    cashSelect.find('option:not(:first)').remove();
+    
+    // Agregar todas las cuentas
+    {% for cash in cash_accounts %}
+    cashSelect.append('<option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
+    {% endfor %}
+}
+
+function calculateClosingAmount() {
+    // Obtener los valores directamente de los cards de totales
+    const totalIncomeText = $('#cashflows-grid').find('.text-success').filter(function() {
+        return $(this).text().includes('S/') && $(this).closest('.card.border-0.shadow-sm').length > 0;
+    }).first().text().trim();
+    
+    const totalExpensesText = $('#cashflows-grid').find('.text-danger').filter(function() {
+        return $(this).text().includes('S/') && $(this).closest('.card.border-0.shadow-sm').length > 0;
+    }).first().text().trim();
+    
+    const balanceText = $('#cashflows-grid').find('.text-primary, .text-success, .text-danger').filter(function() {
+        return $(this).text().includes('S/') && $(this).closest('.card.border-0.shadow-sm').length > 0;
+    }).last().text().trim();
+    // Extraer los valores numéricos (manejar comas como separador de miles)
+    const totalIncome = parseFloat(totalIncomeText.replace('S/', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+    const totalExpenses = parseFloat(totalExpensesText.replace('S/ ', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+    const balance = parseFloat(balanceText.replace('S/ ', '').trim().replace(/\./g, '').replace(',', '.')) || 0;
+    
+    // Establecer el balance final en el campo de cierre
+    $('#closing_amount').val(balance.toFixed(2));
+    
+    // Mostrar información de cálculo en la descripción
+    const description = `CIERRE DE CAJA - Entradas: S/ ${totalIncome.toFixed(2)} - Salidas: S/ ${totalExpenses.toFixed(2)} - Balance: S/ ${balance.toFixed(2)}`;
+    $('#closing_description').val(description);
+}
+
+function openCashOpeningModal() {
+    // Limpiar formulario
+    $('#cash-opening-form')[0].reset();
+    $('#opening_date').val(new Date().toISOString().split('T')[0]);
+    $('#opening_amount').val('0.00');
+    $('#opening_description').val('APERTURA DE CAJA');
+    
+    // Mostrar modal
+    $('#cashOpeningModal').modal('show');
+}
+
+function openCashClosingModal() {
+    // Limpiar formulario
+    $('#cash-closing-form')[0].reset();
+    $('#closing_date').val(new Date().toISOString().split('T')[0]);
+    $('#closing_description').val('CIERRE DE CAJA');
+    
+    // Calcular monto de cierre automáticamente
+    calculateClosingAmount();
+    
+    // Mostrar modal
+    $('#cashClosingModal').modal('show');
+    
+    // Recalcular después de que el modal esté completamente visible
+    setTimeout(function() {
+        calculateClosingAmount();
+    }, 300);
+}
+
+function saveCashOpening() {
+    // Validar formulario
+    if (!validateCashOpeningForm()) {
+        return;
+    }
+
+    // Preparar datos
+    const formData = new FormData($('#cash-opening-form')[0]);
+    formData.set('transaction_type', 'A'); // Apertura
+    formData.set('description', $('#opening_description').val() || 'APERTURA DE CAJA');
+    formData.set('total', $('#opening_amount').val());
+    formData.set('subtotal', '0.00');
+    formData.set('igv', '0.00');
+    formData.set('expense_type', 'O');
+    formData.set('document_type', 'O');
+    formData.set('cash_id', $('#opening_cash_id').val());
+    formData.set('user_id', $('#opening_user_id').val());
+    formData.set('transaction_date', $('#opening_date').val());
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cashflow_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: 'Apertura de caja registrada exitosamente',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    $('#cashOpeningModal').modal('hide');
+                    loadCashflows();
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al registrar la apertura de caja', 'error');
+        }
+    });
+}
+
+function saveCashClosing() {
+    // Validar formulario
+    if (!validateCashClosingForm()) {
+        return;
+    }
+
+    // Preparar datos
+    const formData = new FormData($('#cash-closing-form')[0]);
+    formData.set('transaction_type', 'C'); // Cierre
+    formData.set('description', $('#closing_description').val() || 'CIERRE DE CAJA');
+    formData.set('total', $('#closing_amount').val());
+    formData.set('subtotal', '0.00');
+    formData.set('igv', '0.00');
+    formData.set('expense_type', 'O');
+    formData.set('document_type', 'O');
+    formData.set('cash_id', $('#closing_cash_id').val());
+    formData.set('user_id', $('#closing_user_id').val());
+    formData.set('transaction_date', $('#closing_date').val());
+
+    // Enviar formulario
+    $.ajax({
+        url: '{% url "apps.accounting:cashflow_save" %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: 'Cierre de caja registrado exitosamente',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#28a745'
+                }).then((result) => {
+                    $('#cashClosingModal').modal('hide');
+                    loadCashflows();
+                });
+            } else {
+                Swal.fire('Error', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('Error', 'Error al registrar el cierre de caja', 'error');
+        }
+    });
+}
+
+function validateCashOpeningForm() {
+    const requiredFields = ['opening_date', 'opening_cash_id', 'opening_user_id', 'opening_amount'];
+
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    const amount = parseFloat($('#opening_amount').val());
+    if (amount < 0) {
+        Swal.fire('Error', 'El monto de apertura debe ser mayor o igual a 0', 'error');
+        $('#opening_amount').focus();
+        return false;
+    }
+
+    return true;
+}
+
+function validateCashClosingForm() {
+    const requiredFields = ['closing_date', 'closing_cash_id', 'closing_user_id', 'closing_amount'];
+
+    for (const field of requiredFields) {
+        const value = $(`#${field}`).val();
+        if (!value) {
+            Swal.fire('Error', 'Por favor complete todos los campos obligatorios', 'error');
+            $(`#${field}`).focus();
+            return false;
+        }
+    }
+
+    const amount = parseFloat($('#closing_amount').val());
+    if (amount < 0) {
+        Swal.fire('Error', 'El monto de cierre debe ser mayor o igual a 0', 'error');
+        $('#closing_amount').focus();
+        return false;
+    }
+
+    return true;
 }
 </script>
 
@@ -946,15 +1366,59 @@ function updateExpensesCount() {
         font-size: 0.85rem !important;
     }
     
-    .d-flex.gap-2 {
+    /* Botones de acción en móvil */
+    .d-flex.flex-wrap.gap-2 {
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
+        gap: 0.5rem !important;
     }
     
-    .gap-2 .btn {
-        margin-bottom: 0.5rem;
+    .d-flex.flex-wrap.gap-2 .btn {
         width: 100%;
-        max-width: 250px;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Botones de búsqueda en móvil */
+    .justify-content-center.justify-content-md-start {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .justify-content-center.justify-content-md-start .btn {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Header más compacto en móvil */
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 0.5rem;
+    }
+    
+    .ml-3 {
+        margin-left: 0 !important;
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn-sm {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .card-title {
+        font-size: 0.9rem !important;
+    }
+    
+    .form-label-sm {
+        font-size: 0.7rem !important;
     }
 }
 </style>

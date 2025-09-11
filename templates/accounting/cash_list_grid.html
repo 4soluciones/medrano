@@ -30,7 +30,7 @@
                     <th class="text-dark" style="width: 20%">Sucursal</th>
                     <th class="text-dark" style="width: 15%">Número de Cuenta</th>
                     <th class="text-dark" style="width: 15%">Moneda</th>
-                    <th class="text-dark" style="width: 15%">Saldo Inicial</th>
+                    <th class="text-dark" style="width: 15%">Tipo de Cuenta</th>
                     <th class="text-dark" style="width: 10%">Acciones</th>
                 </tr>
             </thead>
@@ -73,11 +73,10 @@
                             </span>
                         </td>
                         <td>
-                            <div class="text-right">
-                                <span class="h6 text-{% if cash.currency_type == 'S' %}success{% elif cash.currency_type == 'D' %}primary{% else %}info{% endif %}">
-                                    S/ {{ cash.initial|floatformat:2 }}
-                                </span>
-                            </div>
+                            <span class="badge badge-{% if cash.account_type == 'C' %}warning{% else %}info{% endif %} badge-pill">
+                                <i class="fas fa-{% if cash.account_type == 'C' %}cash-register{% else %}university{% endif %} mr-1"></i>
+                                {{ cash.get_account_type_display }}
+                            </span>
                         </td>
                         <td>
                             <div class="btn-group" role="group">

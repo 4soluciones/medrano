@@ -1,142 +1,39 @@
-<!-- Resumen de Gastos y Transacciones -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-gradient-info">
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-3">
-                        <div class="info-box bg-white">
-                            <div class="info-box-content p-3">
-                                <span class="info-box-text text-muted">Total Ingresos</span>
-                                <span class="info-box-number text-success h4 mb-0">
-                                    <i class="fas fa-arrow-up mr-2"></i>S/ {{ total_income|floatformat:2 }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-white">
-                            <div class="info-box-content p-3">
-                                <span class="info-box-text text-muted">Total Gastos</span>
-                                <span class="info-box-number text-danger h4 mb-0">
-                                    <i class="fas fa-arrow-down mr-2"></i>S/ {{ total_expenses|floatformat:2 }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-white">
-                            <div class="info-box-content p-3">
-                                <span class="info-box-text text-muted">Balance Neto</span>
-                                <span class="info-box-number h4 mb-0 {% if net_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    <i class="fas fa-balance-scale mr-2"></i>S/ {{ net_balance|floatformat:2 }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-white">
-                            <div class="info-box-content p-3">
-                                <span class="info-box-text text-muted">Total Transacciones</span>
-                                <span class="info-box-number text-primary h4 mb-0">
-                                    <i class="fas fa-list mr-2"></i>{{ cashflows|length }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Desglose por Tipo de Gasto -->
-{% if expense_totals %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="fas fa-chart-pie mr-2"></i>Desglose por Tipo de Gasto
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for expense_code, total in expense_totals.items %}
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body text-center p-3">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    {% if expense_code == 'V' %}
-                                        <i class="fas fa-chart-line fa-2x text-warning"></i>
-                                    {% elif expense_code == 'F' %}
-                                        <i class="fas fa-anchor fa-2x text-info"></i>
-                                    {% elif expense_code == 'P' %}
-                                        <i class="fas fa-user fa-2x text-primary"></i>
-                                    {% else %}
-                                        <i class="fas fa-ellipsis-h fa-2x text-secondary"></i>
-                                    {% endif %}
-                                </div>
-                                <h6 class="card-title mb-1">
-                                    {% if expense_code == 'V' %}
-                                        Gastos Variables
-                                    {% elif expense_code == 'F' %}
-                                        Gastos Fijos
-                                    {% elif expense_code == 'P' %}
-                                        Gastos Personales
-                                    {% else %}
-                                        Otros Gastos
-                                    {% endif %}
-                                </h6>
-                                <p class="card-text text-muted mb-0">
-                                    <strong class="text-dark">S/ {{ total|floatformat:2 }}</strong>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 <!-- Tabla de Gastos -->
-<div class="table-responsive">
+<div class="table-responsive" style="font-size: 12px">
     <table class="table table-hover table-striped">
         <thead class="thead-dark">
             <tr>
-                <th class="text-center" style="width: 50px;">
+                <th class="text-center" style="width: 5%;">
                     <i class="fas fa-hashtag"></i>
                 </th>
-                <th style="width: 120px;">
+                <th style="width: 10%;">
                     <i class="fas fa-calendar mr-1"></i>Fecha
                 </th>
-                <th style="width: 150px;">
+                <th style="width: 10%;">
                     <i class="fas fa-exchange-alt mr-1"></i>Tipo
                 </th>
-                <th style="width: 200px;">
+                <th style="width: 30%;">
                     <i class="fas fa-comment mr-1"></i>Descripción
                 </th>
-                <th style="width: 120px;">
+                <th style="width: 15%;">
                     <i class="fas fa-university mr-1"></i>Cuenta
                 </th>
-                <th style="width: 120px;">
+                <th style="width: 10%;">
                     <i class="fas fa-user mr-1"></i>Usuario
                 </th>
-                <th style="width: 120px;">
+                <th style="width: 10%;">
                     <i class="fas fa-tags mr-1"></i>Gasto
                 </th>
-                <th style="width: 100px;">
+                <th style="width: 10%;">
                     <i class="fas fa-money-bill-wave mr-1"></i>Total
                 </th>
-                <th style="width: 120px;">
-                    <i class="fas fa-file-alt mr-1"></i>Documento
-                </th>
-                <th class="text-center" style="width: 120px;">
-                    <i class="fas fa-cogs mr-1"></i>Acciones
-                </th>
+{#                <th style="width: 120px;">#}
+{#                    <i class="fas fa-file-alt mr-1"></i>Documento#}
+{#                </th>#}
+{#                <th class="text-center" style="width: 120px;">#}
+{#                    <i class="fas fa-cogs mr-1"></i>Acciones#}
+{#                </th>#}
             </tr>
         </thead>
         <tbody>
@@ -181,7 +78,7 @@
                     </td>
                     <td>
                         <div class="d-flex flex-column">
-                            <strong class="text-dark">{{ cashflow.description|truncatechars:30 }}</strong>
+                            <strong class="text-dark">{{ cashflow.description }}</strong>
                             {% if cashflow.operation_code %}
                                 <small class="text-muted">
                                     <i class="fas fa-barcode mr-1"></i>{{ cashflow.operation_code }}
@@ -191,7 +88,7 @@
                     </td>
                     <td>
                         <div class="d-flex flex-column">
-                            <strong class="text-dark">{{ cashflow.cash.name|truncatechars:20 }}</strong>
+                            <strong class="text-dark">{{ cashflow.cash.name }}</strong>
                             <small class="text-muted">
                                 {{ cashflow.cash.get_currency_type_display }}
                             </small>
@@ -206,23 +103,28 @@
                         </div>
                     </td>
                     <td>
-                        {% if cashflow.type_expense == 'V' %}
-                            <span class="badge badge-warning badge-pill">
+                        {% if cashflow.type == 'A' or cashflow.type == 'C' %}
+                            -
+                        {% else %}
+                            {% if cashflow.type_expense == 'V' %}
+                                <span class="badge badge-warning badge-pill">
                                 <i class="fas fa-chart-line mr-1"></i>Variable
                             </span>
-                        {% elif cashflow.type_expense == 'F' %}
-                            <span class="badge badge-info badge-pill">
+                            {% elif cashflow.type_expense == 'F' %}
+                                <span class="badge badge-info badge-pill">
                                 <i class="fas fa-anchor mr-1"></i>Fijo
                             </span>
-                        {% elif cashflow.type_expense == 'P' %}
-                            <span class="badge badge-primary badge-pill">
+                            {% elif cashflow.type_expense == 'P' %}
+                                <span class="badge badge-primary badge-pill">
                                 <i class="fas fa-user mr-1"></i>Personal
                             </span>
-                        {% elif cashflow.type_expense == 'O' %}
-                            <span class="badge badge-secondary badge-pill">
+                            {% elif cashflow.type_expense == 'O' %}
+                                <span class="badge badge-secondary badge-pill">
                                 <i class="fas fa-ellipsis-h mr-1"></i>Otro
                             </span>
+                            {% endif %}
                         {% endif %}
+
                     </td>
                     <td>
                         <div class="d-flex flex-column">
@@ -236,49 +138,49 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td>
-                        {% if cashflow.document_type_attached %}
-                            <div class="d-flex flex-column">
-                                <span class="badge badge-outline-secondary">
-                                    {% if cashflow.document_type_attached == 'F' %}
-                                        <i class="fas fa-file-invoice mr-1"></i>Factura
-                                    {% elif cashflow.document_type_attached == 'B' %}
-                                        <i class="fas fa-receipt mr-1"></i>Boleta
-                                    {% elif cashflow.document_type_attached == 'T' %}
-                                        <i class="fas fa-ticket-alt mr-1"></i>Ticket
-                                    {% else %}
-                                        <i class="fas fa-file mr-1"></i>Otro
-                                    {% endif %}
-                                </span>
-                                {% if cashflow.serial and cashflow.n_receipt %}
-                                    <small class="text-muted">
-                                        {{ cashflow.serial }}-{{ cashflow.n_receipt }}
-                                    </small>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-outline-primary" 
-                                    onclick="viewCashflowDetails({{ cashflow.id }})" 
-                                    title="Ver detalles">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-warning" 
-                                    onclick="editCashflow({{ cashflow.id }})" 
-                                    title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="deleteCashflow({{ cashflow.id }})" 
-                                    title="Eliminar">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
+{#                    <td>#}
+{#                        {% if cashflow.document_type_attached %}#}
+{#                            <div class="d-flex flex-column">#}
+{#                                <span class="badge badge-outline-secondary">#}
+{#                                    {% if cashflow.document_type_attached == 'F' %}#}
+{#                                        <i class="fas fa-file-invoice mr-1"></i>Factura#}
+{#                                    {% elif cashflow.document_type_attached == 'B' %}#}
+{#                                        <i class="fas fa-receipt mr-1"></i>Boleta#}
+{#                                    {% elif cashflow.document_type_attached == 'T' %}#}
+{#                                        <i class="fas fa-ticket-alt mr-1"></i>Ticket#}
+{#                                    {% else %}#}
+{#                                        <i class="fas fa-file mr-1"></i>Otro#}
+{#                                    {% endif %}#}
+{#                                </span>#}
+{#                                {% if cashflow.serial and cashflow.n_receipt %}#}
+{#                                    <small class="text-muted">#}
+{#                                        {{ cashflow.serial }}-{{ cashflow.n_receipt }}#}
+{#                                    </small>#}
+{#                                {% endif %}#}
+{#                            </div>#}
+{#                        {% else %}#}
+{#                            <span class="text-muted">-</span>#}
+{#                        {% endif %}#}
+{#                    </td>#}
+{#                    <td class="text-center">#}
+{#                        <div class="btn-group" role="group">#}
+{#                            <button type="button" class="btn btn-sm btn-outline-primary" #}
+{#                                    onclick="viewCashflowDetails({{ cashflow.id }})" #}
+{#                                    title="Ver detalles">#}
+{#                                <i class="fas fa-eye"></i>#}
+{#                            </button>#}
+{#                            <button type="button" class="btn btn-sm btn-outline-warning" #}
+{#                                    onclick="editCashflow({{ cashflow.id }})" #}
+{#                                    title="Editar">#}
+{#                                <i class="fas fa-edit"></i>#}
+{#                            </button>#}
+{#                            <button type="button" class="btn btn-sm btn-outline-danger" #}
+{#                                    onclick="deleteCashflow({{ cashflow.id }})" #}
+{#                                    title="Eliminar">#}
+{#                                <i class="fas fa-trash"></i>#}
+{#                            </button>#}
+{#                        </div>#}
+{#                    </td>#}
                 </tr>
                 {% endfor %}
             {% else %}
@@ -298,6 +200,59 @@
         </tbody>
     </table>
 </div>
+
+<!-- Totales -->
+{% if cashflows %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="mr-3">
+                                <i class="fas fa-arrow-down fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 text-muted">Total Entradas</h6>
+                                <h5 class="mb-0 text-success font-weight-bold">
+                                    S/ {{ total_income|floatformat:2 }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="mr-3">
+                                <i class="fas fa-arrow-up fa-2x text-danger"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 text-muted">Total Salidas</h6>
+                                <h5 class="mb-0 text-danger font-weight-bold">
+                                    S/ {{ total_expenses|floatformat:2 }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="mr-3">
+                                <i class="fas fa-balance-scale fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 text-muted">Balance Final</h6>
+                                <h5 class="mb-0 {% if net_balance >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bold">
+                                    S/ {{ net_balance|floatformat:2 }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Paginación -->
 {% if cashflows.has_other_pages %}
@@ -447,7 +402,68 @@
     border-color: #dee2e6;
 }
 
-/* Responsive */
+/* Estilos para totales */
+.card.border-0.shadow-sm {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px !important;
+    transition: all 0.3s ease;
+}
+
+.card.border-0.shadow-sm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Responsive para totales */
+@media (max-width: 768px) {
+    .card-body.py-3 {
+        padding: 1rem !important;
+    }
+    
+    .d-flex.align-items-center.justify-content-center {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .mr-3 {
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .fa-2x {
+        font-size: 1.5rem !important;
+    }
+    
+    h5.mb-0 {
+        font-size: 1.1rem !important;
+    }
+    
+    h6.mb-1 {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Responsive general */
 @media (max-width: 768px) {
     .info-box {
         margin-bottom: 1rem;

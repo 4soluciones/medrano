@@ -146,6 +146,10 @@ class PaymentPeriod(models.Model):
         """Retorna el número de días de permiso"""
         return self.daily_payments.filter(status='PERMISO').count()
 
+    def get_absence_days_count(self):
+        """Retorna el número de días de falta"""
+        return self.daily_payments.filter(status='FALTA').count()
+
 
 class DailyPayment(models.Model):
     """Pago diario individual"""
