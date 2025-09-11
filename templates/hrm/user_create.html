@@ -360,6 +360,24 @@
         }
     }
 
+    // Asegurar que los checkboxes funcionen correctamente
+    /*$(document).ready(function() {
+        // Asegurar que los checkboxes mantengan su funcionalidad
+        $('.custom-control-input').on('change', function() {
+            console.log(`Checkbox ${$(this).attr('name')} cambió a: ${$(this).is(':checked')}`);
+        });
+        
+        // Forzar la funcionalidad básica si es necesario
+        $('.custom-control-label').on('click', function(e) {
+            let checkboxId = $(this).attr('for');
+            let checkbox = $('#' + checkboxId);
+            if (checkbox.length) {
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                checkbox.trigger('change');
+            }
+        });
+    });*/
+
     $('#form-user').submit(function (event) {
         event.preventDefault();
 

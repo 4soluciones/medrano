@@ -64,6 +64,16 @@
             <div id="employee-grid-list" class="table-responsive">
                 {% include "hrm/employee_grid_list.html" %}
             </div>
+            
+            <!-- Contador de resultados -->
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info d-flex align-items-center" id="results-counter" style="display: none !important;">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <span id="counter-text">Mostrando 0 de 0 empleados</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -134,6 +144,38 @@
         .input-group-text {
             border-radius: 25px !important;
         }
+        
+        /* Estilos para filas filtradas */
+        .table tbody tr[style*="display: none"] {
+            display: none !important;
+        }
+        
+        /* Animación suave para mostrar/ocultar filas */
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        /* Indicador de filtros activos */
+        .filter-active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            color: white !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .filter-inactive {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%) !important;
+            color: white !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+        
+        .filter-all {
+            background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%) !important;
+            color: white !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
     </style>
 
 {% endblock body %}
@@ -148,40 +190,96 @@
             // Configuración del usuario
             let isAdmin = '{{ user_log.has_access_to_all|yesno:"true,false" }}' === 'true';
             
-            // Filtros de estado simples
-            $('input[name="filter-status"]').on('change', function () {
-                let value = $(this).val();
+            // Función para aplicar filtros y búsqueda
+            function applyFilters() {
+                let statusFilter = $('input[name="filter-status"]:checked').val();
+                let searchTerm = $('#search-employee').val().toLowerCase();
                 let rows = $('#table-employee-list tbody tr');
-                
-                if (value === "Activo") {
-                    rows.show();
-                    rows.filter(function() {
-                        return $(this).find('td:eq(8) .badge-success').length === 0;
-                    }).hide();
-                } else if (value === "Inactivo") {
-                    rows.show();
-                    rows.filter(function() {
-                        return $(this).find('td:eq(8) .badge-danger').length === 0;
-                    }).hide();
-                } else if (value === "All") {
-                    rows.show();
-                }
-            });
-            
-            // Búsqueda simple
-            $('#search-employee').on('keyup', function() {
-                let searchTerm = $(this).val().toLowerCase();
-                let rows = $('#table-employee-list tbody tr');
+                let visibleCount = 0;
+                let totalCount = rows.length;
                 
                 rows.each(function() {
-                    let text = $(this).text().toLowerCase();
-                    if (text.indexOf(searchTerm) > -1) {
-                        $(this).show();
+                    let $row = $(this);
+                    let text = $row.text().toLowerCase();
+                    let isVisible = true;
+                    
+                    // Aplicar filtro de estado
+                    if (statusFilter === "Activo") {
+                        if ($row.find('td:eq(6) .badge-success').length === 0) {
+                            isVisible = false;
+                        }
+                    } else if (statusFilter === "Inactivo") {
+                        if ($row.find('td:eq(6) .badge-danger').length === 0) {
+                            isVisible = false;
+                        }
+                    }
+                    // Si es "All", no aplicar filtro de estado
+                    
+                    // Aplicar búsqueda
+                    if (isVisible && searchTerm && text.indexOf(searchTerm) === -1) {
+                        isVisible = false;
+                    }
+                    
+                    // Mostrar u ocultar fila
+                    if (isVisible) {
+                        $row.show();
+                        visibleCount++;
                     } else {
-                        $(this).hide();
+                        $row.hide();
                     }
                 });
+                
+                // Actualizar contador de resultados
+                updateResultsCounter(visibleCount, totalCount, statusFilter, searchTerm);
+            }
+            
+            // Función para actualizar el contador de resultados
+            function updateResultsCounter(visible, total, statusFilter, searchTerm) {
+                let counterText = `Mostrando ${visible} de ${total} empleados`;
+                
+                if (statusFilter && statusFilter !== "All") {
+                    counterText += ` (${statusFilter.toLowerCase()}s)`;
+                }
+                
+                if (searchTerm) {
+                    counterText += ` - Búsqueda: "${searchTerm}"`;
+                }
+                
+                $('#counter-text').text(counterText);
+                
+                // Mostrar u ocultar el contador
+                if (visible !== total || searchTerm) {
+                    $('#results-counter').show();
+                } else {
+                    $('#results-counter').hide();
+                }
+            }
+            
+            // Filtros de estado
+            $('input[name="filter-status"]').on('change', function () {
+                // Remover clases de filtro activo de todos los botones
+                $('input[name="filter-status"]').next('label').removeClass('filter-active filter-inactive filter-all');
+                
+                // Agregar clase correspondiente al botón seleccionado
+                let selectedValue = $(this).val();
+                if (selectedValue === "Activo") {
+                    $(this).next('label').addClass('filter-active');
+                } else if (selectedValue === "Inactivo") {
+                    $(this).next('label').addClass('filter-inactive');
+                } else if (selectedValue === "All") {
+                    $(this).next('label').addClass('filter-all');
+                }
+                
+                applyFilters();
             });
+            
+            // Búsqueda
+            $('#search-employee').on('keyup', function() {
+                applyFilters();
+            });
+            
+            // Aplicar filtros iniciales
+            applyFilters();
         });
 
 
@@ -279,3 +377,4 @@
         });
     </script>
 {% endblock extrajs %}
+

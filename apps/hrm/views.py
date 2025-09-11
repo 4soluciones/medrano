@@ -427,14 +427,14 @@ def update_user(request):
             _user = request.POST.get('user', '')
             _password = request.POST.get('password', '')
             
-            # Checkboxes de permisos
-            _check_active = request.POST.get('customCheckActive', False)
-            _check_access = request.POST.get('customCheckboxAccess', False)
-            _check_sales = request.POST.get('customCheckboxSales', False)
-            _check_hrm = request.POST.get('customCheckboxHrm', False)
-            _check_finances = request.POST.get('customCheckboxFinances', False)
-            _check_report = request.POST.get('customCheckboxReport', False)
-            _check_admin = request.POST.get('customCheckboxAdmin', False)
+            # Checkboxes de permisos (nombres actualizados para edición)
+            _check_active = request.POST.get('editCheckActive', False)
+            _check_access = request.POST.get('editCheckboxAccess', False)
+            _check_sales = request.POST.get('editCheckboxSales', False)
+            _check_hrm = request.POST.get('editCheckboxHrm', False)
+            _check_finances = request.POST.get('editCheckboxFinances', False)
+            _check_report = request.POST.get('editCheckboxReport', False)
+            _check_admin = request.POST.get('editCheckboxAdmin', False)
             
             # Convertir checkboxes a boolean
             if _check_active == 'on':
