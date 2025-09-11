@@ -310,8 +310,8 @@
                                     <label for="user_id" class="form-label">
                                         <i class="fas fa-user-tie mr-1"></i>Vendedor <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" class="form-control" id="user_id" name="user_id" readonly 
-                                           value="{{ request.user.first_name }} {{ request.user.last_name }}" 
+                                    <input type="text" class="form-control" id="user_id" name="user_id" readonly
+                                           value="{{ request.user.first_name }} {{ request.user.last_name }}"
                                            style="background-color: #f8f9fa;">
                                     <input type="hidden" id="user_id_hidden" name="user_id" value="{{ request.user.id }}">
                                 </div>
@@ -753,8 +753,8 @@
                                     <label for="edit_user_id" class="form-label">
                                         <i class="fas fa-user-tie mr-1"></i>Vendedor <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" class="form-control" id="edit_user_id" name="user_id" readonly 
-                                           value="{{ request.user.first_name }} {{ request.user.last_name }}" 
+                                    <input type="text" class="form-control" id="edit_user_id" name="user_id" readonly
+                                           value="{{ request.user.first_name }} {{ request.user.last_name }}"
                                            style="background-color: #f8f9fa;">
                                     <input type="hidden" id="edit_user_id_hidden" name="user_id" value="{{ request.user.id }}">
                                 </div>
@@ -1026,7 +1026,7 @@
                             </div>
                         </div>
 
-                        <!-- Campos principales en dos columnas -->
+                        <!-- Información de pago -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -1051,37 +1051,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="completed_by" class="form-label">
-                                        <i class="fas fa-user mr-1"></i>Completado por <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-control" id="completed_by" name="completed_by" required>
-                                        <option value="">Seleccionar empleado...</option>
-                                        {% for user in user_set %}
-                                            <option value="{{ user.id }}" {% if user.id == request.user.id %}selected{% endif %}>
-                                                {{ user.first_name }} {{ user.last_name }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="complete_cash_account" class="form-label">
-                                        <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-control" id="complete_cash_account" name="cash_account" required>
-                                        <option value="">Seleccione una cuenta</option>
-                                        {% for cash in cash_accounts %}
-                                            <option value="{{ cash.id }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
+                        <!-- Forma de pago y cuenta -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -1097,7 +1067,33 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <!-- Espacio para futuras funcionalidades -->
+                                <div class="form-group">
+                                    <label for="complete_cash_account" class="form-label">
+                                        <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="complete_cash_account" name="cash_account" required>
+                                        <option value="">Seleccione una cuenta</option>
+                                        {% for cash in cash_accounts %}
+                                            <option value="{{ cash.id }}" data-account-type="{{ cash.account_type }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usuario responsable -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="completed_by" class="form-label">
+                                        <i class="fas fa-user mr-1"></i>Completado por <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="completed_by" name="completed_by" 
+                                           value="{{ request.user.first_name }} {{ request.user.last_name }}" readonly required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Espacio disponible para futuras funcionalidades -->
                             </div>
                         </div>
 
@@ -1295,15 +1291,8 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="deliveredBy">Entregado por: <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="deliveredBy" name="delivered_by" required>
-                                        <option value="">Seleccionar empleado...</option>
-                                        {% for user in user_set %}
-                                            <option value="{{ user.id }}"
-                                                    {% if user.id == request.user.id %}selected{% endif %}>
-                                                {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <input type="text" class="form-control" id="deliveredBy" name="delivered_by" 
+                                           value="{{ request.user.first_name }} {{ request.user.last_name }}" readonly required>
                                 </div>
                             </div>
                         </div>
@@ -1427,7 +1416,7 @@
                 <div class="modal-body">
                     <form id="orderDeliveryStatusForm">
                         <input type="hidden" id="orderDeliveryStatusId" name="order_id">
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -1442,7 +1431,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -1462,7 +1451,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
@@ -1503,7 +1492,7 @@
                 <div class="modal-body">
                     <form id="convert-order-form">
                         <input type="hidden" id="convert_order_id" name="order_id" value="">
-                        
+
                         <!-- Información General -->
                         <div class="row mb-2">
                             <div class="col-12">
@@ -1639,7 +1628,7 @@
                                     <label for="convert_observation" class="form-label">
                                         <i class="fas fa-comment mr-1"></i>Observaciones
                                     </label>
-                                    <textarea class="form-control" id="convert_observation" name="observation" 
+                                    <textarea class="form-control" id="convert_observation" name="observation"
                                               rows="3" placeholder="Observaciones adicionales..."></textarea>
                                 </div>
                             </div>
@@ -1847,68 +1836,65 @@
         // Función para obtener la fecha del servidor (zona horaria de Perú)
         // Esta función resuelve el problema de zona horaria usando la fecha
         // que viene del backend en lugar de calcularla en JavaScript
-        
+
         // Función para actualizar el color del select según el estado
         function updateSelectColor(selectElement) {
             const value = selectElement.value;
             const isStatusSelect = selectElement.classList.contains('status-select');
             const isDeliverySelect = selectElement.classList.contains('delivery-select');
-            
+
             // Remover clases de color anteriores
             selectElement.removeAttribute('data-status');
             selectElement.removeAttribute('data-delivery-status');
-            
+
             if (isStatusSelect) {
                 selectElement.setAttribute('data-status', value);
             } else if (isDeliverySelect) {
                 selectElement.setAttribute('data-delivery-status', value);
             }
         }
-        
+
         // Función para inicializar colores de todos los selects
         function initializeSelectColors() {
             // Inicializar colores de status-select
             $('.status-select').each(function() {
                 updateSelectColor(this);
             });
-            
+
             // Inicializar colores de delivery-select
             $('.delivery-select').each(function() {
                 updateSelectColor(this);
             });
         }
-        
+
         // Evento para el botón de guardar estado de entrega
         $(document).ready(function() {
             // Inicializar colores al cargar la página
             initializeSelectColors();
-            
+
             // Evento para cambio de estado de pago
             $(document).on('change', '.status-select', function() {
                 updateSelectColor(this);
             });
-            
+
             // Evento para cambio de estado de entrega
             $(document).on('change', '.delivery-select', function() {
                 updateSelectColor(this);
             });
-            
+
             $('#saveOrderDeliveryStatus').click(function() {
                 var form = $('#orderDeliveryStatusForm');
                 var formData = form.serialize();
-                
+
                 // Validar que se haya seleccionado un estado
                 if (!$('#newDeliveryStatus').val()) {
                     toastr.error('Debe seleccionar un nuevo estado de entrega');
                     return;
                 }
-                
-                // Validar que se haya seleccionado un empleado
-                if (!$('#deliveredBy').val()) {
-                    toastr.error('Debe seleccionar un empleado');
-                    return;
-                }
-                
+
+                // Agregar el ID del usuario logueado al formData
+                formData += '&delivered_by={{ request.user.id }}';
+
                 $.ajax({
                     url: '/sales/orders/update-delivery-status/',
                     type: 'POST',
@@ -2099,7 +2085,7 @@
             $('.btn-clear-client').hide();
             $('#client-notification').remove();
             $('#client_autocomplete_results').hide();
-            
+
             // Limpiar campos adicionales del cliente
             $('#client_address').val('');
             $('#client_phone').val('');
@@ -2115,7 +2101,7 @@
             $('.btn-clear-client').hide();
             $('#edit-client-notification').remove();
             $('#edit_client_autocomplete_results').hide();
-            
+
             // Limpiar campos adicionales del cliente en edición
             $('#edit_client_address').val('');
             $('#edit_client_phone').val('');
@@ -2374,7 +2360,7 @@
 
             // Actualizar correlativo cuando cambie la sucursal o tipo
             $('#subsidiary_id, #order_type').on('change', updateCorrelative);
-            
+
             // Configurar validaciones cuando cambie el tipo de orden
             $('#order_type').on('change', configureOrderTypeValidations);
 
@@ -2549,6 +2535,38 @@
                 resetElectronicDocumentFields();
             });
 
+            // Filtrar cuentas de caja según forma de pago
+            $('#complete_way_to_pay').on('change', function () {
+                const wayToPay = $(this).val();
+                const cashAccountSelect = $('#complete_cash_account');
+                
+                // Limpiar selección actual
+                cashAccountSelect.val('');
+                
+                // Mostrar/ocultar opciones según forma de pago
+                cashAccountSelect.find('option').each(function () {
+                    const $option = $(this);
+                    const accountType = $option.data('account-type');
+
+                    if ($option.val() === '') {
+                        // Mantener la opción vacía visible
+                        $option.show();
+                    } else {
+                        // Filtrar según forma de pago
+                        if (wayToPay === 'E' && accountType === 'C') {
+                            // Efectivo -> solo cajas chicas (C)
+                            $option.show();
+                        } else if ((wayToPay === 'Y' || wayToPay === 'D') && accountType === 'B') {
+                            // Yape o Depósito -> solo cuentas bancarias (B)
+                            $option.show();
+                        } else {
+                            // Ocultar opciones que no coincidan
+                            $option.hide();
+                        }
+                    }
+                });
+            });
+
             $('#cancelOrderModal').on('hidden.bs.modal', function () {
                 $('#cancel-order-form')[0].reset();
                 $('#cancel_order_id').val('');
@@ -2644,7 +2662,7 @@
             advanceCounter = 0;
             $('#advance_payments_body').empty();
             updateAdvance();
-            
+
             // Ocultar sección de adelantos por defecto (se mostrará si es orden de servicio)
             $('#advance_payments_section').hide();
 
@@ -2692,7 +2710,7 @@
                 voucherTypeField.prop('readonly', true);
                 voucherTypeField.addClass('form-control-readonly');
                 advanceSection.hide();
-                
+
                 // Limpiar adelantos existentes
                 advancePayments = [];
                 advanceCounter = 0;
@@ -3089,9 +3107,9 @@
                         </select>
                     </td>
                     <td style="padding: 0.3rem;">
-                        <input type="number" class="form-control form-control-sm text-right" 
+                        <input type="number" class="form-control form-control-sm text-right"
                                value=""
-                               min="0" step="0.01" 
+                               min="0" step="0.01"
                                onkeyup="updateAdvanceField(${advance.id}, 'amount', this.value)"
                                placeholder="0.00" style="font-size: 0.8rem;">
                     </td>
@@ -3188,9 +3206,9 @@
                         </select>
                     </td>
                     <td style="padding: 0.3rem;">
-                        <input type="number" class="form-control form-control-sm text-right" 
-                               value="${advance.amount}" 
-                               min="0" step="0.01" 
+                        <input type="number" class="form-control form-control-sm text-right"
+                               value="${advance.amount}"
+                               min="0" step="0.01"
                                onkeyup="updateEditAdvanceField(${advance.id}, 'amount', this.value)"
                                placeholder="0.00" style="font-size: 0.8rem;">
                     </td>
@@ -3274,7 +3292,7 @@
             isSavingOrder = true;
             const saveBtn = $('#saveOrderBtn');
             const originalText = saveBtn.html();
-            
+
             // Cambiar estado del botón
             saveBtn.prop('disabled', true);
             saveBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...');
@@ -3323,20 +3341,20 @@
                             // Descargar PDF automáticamente desde base64
                             const pdfBlob = base64ToBlob(response.pdf_content, 'application/pdf');
                             const pdfUrl = URL.createObjectURL(pdfBlob);
-                            
+
                             // Crear enlace de descarga temporal
                             const downloadLink = document.createElement('a');
                             downloadLink.href = pdfUrl;
                             downloadLink.download = response.pdf_filename || `ticket_${response.order_code}.pdf`;
-                            
+
                             // Simular clic para descargar
                             document.body.appendChild(downloadLink);
                             downloadLink.click();
                             document.body.removeChild(downloadLink);
-                            
+
                             // Limpiar el objeto URL después de un tiempo
                             setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-                            
+
                             // Código comentado para apertura en nueva pestaña (por si se necesita en el futuro)
                             // window.open(pdfUrl, '_blank');
                         } else {
@@ -3367,7 +3385,7 @@
         function validateForm() {
             const orderType = $('#order_type').val();
             let requiredFields = ['order_type', 'subsidiary_id', 'client_id'];
-            
+
             // Los campos de pago ahora se manejan en los adelantos individuales
             // Para cotizaciones no se requieren adelantos
 
@@ -3379,13 +3397,13 @@
                     return false;
                 }
             }
-            
+
             // Validar que haya al menos un detalle
             if (orderDetails.length === 0) {
                 toastr.error('Debe agregar al menos un producto o servicio', 'Error');
                 return false;
             }
-            
+
             // Para órdenes de servicio, validar que los adelantos tengan cuenta de caja
             if (orderType !== 'C' && advancePayments.length > 0) {
                 for (let i = 0; i < advancePayments.length; i++) {
@@ -3420,7 +3438,7 @@
 
                     // Actualizar conteo de órdenes
                     updateOrdersCount();
-                    
+
                     // Inicializar colores de los selects después de cargar la tabla
                     setTimeout(function() {
                         initializeSelectColors();
@@ -4175,12 +4193,12 @@
             } else {
                 // Si es orden de servicio, mostrar adelantos
                 editAdvanceSection.show();
-                
+
                 // Limpiar y cargar adelantos múltiples
                 editAdvancePayments = [];
                 editAdvanceCounter = 0;
                 $('#edit_advance_payments_body').empty();
-                
+
                 // Si hay adelanto, crear un adelanto por defecto
                 if (orderData.cash_advance > 0) {
                     const advanceId = ++editAdvanceCounter;
@@ -4194,7 +4212,7 @@
                     addEditAdvancePaymentRow(advancePayment);
                 }
             }
-            
+
             updateEditAdvance();
 
             // Establecer cliente en el input de búsqueda
@@ -4209,7 +4227,7 @@
                             const client = response.clients[0];
                             // Manejar clientes sin documento correctamente
                             let clientDisplayText = client.full_name;
-                            
+
                             if (client.document && client.document !== '' && client.number && client.number !== '') {
                                 const documentType = client.document === '01' ? 'DNI' :
                                     client.document === '06' ? 'RUC' : 'S/D';
@@ -4218,7 +4236,7 @@
                                 // Cliente sin documento
                                 clientDisplayText += ' - S/D';
                             }
-                            
+
                             $('#edit_client_search_input').val(clientDisplayText);
                             $('#edit_client_search_input').addClass('client-selected');
                             $('#edit_client_search_input').attr('readonly', true);
@@ -4522,13 +4540,13 @@
                     return false;
                 }
             }
-            
+
             // Validar que haya al menos un detalle
             if (editOrderDetails.length === 0) {
                 toastr.error('Debe agregar al menos un producto o servicio', 'Error');
                 return false;
             }
-            
+
             // Para órdenes de servicio, validar que los adelantos tengan cuenta de caja
             if (orderType !== 'C' && editAdvancePayments.length > 0) {
                 for (let i = 0; i < editAdvancePayments.length; i++) {
@@ -4795,7 +4813,7 @@
             const paymentAmount = $('#complete_payment_amount').val();
             const paymentDate = $('#complete_payment_date').val();
             const cashAccountId = $('#complete_cash_account').val();
-            const completedBy = $('#completed_by').val();
+            const completedBy = '{{ request.user.id }}'; // Usar ID del usuario logueado
             const wayToPay = $('#complete_way_to_pay').val();
 
             if (!orderId || !paymentAmount || !paymentDate || !cashAccountId || !completedBy || !wayToPay) {
@@ -4988,7 +5006,7 @@
             const numberField = $('#document_number');
             const searchButton = numberField.next('.input-group-append').find('button');
             const originalButtonContent = searchButton.html();
-            
+
             numberField.prop('disabled', true);
             searchButton.prop('disabled', true);
             searchButton.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -5213,7 +5231,7 @@
             $('#deliveryClientName').val(clientName);
             $('#currentDeliveryStatus').val(currentDeliveryStatus);
             $('#newDeliveryStatus').val(newDeliveryStatus || '');
-            $('#deliveredBy').val('');
+            // No es necesario limpiar deliveredBy ya que es readonly y siempre muestra el usuario logueado
 
             // Mostrar el modal
             $('#orderDeliveryStatusModal').modal('show');
@@ -5225,7 +5243,7 @@
          */
         function saveDeliveryStatusChange(orderId) {
             const form = $('#orderDeliveryStatusForm');
-            const formData = form.serialize();
+            let formData = form.serialize();
 
             // Validar que se haya seleccionado un estado
             if (!$('#newDeliveryStatus').val()) {
@@ -5233,11 +5251,8 @@
                 return;
             }
 
-            // Validar que se haya seleccionado un empleado
-            if (!$('#deliveredBy').val()) {
-                toastr.error('Debe seleccionar un empleado');
-                return;
-            }
+            // Agregar el ID del usuario logueado al formData
+            formData += '&delivered_by={{ request.user.id }}';
 
             $.ajax({
                 url: '/sales/orders/update-delivery-status/',
@@ -5366,11 +5381,8 @@
                 return;
             }
 
-            // Validar que se haya seleccionado un empleado
-            if (!$('#deliveredBy').val()) {
-                toastr.error('Debe seleccionar un empleado');
-                return;
-            }
+            // Agregar el ID del usuario logueado al formData
+            formData += '&delivered_by={{ request.user.id }}';
 
             $.ajax({
                 url: '/sales/orders/update-delivery-status/',
@@ -6599,14 +6611,14 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Estilos para tabs redondeados */
-        .nav-tabs .nav-link {
+        /* Estilos para tabs redondeados - Específico para order_list */
+        .container-fluid .nav-tabs .nav-link {
             border-radius: 15px 15px 0 0 !important;
             border: none;
             margin-right: 5px;
         }
 
-        .nav-tabs .nav-link.active {
+        .container-fluid .nav-tabs .nav-link.active {
             border-radius: 15px 15px 0 0 !important;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -7888,7 +7900,7 @@
             // Limpiar formulario
             $('#convert-order-form')[0].reset();
             $('#convert_order_id').val(orderId);
-            
+
             // Obtener datos de la orden
             $.ajax({
                 url: '{% url "apps.sales:get_order_for_conversion" %}',
@@ -7899,27 +7911,27 @@
                 success: function(response) {
                     if (response.success) {
                         const order = response.order;
-                        
+
                         // Llenar información de la orden actual
                         $('#convert_current_code').val(order.code);
                         $('#convert_client_name').val(order.client_name);
                         $('#convert_register_date').val(order.register_date);
                         $('#convert_current_total').val('S/ ' + order.total.toFixed(2));
-                        
+
                         // Llenar configuración de la nueva orden
                         $('#convert_register_date_new').val(order.register_date);
                         $('#convert_delivery_date').val(order.delivery_date);
                         $('#convert_observation').val(order.observation);
-                        
+
                         // Configurar visibilidad de adelantos (siempre mostrar en conversión ya que se convierte a orden de servicio)
                         const convertAdvanceSection = $('#convert_advance_payments_section');
                         convertAdvanceSection.show();
-                        
+
                         // Limpiar y cargar adelantos múltiples
                         convertAdvancePayments = [];
                         convertAdvanceCounter = 0;
                         $('#convert_advance_payments_body').empty();
-                        
+
                         // Si hay adelanto, crear un adelanto por defecto
                         if (order.cash_advance > 0) {
                             const advanceId = ++convertAdvanceCounter;
@@ -7932,21 +7944,21 @@
                             convertAdvancePayments.push(advancePayment);
                             addConvertAdvancePaymentRow(advancePayment);
                         }
-                        
+
                         // Configurar código, serie y correlativo desde la orden original
                         $('#convert_code').val(order.code);
                         $('#convert_serial').val(order.serial);
                         $('#convert_correlative').val(order.correlative);
-                        
+
                         // Seleccionar sucursal si existe
                         if (order.subsidiary_id) {
                             $('#convert_subsidiary_id').val(order.subsidiary_id);
                             loadConvertCashAccounts(order.subsidiary_id);
                         }
-                        
+
                         // Cargar productos/servicios
                         loadConvertOrderDetails(order.details);
-                        
+
                         // Mostrar modal
                         $('#convertOrderModal').modal('show');
                     } else {
@@ -7976,7 +7988,7 @@
                             const cashSelect = $('#convert_cash_account_id');
                             cashSelect.empty();
                             cashSelect.append('<option value="">Seleccione caja</option>');
-                            
+
                             response.accounts.forEach(function(cash) {
                                 cashSelect.append(`<option value="${cash.id}">${cash.name}</option>`);
                             });
@@ -7994,16 +8006,16 @@
          */
         function updateConvertCorrelative() {
             const subsidiaryId = $('#convert_subsidiary_id').val();
-            
+
             if (subsidiaryId) {
                 const selectedOption = $('#convert_subsidiary_id option:selected');
                 const serial = selectedOption.data('serial');
-                
+
                 $('#convert_serial').val(serial);
-                
+
                 // Cargar cajas disponibles
                 loadConvertCashAccounts(subsidiaryId);
-                
+
                 // Obtener correlativo para orden de servicio
                 $.ajax({
                     url: '{% url "apps.sales:get_correlative_order" %}',
@@ -8041,11 +8053,11 @@
         function loadConvertOrderDetails(details) {
             const tbody = $('#convert-products-tbody');
             tbody.empty();
-            
+
             // Inicializar la variable global
             convertOrderDetails = [];
             convertDetailCounter = 0;
-            
+
             details.forEach((detail, index) => {
                 const productDetail = {
                     id: ++convertDetailCounter,
@@ -8057,10 +8069,10 @@
                     observation: detail.observation || ''
                 };
                 convertOrderDetails.push(productDetail);
-                
+
                 addConvertDetailRow(productDetail);
             });
-            
+
             updateConvertTotals();
         }
 
@@ -8145,7 +8157,7 @@
                 subtotal: price,
                 observation: ''
             };
-            
+
             convertOrderDetails.push(newDetail);
             addConvertDetailRow(newDetail);
             updateConvertTotals();
@@ -8237,7 +8249,7 @@
                 subtotal: 0,
                 observation: ''
             };
-            
+
             convertOrderDetails.push(newDetail);
             addConvertDetailRow(newDetail);
             updateConvertTotals();
@@ -8373,7 +8385,7 @@
                 form.reportValidity();
                 return;
             }
-            
+
             // Mostrar confirmación
             Swal.fire({
                 title: '¿Confirmar conversión?',
@@ -8388,18 +8400,18 @@
                 if (result.isConfirmed) {
                     // Enviar datos
                     const formData = new FormData($('#convert-order-form')[0]);
-                    
+
                     // Agregar adelantos múltiples como JSON
                     const advancesJson = JSON.stringify(convertAdvancePayments);
                     formData.append('advance_payments', advancesJson);
-                    
+
                     // Agregar los detalles de productos como JSON
                     formData.append('details', JSON.stringify(convertOrderDetails));
-                    
+
                     // Agregar subtotal e IGV como 0.00
                     formData.append('subtotal', '0.00');
                     formData.append('igv', '0.00');
-                    
+
                     $.ajax({
                         url: '{% url "apps.sales:convert_order_to_service" %}',
                         type: 'POST',
@@ -8413,10 +8425,10 @@
                             if (response.success) {
                                 showToast('success', response.message);
                                 $('#convertOrderModal').modal('hide');
-                                
+
                                 // Recargar la lista de órdenes
                                 loadOrders();
-                                
+
                                 // Mostrar mensaje de éxito con el nuevo código
                                 Swal.fire({
                                     title: '¡Conversión exitosa!',

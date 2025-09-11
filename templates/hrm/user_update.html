@@ -260,6 +260,33 @@
 
                                 <div class="custom-control custom-switch mb-3">
                                     <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxHrm" name="customCheckboxHrm"
+                                           {% if user_obj.has_access_to_hrm %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxHrm">
+                                        Acceso a RRHH
+                                    </label>
+                                </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxFinances" name="customCheckboxFinances"
+                                           {% if user_obj.has_access_to_finances %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxFinances">
+                                        Acceso a Finanzas
+                                    </label>
+                                </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
+                                           id="customCheckboxReport" name="customCheckboxReport"
+                                           {% if user_obj.has_access_to_report %}checked{% endif %}>
+                                    <label class="custom-control-label" for="customCheckboxReport">
+                                        Acceso a Reportes
+                                    </label>
+                                </div>
+
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" 
                                            id="customCheckboxAdmin" name="customCheckboxAdmin"
                                            {% if user_obj.has_access_to_all %}checked{% endif %}>
                                     <label class="custom-control-label" for="customCheckboxAdmin">

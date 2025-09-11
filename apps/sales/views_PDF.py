@@ -206,6 +206,13 @@ def generate_ticket_pdf(order_id):
             fontSize=7
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Center_6',
+            alignment=TA_CENTER,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=6
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Left_6',
             alignment=TA_LEFT,
             leading=7,  # Espaciado reducido
@@ -493,10 +500,12 @@ def generate_ticket_pdf(order_id):
         table_data_title = [[
             Paragraph("Cant.", styles['Helvetica_Bold_Left_6']),
             Paragraph("Descripción", styles['Helvetica_Bold_Left_6']),
+            Paragraph("Und", styles['Helvetica_Bold_Center_6']),
             Paragraph("P.U.", styles['Helvetica_Bold_Right_6']),
             Paragraph("Total", styles['Helvetica_Bold_Right_6'])
         ]]
-        table_title = Table(table_data_title, colWidths=[_wt * 10 / 100, _wt * 56 / 100, _wt * 17 / 100, _wt * 17 / 100])
+        _wt2 = 2.90 * inch - 4 * 0.05 * inch
+        table_title = Table(table_data_title, colWidths=[_wt2 * 9 / 100, _wt2 * 51 / 100, _wt2 * 8 / 100, _wt2 * 16 / 100, _wt2 * 16 / 100])
         table_title.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),  # Descripción a la izquierda
@@ -508,6 +517,8 @@ def generate_ticket_pdf(order_id):
             ('LEFTPADDING', (0, 0), (-1, -1), 1),
             ('RIGHTPADDING', (0, 0), (-1, -1), 1),
             ('RIGHTPADDING', (3, -1), (3, -1), 2),
+            ('LEFTPADDING', (1, 0), (1, 0), 2),
+            # ('BACKGROUND', (1, 0), (1, 0), colors.green),
             # ('GRID', (0, 0), (-1, -1), 0.5, colors.red),
         ]))
         elements.append(table_title)
@@ -517,15 +528,16 @@ def generate_ticket_pdf(order_id):
         # Agregar productos/servicios
         for detail in order_details:
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_7']),
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_6']),
                 Paragraph(detail.product_name, styles['Helvetica_Left_6']),
+                Paragraph(detail.product.productdetail_set.last().unit.name, styles['Helvetica_Left_6']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_6']),
                 Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_6'])
             ])
         
         # Crear tabla con 4 columnas
-        _wt2 = 2.90 * inch - 4 * 0.05 * inch
-        table = Table(table_data, colWidths=[_wt * 10 / 100, _wt * 56 / 100, _wt * 17 / 100, _wt * 17 / 100])
+
+        table = Table(table_data, colWidths=[_wt2 * 8 / 100, _wt2 * 54 / 100, _wt2 * 6 / 100, _wt2 * 16 / 100, _wt2 * 16 / 100])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),    # Descripción a la izquierda
@@ -673,7 +685,7 @@ def download_ticket_pdf(request, order_id):
                 order_type = 'Order'
             else:
                 order_type = 'Cotizacion'
-            response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
+            # response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)

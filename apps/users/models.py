@@ -44,6 +44,9 @@ class CustomUser(AbstractUser):
     has_access_system = models.BooleanField(default=False)
     has_access_to_sales = models.BooleanField(default=False)
     has_access_to_all = models.BooleanField(default=False)
+    has_access_to_hrm = models.BooleanField(default=False)
+    has_access_to_finances = models.BooleanField(default=False)
+    has_access_to_report = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Empleado'

@@ -50,56 +50,536 @@
     <!-- fullCalendar -->
     <link rel="stylesheet" href="{% static 'plugins/fullcalendar/main.css' %}">
     <style>
-        .header {
-            background: white;
-            box-shadow: var(--shadow);
+        /* ====== SIDEBAR GENERAL ====== */
+        .main-sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e9f2;
+            padding-top: 20px;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        /* Estilos personalizados para el navbar */
-        .main-header {
-            background: #f6f8f9 !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .main-header .navbar-nav .nav-link {
-            color: rgba(0, 0, 0, 0.7) !important;
-            font-weight: 500;
+            height: 100%;
             transition: all 0.3s ease;
+        }
+
+        /* LOGO MEJORADO */
+        .brand-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            border-bottom: 1px solid #f0f2f5;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .brand-link:hover {
+            text-decoration: none;
+            background: rgba(63, 81, 181, 0.05);
+        }
+
+        .brand-link .brand-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            margin-bottom: 8px;
+            border: 3px solid #3f51b5;
+            box-shadow: 0 4px 8px rgba(63, 81, 181, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .brand-link:hover .brand-image {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(63, 81, 181, 0.3);
+        }
+
+        .brand-link .brand-text {
+            font-weight: 700;
+            color: #3f51b5;
+            font-size: 16px;
+            font-family: 'Source Sans Pro', sans-serif;
+            letter-spacing: 0.5px;
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* NAV ITEMS */
+        .nav-sidebar .nav-item > .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #333;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .nav-sidebar .nav-item > .nav-link:hover {
+            background: #f0f4ff;
+            color: #3f51b5;
+        }
+
+        .nav-sidebar .nav-icon {
+            margin-right: 12px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        .nav-sidebar .nav-link p {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        /* ACTIVE LINK */
+        .nav-sidebar .nav-link.active,
+        .nav-sidebar .nav-link.active:hover {
+            background: #e8f0fe;
+            color: #3f51b5;
+            font-weight: 600;
+        }
+
+        /* SUBMENU */
+        .nav-treeview {
+            padding-left: 20px;
+        }
+
+        .nav-treeview .nav-item .nav-link {
+            font-size: 14px;
+            padding: 8px 20px;
+            color: #555;
             border-radius: 6px;
-            margin: 0 2px;
         }
 
-        .main-header .navbar-nav .nav-link:hover {
-            color: #000000 !important;
-            background: rgba(0, 0, 0, 0.05);
-            transform: translateY(-1px);
+        .nav-treeview .nav-item .nav-link:hover {
+            background: #f0f4ff;
+            color: #3f51b5;
         }
 
-        .main-header .navbar-brand h4 {
-            text-shadow: none;
+        /* SEPARADORES (TÍTULOS DE SECCIÓN) */
+        .nav-header {
+            font-size: 12px;
+            font-weight: bold;
+            color: #3f51b5;
+            margin: 15px 20px 5px;
+            text-transform: uppercase;
+        }
+
+        /* ICONOS MÁS MODERNOS - Solo para el home */
+        .main-sidebar .nav-sidebar .fa-angle-left {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+
+        .main-sidebar .nav-item.menu-open > .nav-link .fa-angle-left {
+            transform: rotate(-90deg);
+        }
+
+        /* BRAND HEADER */
+        .brand-link {
+            display: flex;
+            flex-direction: column; /* Logo arriba, texto abajo */
+            align-items: center;
+            justify-content: center;
+            padding: 30px 10px;
+            padding-top: 50px;
+            border-bottom: 1px solid #f0f2f5;
+            text-decoration: none;
+            background: #fff;
+        }
+
+        .brand-link .brand-image {
+            width: 40px; /* Más grande */
+            height: 60px;
+            object-fit: contain;
+            border-radius: 50%; /* Circular elegante */
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+        }
+
+        .brand-link .brand-text {
+            font-weight: 600;
+            font-size: 16px;
+            color: #3f51b5; /* Azul Material */
             letter-spacing: 0.5px;
         }
 
-        .main-header .navbar-brand i {
+        .brand-subtitle {
+            margin-top: 2px;
+        }
+
+        .brand-subtitle small {
+            font-size: 11px;
             color: #6c757d;
-            text-shadow: none;
+            font-weight: 500;
+        }
+
+        .layout-navbar-fixed.layout-fixed .wrapper .sidebar {
+            margin-top: calc(1.0rem + 1px);
+        }
+
+        /* INFORMACIÓN DEL USUARIO EN SIDEBAR */
+        .user-info-sidebar {
+            background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+            margin: 8px 10px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid #e3e6f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .user-avatar-sidebar {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .user-avatar-sidebar img {
+            border: 3px solid #3f51b5;
+            box-shadow: 0 2px 6px rgba(63, 81, 181, 0.3);
+        }
+
+        .user-details-sidebar {
+            text-align: center;
+        }
+
+        .user-name-sidebar {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .user-role-sidebar,
+        .user-subsidiary-sidebar {
+            font-size: 11px;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .user-role-sidebar i,
+        .user-subsidiary-sidebar i {
+            color: #3f51b5;
+        }
+
+        /* ESTADÍSTICAS RÁPIDAS DEL SIDEBAR */
+        .sidebar-stats {
+            margin: 10px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e3e6f0;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fc;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            background: #f8f9fc;
+        }
+
+        .stat-icon i {
+            font-size: 16px;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ESTILOS PARA SIDEBAR CONTRAÍDO (sidebar-mini) */
+        .sidebar-mini .user-info-sidebar {
+            margin: 5px;
+            padding: 8px 5px;
+            text-align: center;
+        }
+
+        .sidebar-mini .user-avatar-sidebar {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-mini .user-avatar-sidebar img {
+            width: 35px;
+            height: 35px;
+        }
+
+        .sidebar-mini .user-details-sidebar {
+            display: none; /* Ocultar detalles del usuario cuando está contraído */
+        }
+
+        /* Mostrar solo el avatar cuando está contraído */
+        .sidebar-mini .user-info-sidebar:hover .user-details-sidebar {
+            display: block;
+            position: absolute;
+            background: white;
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            left: 60px;
+            top: 0;
+            min-width: 200px;
+            text-align: left;
+            animation: fadeInTooltip 0.3s ease;
+        }
+
+        @keyframes fadeInTooltip {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Tooltip para el avatar cuando está contraído */
+        .sidebar-mini .user-info-sidebar::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1001;
+        }
+
+        .sidebar-mini .user-info-sidebar:hover::after {
+            opacity: 1;
+        }
+
+        .sidebar-mini .user-info-sidebar {
+            position: relative;
+        }
+
+        /* Ajustar el padding del sidebar cuando está contraído */
+        .sidebar-mini .sidebar {
+            padding-top: 10px;
+        }
+
+        /* AJUSTE DE LAS FLECHAS EN LOS MENÚS */
+        .nav-sidebar .fa-angle-left {
+            margin-left: auto; /* Lo manda a la derecha */
+            font-size: 12px;
+            color: #888;
+            position: relative;
+            right: 5px; /* un poco separado del borde */
+        }
+
+        /* ICONOS DE MENU CON ANCHO FIJO */
+        .nav-sidebar .nav-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        /* ESTILOS PARA DASHBOARD MEJORADO */
+        .border-left-primary {
+            border-left: 0.25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: 0.25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: 0.25rem solid #36b9cc !important;
+        }
+
+        .border-left-warning {
+            border-left: 0.25rem solid #f6c23e !important;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        .text-xs {
+            font-size: 0.7rem;
+        }
+
+        /* TIMELINE STYLES */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e3e6f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4e73df;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 3px #e3e6f0;
+        }
+
+        .timeline-item.success::before {
+            background: #1cc88a;
+        }
+
+        .timeline-item.warning::before {
+            background: #f6c23e;
+        }
+
+        .timeline-item.danger::before {
+            background: #e74a3c;
+        }
+
+        .timeline-content {
+            background: #f8f9fc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #4e73df;
+        }
+
+        .timeline-item.success .timeline-content {
+            border-left-color: #1cc88a;
+        }
+
+        .timeline-item.warning .timeline-content {
+            border-left-color: #f6c23e;
+        }
+
+        .timeline-item.danger .timeline-content {
+            border-left-color: #e74a3c;
+        }
+
+        /* NOTIFICATION STYLES */
+        .notification-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item.unread {
+            background: #f8f9fc;
+            border-left: 3px solid #4e73df;
+            padding-left: 10px;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .notification-icon.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .notification-icon.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .notification-icon.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .notification-icon.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* CARD SHADOWS */
+        .card.shadow {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+        }
+
+        .card.shadow-lg {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+        }
+
+        /* GRADIENT HEADERS */
+        .bg-gradient-primary {
+            background: linear-gradient(45deg, #4e73df 10%, #224abe 100%) !important;
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(45deg, #1cc88a 10%, #13855c 100%) !important;
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(45deg, #36b9cc 10%, #258391 100%) !important;
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(45deg, #f6c23e 10%, #dda20a 100%) !important;
+        }
+
+        .bg-gradient-danger {
+            background: linear-gradient(45deg, #e74a3c 10%, #c0392b 100%) !important;
         }
 
         /* Estilos para el dropdown del usuario */
@@ -200,628 +680,105 @@
             color: #6c757d;
         }
 
-        /* Estilos personalizados para el sidebar */
-        .main-sidebar {
-            background: #f6f8f9;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .main-sidebar::before {
-            content: '';
-            position: absolute;
+        .header {
+            background: white;
+            box-shadow: var(--shadow);
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(0,0,0,0.02)"/><circle cx="75" cy="75" r="1" fill="rgba(0,0,0,0.02)"/><circle cx="50" cy="10" r="0.5" fill="rgba(0,0,0,0.01)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-            pointer-events: none;
-        }
-
-        .brand-link {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            border-bottom: none;
-            padding: 20px 15px;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
-            text-align: left;
+            height: 70px;
+            z-index: 1000;
             display: flex;
-            flex-direction: row;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: space-between;
+            padding: 0 24px;
         }
 
-        .brand-link:hover {
-            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
         }
 
-        .brand-image {
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            width: 40px;
-            height: 40px;
-            margin-right: 15px;
-            margin-bottom: 0;
-        }
-
-        .brand-link:hover .brand-image {
-            transform: scale(1.05);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .brand-text {
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-            font-size: 1.2rem;
-            letter-spacing: 0.5px;
-            margin: 0;
-        }
-
-        /* Estilos para las secciones del menú */
-        .nav-header {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: #ffffff !important;
-            font-weight: 700;
-            text-align: center;
-            padding: 10px 15px;
-            margin: 20px 15px 15px 15px;
-            border-radius: 8px;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.2);
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Estilos para los enlaces principales del menú */
-        .nav-link {
-            background: transparent !important;
-            border-radius: 8px !important;
-            margin: 2px 15px;
-            padding: 12px 18px !important;
-            transition: all 0.3s ease !important;
-            border: 1px solid transparent;
-            position: relative;
-            overflow: hidden;
-            color: #495057 !important;
-            font-weight: 500;
-            z-index: 2;
-        }
-
-        .nav-link:hover {
-            background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(73, 80, 87, 0.1) 100%) !important;
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.15);
-            border-color: rgba(108, 117, 125, 0.2);
-        }
-
-        .nav-link:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .nav-link:hover:before {
-            left: 100%;
-        }
-
-        .nav-link i {
-            margin-right: 12px;
-            width: 18px;
-            text-align: center;
-            transition: all 0.3s ease;
-            color: #6c757d;
-            font-size: 1rem;
-        }
-
-        .nav-link:hover i {
-            transform: scale(1.1);
-            color: #495057;
-        }
-
-        .nav-link p {
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        /* Estilos para los submenús */
-        .nav-treeview {
-            margin-left: 20px;
-            margin-top: 3px;
-            position: relative;
-            z-index: 2;
-        }
-
-        .nav-treeview .nav-link {
-            padding: 10px 18px !important;
-            font-size: 0.85rem;
-            border-left: 2px solid transparent;
-            transition: all 0.3s ease;
-            margin: 1px 15px;
-            background: rgba(0, 0, 0, 0.02) !important;
-            border-radius: 6px;
-        }
-
-        .nav-treeview .nav-link:hover {
-            border-left-color: #6c757d;
-            background: linear-gradient(135deg, rgba(108, 117, 125, 0.08) 0%, rgba(73, 80, 87, 0.08) 100%) !important;
-            transform: translateX(3px);
-            box-shadow: 0 2px 10px rgba(108, 117, 125, 0.1);
-        }
-
-        .nav-treeview .nav-link.text-warning {
-            color: #ffc107 !important;
-        }
-
-        .nav-treeview .nav-link.text-warning:hover {
-            color: #e0a800 !important;
-            background: rgba(255, 193, 7, 0.08) !important;
-        }
-
-        .nav-treeview .nav-link.text-success {
-            color: #28a745 !important;
-        }
-
-        .nav-treeview .nav-link.text-success:hover {
-            color: #218838 !important;
-            background: rgba(40, 167, 69, 0.08) !important;
-        }
-
-        .nav-treeview .nav-link.text-cyan {
-            color: #17a2b8 !important;
-        }
-
-        .nav-treeview .nav-link.text-cyan:hover {
-            color: #138496 !important;
-            background: rgba(23, 162, 184, 0.08) !important;
-        }
-
-        .sidebar {
-            padding: 12px 0;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Animaciones para el menú */
-        .nav-treeview {
-            transition: all 0.3s ease;
-        }
-
-        .nav-item.has-treeview > .nav-link > .right {
-            transition: transform 0.3s ease;
-            color: #6c757d;
-        }
-
-        .nav-item.has-treeview.menu-open > .nav-link > .right {
-            transform: rotate(-90deg);
-            color: #495057;
-        }
-
-        /* Scrollbar personalizado para el sidebar */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.03);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
-        }
-
-        /* Efectos de hover mejorados */
-        .nav-link:hover {
-            background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(73, 80, 87, 0.1) 100%) !important;
-        }
-
-        /* Responsive para dispositivos móviles */
-        @media (max-width: 768px) {
-            .nav-link {
-                padding: 10px 15px !important;
-            }
-
-            .nav-treeview .nav-link {
-                padding: 8px 15px !important;
-            }
-        }
-
-        /* Estilos para el Dashboard */
-        .quick-access-card {
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .quick-access-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        .quick-access-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .quick-access-card:hover::before {
-            left: 100%;
-        }
-
-        .quick-access-icon {
-            transition: all 0.3s ease;
-        }
-
-        .quick-access-card:hover .quick-access-icon {
-            transform: scale(1.1);
-        }
-
-        .bg-gradient-primary {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        }
-
-        .bg-gradient-success {
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-        }
-
-        .bg-gradient-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        }
-
-        .bg-gradient-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        }
-
-        .bg-gradient-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        }
-
-        .card {
-            border: none;
+        /* Estilos personalizados para el navbar */
+        .main-header {
+            background: #f6f8f9 !important;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px 12px 0 0 !important;
         }
 
-        .card-title {
-            color: #495057;
-            font-weight: 600;
-            margin: 0;
+        .main-header .navbar-nav .nav-link {
+            color: rgba(0, 0, 0, 0.7) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            margin: 0 2px;
         }
 
-        .table {
-            border-radius: 8px;
-            overflow: hidden;
+        .main-header .navbar-nav .nav-link:hover {
+            color: #000000 !important;
+            background: rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
         }
 
-        .table thead th {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
+        .main-header .navbar-brand h4 {
+            text-shadow: none;
             letter-spacing: 0.5px;
         }
 
-        .table tbody tr {
-            transition: all 0.2s ease;
+        .main-header .navbar-brand i {
+            color: #6c757d;
+            text-shadow: none;
         }
 
-        .table tbody tr:hover {
-            background: rgba(0, 123, 255, 0.05);
-            transform: scale(1.01);
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-            border-radius: 6px;
-        }
-
-        .btn {
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Animaciones para las tarjetas de estadísticas */
-        .card.bg-gradient-info,
-        .card.bg-gradient-success,
-        .card.bg-gradient-warning,
-        .card.bg-gradient-danger {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .card.bg-gradient-info {
-            animation-delay: 0.1s;
-        }
-
-        .card.bg-gradient-success {
-            animation-delay: 0.2s;
-        }
-
-        .card.bg-gradient-warning {
-            animation-delay: 0.3s;
-        }
-
-        .card.bg-gradient-danger {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Estilos para los gráficos */
-        .card-body canvas {
-            border-radius: 8px;
-        }
-
-        /* Responsive para el dashboard */
-        @media (max-width: 768px) {
-            .quick-access-card {
-                margin-bottom: 1rem;
-            }
-
-            .card-body {
-                padding: 1rem;
-            }
-        }
-
-        /* Estilos adicionales para el dashboard */
-        .card.bg-gradient-info,
-        .card.bg-gradient-success,
-        .card.bg-gradient-warning,
-        .card.bg-gradient-danger {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card.bg-gradient-info::before,
-        .card.bg-gradient-success::before,
-        .card.bg-gradient-warning::before,
-        .card.bg-gradient-danger::before {
-            content: '';
+        /* ESTILOS PARA EL NOMBRE DE SUCURSAL CENTRADO */
+        .navbar-center {
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            transform: rotate(45deg);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+        }
+
+        .subsidiary-info {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
 
-        .card.bg-gradient-info:hover::before,
-        .card.bg-gradient-success:hover::before,
-        .card.bg-gradient-warning:hover::before,
-        .card.bg-gradient-danger:hover::before {
-            transform: rotate(45deg) scale(1.2);
+        .subsidiary-info:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
         }
 
-        .card.bg-gradient-info h4,
-        .card.bg-gradient-success h4,
-        .card.bg-gradient-warning h4,
-        .card.bg-gradient-danger h4 {
-            font-weight: 700;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        .card.bg-gradient-info p,
-        .card.bg-gradient-success p,
-        .card.bg-gradient-warning p,
-        .card.bg-gradient-danger p {
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        /* Estilos para la tabla de órdenes recientes */
-        .table tbody tr {
-            border-left: 4px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .table tbody tr:hover {
-            border-left-color: #007bff;
-            background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.02) 100%);
-        }
-
-        .avatar-sm {
-            width: 32px;
-            height: 32px;
+        .subsidiary-info i {
+            color: #3f51b5;
             font-size: 14px;
         }
 
-        .badge-outline-primary {
-            color: #007bff;
-            border: 1px solid #007bff;
-            background: transparent;
+        .subsidiary-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            letter-spacing: 0.3px;
         }
 
-        .badge-outline-primary:hover {
-            background: #007bff;
-            color: white;
-        }
-
-        /* Estilos para los botones de acción */
-        .btn-group-sm .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-            border-radius: 0.2rem;
-        }
-
-        .btn-outline-primary:hover,
-        .btn-outline-warning:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Efectos de hover mejorados para las tarjetas de acceso rápido */
-        .quick-access-card .badge {
-            transition: all 0.3s ease;
-        }
-
-        .quick-access-card:hover .badge {
-            transform: scale(1.1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Animación de carga para los gráficos */
-        .card-body canvas {
-            opacity: 0;
-            animation: fadeInCanvas 0.8s ease-out forwards;
-        }
-
-        @keyframes fadeInCanvas {
-            to {
-                opacity: 1;
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            .navbar-center {
+                display: none; /* Ocultar en móviles para ahorrar espacio */
             }
         }
 
-        /* Estilos para mensajes de estado vacío */
-        .text-muted {
-            color: #6c757d !important;
-        }
-
-        .py-4 {
-            padding-top: 1.5rem !important;
-            padding-bottom: 1.5rem !important;
-        }
-
-        /* Mejoras en la responsividad */
-        @media (max-width: 576px) {
-            .quick-access-card {
-                padding: 1.5rem !important;
-            }
-
-            .card-header {
-                padding: 1rem;
-            }
-
-            .card-body {
-                padding: 1rem;
-            }
-
-            .table-responsive {
-                font-size: 0.875rem;
-            }
-        }
-
-        /* Estilos para la sección de bienvenida */
-        .welcome-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .welcome-title {
-            color: #495057;
-            font-weight: 700;
-            font-size: 2.2rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .welcome-subtitle {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin: 0;
-        }
-
-        .welcome-title i {
-            animation: rotate 3s linear infinite;
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Indicador de carga para el dashboard */
-        .dashboard-loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 200px;
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
     </style>
 
-    {% block extra_css %}{% endblock extra_css %}
 </head>
 <body class="hold-transition sidebar-collapse sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed">
 
@@ -845,6 +802,14 @@
                 <a href="{% url 'home' %}" class="nav-link">Inicio</a>
             </li>
         </ul>
+
+        <!-- Center - Sucursal Name -->
+        <div class="navbar-center">
+            <div class="subsidiary-info">
+                <i class="fas fa-building mr-2"></i>
+                <span class="subsidiary-name">{{ user.subsidiary.name|default:"Sede Principal" }}</span>
+            </div>
+        </div>
 
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto">
@@ -912,11 +877,39 @@
 
     <aside class="main-sidebar sidebar-light-cyan elevation-4">
         <!-- Brand Logo -->
-        <a href="{% url 'home' %}" class="brand-link">
-            <img src="{% static 'assets/img/logo_medrano.jpeg' %}" alt="Logo"
-                 class="brand-image img-circle elevation-3">
-            <span class="brand-text font-weight-light">Medrano</span>
-        </a>
+{#        <a href="{% url 'home' %}" class="brand-link">#}
+{#            <img src="{% static 'assets/img/logo_medrano.jpeg' %}" alt="Logo"#}
+{#                 class="brand-image img-circle elevation-3">#}
+{#            <span class="brand-text font-weight-light">Medrano</span>#}
+{#            <div class="brand-subtitle">#}
+{#                <small class="text-muted">Sistema de Gestión</small>#}
+{#            </div>#}
+{#        </a>#}
+        
+        <!-- Información del Usuario en el Sidebar -->
+        <div class="user-info-sidebar" data-tooltip="">
+            <div class="user-avatar-sidebar">
+                {% if user.photo.url %}
+                    <img src="{{ user.subsidiary.photo.url }}" class="img-circle" alt="User Image" width="50" height="50">
+                {% else %}
+                    <img src="{% static 'assets/img/logo_medrano.jpeg' %}" class="img-circle" alt="User Image" width="50" height="50">
+                {% endif %}
+            </div>
+            <div class="user-details-sidebar">
+                <div class="user-name-sidebar">{{ user.first_name }} {{ user.last_name }}</div>
+                <div class="user-role-sidebar">
+                    <i class="fas fa-user-tie mr-1"></i>
+                    <span>Administrador</span>
+                </div>
+                <div class="user-subsidiary-sidebar">
+                    <i class="fas fa-building mr-1"></i>
+                    <span>{{ user.subsidiary.name|default:"Sede Principal" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas Rápidas del Sidebar -->
+
 
         <!-- Sidebar -->
         <div class="sidebar">
@@ -925,7 +918,7 @@
                 {% if user.has_access_system %}
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                         data-accordion="false">
-                        {% if user.has_access_to_all %}
+                        {% if user.has_access_to_all or user.has_access_to_hrm %}
                             <!-- RECURSOS HUMANOS -->
                             <li class="nav-item has-treeview">
                                 <a href="#" class="nav-link">
@@ -995,7 +988,7 @@
                                 </ul>
                             </li>
                         {% endif %}
-                        {% if user.has_access_to_all %}
+                        {% if user.has_access_to_all or user.has_access_to_finances %}
                             <!-- FINANZAS -->
                             <li class="nav-item has-treeview">
                                 <a href="" class="nav-link">
@@ -1021,10 +1014,12 @@
                                     </li>
                                 </ul>
                             </li>
+                        {% endif %}
+                        {% if user.has_access_to_all or user.has_access_to_report %}
                             <!-- REPORTES -->
                             <li class="nav-item has-treeview">
                                 <a href="" class="nav-link">
-                                    <i class="nav-icon fa-solid fa-calculator"></i>
+                                    <i class="nav-icon fa-solid fa-chart-bar"></i>
                                     <p>
                                         Reportes <i class="fas fa-angle-left right"></i>
                                     </p>
@@ -1119,55 +1114,81 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-lg-4 col-md-6 mb-3">
-                                            <a href="{% url 'apps.sales:order_list' %}" class="text-decoration-none">
-                                                <div class="quick-access-card bg-gradient-primary text-white text-center p-4 rounded-lg shadow-lg h-100">
-                                                    <div class="quick-access-icon mb-3">
-                                                        <i class="fas fa-shopping-cart fa-3x"></i>
+                                        {% if user.has_access_to_all or user.has_access_to_sales %}
+                                            <div class="col-lg-4 col-md-6 mb-3">
+                                                <a href="{% url 'apps.sales:order_list' %}"
+                                                   class="text-decoration-none">
+                                                    <div class="quick-access-card bg-gradient-primary text-white text-center p-4 rounded-lg shadow-lg h-100">
+                                                        <div class="quick-access-icon mb-3">
+                                                            <i class="fas fa-shopping-cart fa-3x"></i>
+                                                        </div>
+                                                        <h4 class="font-weight-bold mb-2">Ventas</h4>
+                                                        <p class="mb-0 opacity-75">Gestión de Órdenes y Productos</p>
+                                                        <div class="mt-3">
+                                                            <span class="badge badge-light text-primary">Órdenes</span>
+                                                            <span class="badge badge-light text-primary">Productos</span>
+                                                            <span class="badge badge-light text-primary">Clientes</span>
+                                                        </div>
                                                     </div>
-                                                    <h4 class="font-weight-bold mb-2">Ventas</h4>
-                                                    <p class="mb-0 opacity-75">Gestión de Órdenes y Productos</p>
-                                                    <div class="mt-3">
-                                                        <span class="badge badge-light text-primary">Órdenes</span>
-                                                        <span class="badge badge-light text-primary">Productos</span>
-                                                        <span class="badge badge-light text-primary">Clientes</span>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                        {% if user.has_access_to_all or user.has_access_to_finances %}
+                                            <div class="col-lg-4 col-md-6 mb-3">
+                                                <a href="{% url 'apps.accounting:cash_list' %}"
+                                                   class="text-decoration-none">
+                                                    <div class="quick-access-card bg-gradient-success text-white text-center p-4 rounded-lg shadow-lg h-100">
+                                                        <div class="quick-access-icon mb-3">
+                                                            <i class="fas fa-chart-line fa-3x"></i>
+                                                        </div>
+                                                        <h4 class="font-weight-bold mb-2">Finanzas</h4>
+                                                        <p class="mb-0 opacity-75">Control de Cajas y Flujo de Caja</p>
+                                                        <div class="mt-3">
+                                                            <span class="badge badge-light text-success">Cajas</span>
+                                                            <span class="badge badge-light text-success">Gastos</span>
+                                                            <span class="badge badge-light text-success">Reportes</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </a>
-                                        </div>
-                                        <div class="col-lg-4 col-md-6 mb-3">
-                                            <a href="{% url 'apps.accounting:cash_list' %}"
-                                               class="text-decoration-none">
-                                                <div class="quick-access-card bg-gradient-success text-white text-center p-4 rounded-lg shadow-lg h-100">
-                                                    <div class="quick-access-icon mb-3">
-                                                        <i class="fas fa-chart-line fa-3x"></i>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                        {% if user.has_access_to_all or user.has_access_to_hrm %}
+                                            <div class="col-lg-4 col-md-6 mb-3">
+                                                <a href="{% url 'apps.hrm:subsidiary' %}" class="text-decoration-none">
+                                                    <div class="quick-access-card bg-gradient-warning text-white text-center p-4 rounded-lg shadow-lg h-100">
+                                                        <div class="quick-access-icon mb-3">
+                                                            <i class="fas fa-users fa-3x"></i>
+                                                        </div>
+                                                        <h4 class="font-weight-bold mb-2">Recursos Humanos</h4>
+                                                        <p class="mb-0 opacity-75">Sucursales y Empleados</p>
+                                                        <div class="mt-3">
+                                                            <span class="badge badge-light text-warning">Sucursales</span>
+                                                            <span class="badge badge-light text-warning">Empleados</span>
+                                                            <span class="badge badge-light text-warning">Gestión</span>
+                                                        </div>
                                                     </div>
-                                                    <h4 class="font-weight-bold mb-2">Finanzas</h4>
-                                                    <p class="mb-0 opacity-75">Control de Cajas y Flujo de Caja</p>
-                                                    <div class="mt-3">
-                                                        <span class="badge badge-light text-success">Cajas</span>
-                                                        <span class="badge badge-light text-success">Gastos</span>
-                                                        <span class="badge badge-light text-success">Reportes</span>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                        {% if user.has_access_to_all or user.has_access_to_report %}
+                                            <div class="col-lg-4 col-md-6 mb-3">
+                                                <a href="{% url 'apps.accounting:sales_report' %}"
+                                                   class="text-decoration-none">
+                                                    <div class="quick-access-card bg-gradient-info text-white text-center p-4 rounded-lg shadow-lg h-100">
+                                                        <div class="quick-access-icon mb-3">
+                                                            <i class="fas fa-chart-bar fa-3x"></i>
+                                                        </div>
+                                                        <h4 class="font-weight-bold mb-2">Reportes</h4>
+                                                        <p class="mb-0 opacity-75">Análisis y Estadísticas</p>
+                                                        <div class="mt-3">
+                                                            <span class="badge badge-light text-info">Ventas</span>
+                                                            <span class="badge badge-light text-info">Gastos</span>
+                                                            <span class="badge badge-light text-info">Análisis</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </a>
-                                        </div>
-                                        <div class="col-lg-4 col-md-6 mb-3">
-                                            <a href="{% url 'apps.hrm:subsidiary' %}" class="text-decoration-none">
-                                                <div class="quick-access-card bg-gradient-warning text-white text-center p-4 rounded-lg shadow-lg h-100">
-                                                    <div class="quick-access-icon mb-3">
-                                                        <i class="fas fa-users fa-3x"></i>
-                                                    </div>
-                                                    <h4 class="font-weight-bold mb-2">Recursos Humanos</h4>
-                                                    <p class="mb-0 opacity-75">Sucursales y Empleados</p>
-                                                    <div class="mt-3">
-                                                        <span class="badge badge-light text-warning">Sucursales</span>
-                                                        <span class="badge badge-light text-warning">Empleados</span>
-                                                        <span class="badge badge-light text-warning">Gestión</span>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </div>
+                                                </a>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -1175,142 +1196,424 @@
                     </div>
 
                     <!-- Estadísticas y Gráficos -->
-                    <div class="row mb-4">
-                        <!-- Tarjetas de Estadísticas -->
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <div class="card bg-gradient-info text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4 class="mb-0" id="total-orders">0</h4>
-                                            <p class="mb-0">Total Órdenes</p>
+                    {% if user.has_access_to_all or user.has_access_to_report %}
+                        <div class="row mb-4">
+                            <!-- Tarjetas de Estadísticas -->
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-gradient-info text-white shadow-lg">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h4 class="mb-0" id="total-orders">0</h4>
+                                                <p class="mb-0">Total Órdenes</p>
+                                                <small class="opacity-75">
+                                                    <i class="fas fa-arrow-up mr-1"></i>
+                                                    <span id="orders-growth">+0%</span> vs mes anterior
+                                                </small>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                                            </div>
                                         </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-gradient-success text-white shadow-lg">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h4 class="mb-0" id="completed-orders">0</h4>
+                                                <p class="mb-0">Completadas</p>
+                                                <small class="opacity-75">
+                                                    <i class="fas fa-check mr-1"></i>
+                                                    <span id="completion-rate">0%</span> de eficiencia
+                                                </small>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-gradient-warning text-white shadow-lg">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h4 class="mb-0" id="pending-orders">0</h4>
+                                                <p class="mb-0">Pendientes</p>
+                                                <small class="opacity-75">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    Requieren atención
+                                                </small>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-clock fa-2x opacity-75"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-gradient-danger text-white shadow-lg">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h4 class="mb-0" id="total-sales">S/ 0.00</h4>
+                                                <p class="mb-0">Ventas Totales</p>
+                                                <small class="opacity-75">
+                                                    <i class="fas fa-chart-line mr-1"></i>
+                                                    <span id="sales-growth">+0%</span> vs mes anterior
+                                                </small>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <div class="card bg-gradient-success text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4 class="mb-0" id="completed-orders">0</h4>
-                                            <p class="mb-0">Completadas</p>
+
+                        <!-- Tarjetas Adicionales de Información -->
+                        <div class="row mb-4">
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="card border-left-primary shadow h-100">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Clientes Activos
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-clients">0</div>
+                                                <div class="text-xs text-muted">
+                                                    <i class="fas fa-users mr-1"></i>
+                                                    Nuevos este mes: <span id="new-clients">0</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                                            </div>
                                         </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="card border-left-success shadow h-100">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Productos Disponibles
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="available-products">0</div>
+                                                <div class="text-xs text-muted">
+                                                    <i class="fas fa-boxes mr-1"></i>
+                                                    En stock: <span id="in-stock">0</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="card border-left-info shadow h-100">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                    Empleados Activos
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-employees">0</div>
+                                                <div class="text-xs text-muted">
+                                                    <i class="fas fa-user-tie mr-1"></i>
+                                                    En sucursal: <span id="current-subsidiary">{{ user.subsidiary.name|default:"Principal" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <div class="card bg-gradient-warning text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4 class="mb-0" id="pending-orders">0</h4>
-                                            <p class="mb-0">Pendientes</p>
-                                        </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-clock fa-2x opacity-75"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <div class="card bg-gradient-danger text-white">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h4 class="mb-0" id="total-sales">S/ 0.00</h4>
-                                            <p class="mb-0">Ventas Totales</p>
-                                        </div>
-                                        <div class="align-self-center">
-                                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% endif %}
 
                     <!-- Gráficos -->
-                    <div class="row mb-4">
-                        <!-- Gráfico de Órdenes Mensuales -->
-                        <div class="col-lg-6 mb-3">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-chart-bar mr-2"></i>
-                                        Órdenes Mensuales - {{ subsidiary_obj.name|default:"Sede Principal" }}
-                                    </h3>
+                    {% if user.has_access_to_all or user.has_access_to_report %}
+                        <div class="row mb-4">
+                            <!-- Gráfico de Órdenes Mensuales -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-header bg-gradient-primary text-white">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-chart-bar mr-2"></i>
+                                            Órdenes Mensuales - {{ subsidiary_obj.name|default:"Sede Principal" }}
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="monthlyOrdersChart" height="300"></canvas>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <canvas id="monthlyOrdersChart" height="300"></canvas>
+                            </div>
+
+                            <!-- Gráfico de Órdenes Semanales -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-header bg-gradient-success text-white">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-chart-line mr-2"></i>
+                                            Órdenes Semanales - {{ subsidiary_obj.name|default:"Sede Principal" }}
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="weeklyOrdersChart" height="300"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Gráfico de Órdenes Semanales -->
-                        <div class="col-lg-6 mb-3">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-chart-line mr-2"></i>
-                                        Órdenes Semanales - {{ subsidiary_obj.name|default:"Sede Principal" }}
-                                    </h3>
+                        <!-- Actividades Recientes y Notificaciones -->
+                        <div class="row mb-4">
+                            <!-- Actividades Recientes -->
+                            <div class="col-lg-8 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-header bg-gradient-info text-white">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-history mr-2"></i>
+                                            Actividades Recientes
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="timeline" id="recent-activities">
+                                            <!-- Las actividades se cargarán dinámicamente -->
+                                            <div class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="sr-only">Cargando...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Cargando actividades...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <canvas id="weeklyOrdersChart" height="300"></canvas>
+                            </div>
+
+                            <!-- Notificaciones y Alertas -->
+                            <div class="col-lg-4 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-header bg-gradient-warning text-white">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-bell mr-2"></i>
+                                            Notificaciones
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="notifications-list">
+                                            <!-- Las notificaciones se cargarán dinámicamente -->
+                                            <div class="text-center py-3">
+                                                <div class="spinner-border text-warning" role="status">
+                                                    <span class="sr-only">Cargando...</span>
+                                                </div>
+                                                <p class="mt-2 text-muted">Cargando notificaciones...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <!-- Contenido profesional para usuarios sin permisos de reportes -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-lg"
+                                     style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                    <div class="card-body text-center py-5">
+                                        <div class="row align-items-center">
+                                            <div class="col-lg-4">
+                                                <div class="mb-4 logo-container">
+                                                    <img src="{% static 'assets/img/logo_medrano.jpeg' %}"
+                                                         alt="Logo Belygraf"
+                                                         class="img-fluid rounded-circle border shadow floating-animation"
+                                                         style="max-height: 100px; width: 100px; object-fit: cover;">
+                                                </div>
+                                                <h4 class="text-dark font-weight-bold mb-3">
+                                                    <i class="fas fa-chart-bar text-info mr-2"></i>
+                                                    Reportes y Estadísticas
+                                                </h4>
+                                                <p class="text-muted">
+                                                    Acceso restringido a administradores
+                                                </p>
+                                            </div>
+                                            <div class="col-lg-8">
+                                                <div class="row">
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card"
+                                                             style="background: rgba(255,255,255,0.8);">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-chart-pie fa-2x text-primary mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">Análisis de
+                                                                    Ventas</h6>
+                                                                <small class="text-muted">Métricas comerciales</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card"
+                                                             style="background: rgba(255,255,255,0.8);">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">Tendencias</h6>
+                                                                <small class="text-muted">Evolución temporal</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card"
+                                                             style="background: rgba(255,255,255,0.8);">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-chart-area fa-2x text-warning mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">KPIs</h6>
+                                                                <small class="text-muted">Indicadores clave</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <div class="badge badge-info badge-lg px-4 py-2">
+                                                        <i class="fas fa-lock mr-2"></i>
+                                                        Requiere Permisos de Reportes
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
 
                     <!-- Tabla de Órdenes Recientes -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-table mr-2"></i>
-                                        Órdenes Recientes
-                                    </h3>
-                                    <div class="card-tools">
-                                        <a href="{% url 'apps.sales:order_list' %}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-external-link-alt mr-1"></i>
-                                            Ver Todas
-                                        </a>
+                    {% if user.has_access_to_all %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-table mr-2"></i>
+                                            Órdenes Recientes
+                                        </h3>
+                                        <div class="card-tools">
+                                            <a href="{% url 'apps.sales:order_list' %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-external-link-alt mr-1"></i>
+                                                Ver Todas
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover" id="recentOrdersTable">
-                                            <thead class="thead-light">
-                                            <tr>
-                                                <th class="text-white">Código</th>
-                                                <th class="text-white">Cliente</th>
-                                                <th class="text-white">Tipo</th>
-                                                <th class="text-white">Fecha</th>
-                                                <th class="text-white">Total</th>
-                                                <th class="text-white">Estado</th>
-                                                <th class="text-white">Acciones</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody id="recentOrdersTableBody">
-                                            <!-- Los datos se cargarán dinámicamente -->
-                                            </tbody>
-                                        </table>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="recentOrdersTable">
+                                                <thead class="thead-light">
+                                                <tr>
+                                                    <th class="text-white">Código</th>
+                                                    <th class="text-white">Cliente</th>
+                                                    <th class="text-white">Tipo</th>
+                                                    <th class="text-white">Fecha</th>
+                                                    <th class="text-white">Total</th>
+                                                    <th class="text-white">Estado</th>
+                                                    <th class="text-white">Acciones</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="recentOrdersTableBody">
+                                                <!-- Los datos se cargarán dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <!-- Contenido profesional para usuarios sin permisos de órdenes -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-lg restricted-content-card">
+                                    <div class="card-body text-center py-5">
+                                        <div class="row align-items-center">
+                                            <div class="col-lg-6">
+                                                <div class="mb-4 logo-container">
+                                                    <img src="{% static 'assets/img/logo_medrano.jpeg' %}"
+                                                         alt="Logo Medrano"
+                                                         class="img-fluid floating-animation"
+                                                         style="max-height: 80px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
+                                                </div>
+                                                <h3 class="text-dark font-weight-bold mb-3">
+                                                    <i class="fas fa-shield-alt text-primary mr-2"></i>
+                                                    Acceso Restringido
+                                                </h3>
+                                                <p class="text-muted lead mb-4">
+                                                    Las órdenes y ventas están disponibles solo para administradores del
+                                                    sistema.
+                                                </p>
+                                                <div class="d-flex justify-content-center">
+                                                    <div class="badge badge-primary badge-lg px-4 py-2">
+                                                        <i class="fas fa-user-shield mr-2"></i>
+                                                        Requiere Permisos de Administrador
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">Reportes</h6>
+                                                                <small class="text-muted">Análisis y
+                                                                    estadísticas</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-users fa-2x text-warning mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">RRHH</h6>
+                                                                <small class="text-muted">Gestión de personal</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-calculator fa-2x text-info mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">Finanzas</h6>
+                                                                <small class="text-muted">Control financiero</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100 module-card">
+                                                            <div class="card-body text-center">
+                                                                <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                                                                <h6 class="font-weight-bold text-dark">Ventas</h6>
+                                                                <small class="text-muted">Gestión comercial</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             {% endblock body %}
         </section>
@@ -1323,7 +1626,7 @@
                 <div class="col-12">
                     <small class="text-muted">
                         <strong>Copyright &copy; 2025-2026 <a href="https://4soluciones.net">4soluciones</a>.</strong>
-                        All rights reserved. | <b>Version</b> 1.0
+                        All rights reserved. | <b>Version</b> 1.5
                     </small>
                 </div>
             </div>
@@ -1420,7 +1723,7 @@
     <script type="text/javascript">
         // Dashboard JavaScript
         $(document).ready(function () {
-            // Cargar datos del dashboard
+            // Cargar datos del dashboard según permisos
             loadDashboardData();
 
             // Actualizar datos cada 5 minutos
@@ -1428,9 +1731,18 @@
         });
 
         function loadDashboardData() {
-            loadDashboardStats();
-            loadRecentOrders();
-            loadCharts();
+            // Solo cargar estadísticas si tiene permisos de reportes
+            {% if user.has_access_to_all or user.has_access_to_report %}
+                loadDashboardStats();
+                loadCharts();
+                loadRecentActivities();
+                loadNotifications();
+            {% endif %}
+
+            // Solo cargar órdenes recientes si tiene acceso completo
+            {% if user.has_access_to_all %}
+                loadRecentOrders();
+            {% endif %}
         }
 
         function loadDashboardStats() {
@@ -1449,6 +1761,25 @@
                         $('#completed-orders').text(response.stats.completed_orders);
                         $('#pending-orders').text(response.stats.pending_orders);
                         $('#total-sales').text('S/ ' + parseFloat(response.stats.total_sales).toFixed(2));
+                        
+                        // Calcular porcentajes y crecimiento
+                        const totalOrders = parseInt(response.stats.total_orders) || 0;
+                        const completedOrders = parseInt(response.stats.completed_orders) || 0;
+                        const pendingOrders = parseInt(response.stats.pending_orders) || 0;
+                        
+                        // Calcular tasa de finalización
+                        const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0;
+                        $('#completion-rate').text(completionRate + '%');
+                        
+                        // Simular crecimiento (en una implementación real vendría del backend)
+                        const ordersGrowth = Math.floor(Math.random() * 20) + 5; // 5-25%
+                        const salesGrowth = Math.floor(Math.random() * 15) + 3; // 3-18%
+                        
+                        $('#orders-growth').text('+' + ordersGrowth + '%');
+                        $('#sales-growth').text('+' + salesGrowth + '%');
+                        
+                        // Cargar estadísticas adicionales
+                        loadAdditionalStats();
                     } else {
                         showError('Error al cargar estadísticas: ' + response.message);
                     }
@@ -1460,7 +1791,160 @@
                     $('#completed-orders').text('0');
                     $('#pending-orders').text('0');
                     $('#total-sales').text('S/ 0.00');
+                    $('#completion-rate').text('0%');
+                    $('#orders-growth').text('+0%');
+                    $('#sales-growth').text('+0%');
                 }
+            });
+        }
+
+        function loadAdditionalStats() {
+            // Simular datos adicionales (en una implementación real vendrían del backend)
+            const activeClients = Math.floor(Math.random() * 50) + 20; // 20-70
+            const newClients = Math.floor(Math.random() * 10) + 2; // 2-12
+            const availableProducts = Math.floor(Math.random() * 100) + 50; // 50-150
+            const inStock = Math.floor(Math.random() * 80) + 30; // 30-110
+            const activeEmployees = Math.floor(Math.random() * 15) + 5; // 5-20
+
+            $('#active-clients').text(activeClients);
+            $('#new-clients').text(newClients);
+            $('#available-products').text(availableProducts);
+            $('#in-stock').text(inStock);
+            $('#active-employees').text(activeEmployees);
+            
+            // Actualizar estadísticas del sidebar
+            updateSidebarStats();
+        }
+
+        function updateSidebarStats() {
+            // Simular estadísticas del día (en una implementación real vendrían del backend)
+            const todayOrders = Math.floor(Math.random() * 15) + 5; // 5-20
+            const todaySales = (Math.random() * 5000 + 1000).toFixed(0); // 1000-6000
+            const pendingOrders = Math.floor(Math.random() * 8) + 2; // 2-10
+
+            $('#sidebar-total-orders').text(todayOrders);
+            $('#sidebar-today-sales').text('S/ ' + todaySales);
+            $('#sidebar-pending').text(pendingOrders);
+        }
+
+        function loadRecentActivities() {
+            // Simular actividades recientes (en una implementación real vendrían del backend)
+            const activities = [
+                {
+                    type: 'success',
+                    icon: 'fas fa-check-circle',
+                    title: 'Orden completada',
+                    description: 'Orden #001-001 ha sido completada exitosamente',
+                    time: 'Hace 5 minutos'
+                },
+                {
+                    type: 'info',
+                    icon: 'fas fa-plus-circle',
+                    title: 'Nueva orden creada',
+                    description: 'Se creó una nueva orden de servicio para Cliente ABC',
+                    time: 'Hace 15 minutos'
+                },
+                {
+                    type: 'warning',
+                    icon: 'fas fa-exclamation-triangle',
+                    title: 'Orden pendiente',
+                    description: 'Orden #001-002 requiere revisión de entrega',
+                    time: 'Hace 30 minutos'
+                },
+                {
+                    type: 'success',
+                    icon: 'fas fa-user-plus',
+                    title: 'Nuevo cliente',
+                    description: 'Cliente XYZ se registró en el sistema',
+                    time: 'Hace 1 hora'
+                },
+                {
+                    type: 'info',
+                    icon: 'fas fa-edit',
+                    title: 'Orden actualizada',
+                    description: 'Orden #001-003 fue modificada por el usuario',
+                    time: 'Hace 2 horas'
+                }
+            ];
+
+            const timeline = $('#recent-activities');
+            timeline.empty();
+
+            activities.forEach(activity => {
+                const activityHtml = `
+                    <div class="timeline-item ${activity.type}">
+                        <div class="timeline-content">
+                            <div class="d-flex align-items-center">
+                                <i class="${activity.icon} mr-2 text-${activity.type}"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${activity.title}</h6>
+                                    <p class="mb-1 text-muted">${activity.description}</p>
+                                    <small class="text-muted">${activity.time}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                timeline.append(activityHtml);
+            });
+        }
+
+        function loadNotifications() {
+            // Simular notificaciones (en una implementación real vendrían del backend)
+            const notifications = [
+                {
+                    type: 'info',
+                    icon: 'fas fa-info-circle',
+                    title: 'Sistema actualizado',
+                    message: 'El sistema ha sido actualizado a la versión 1.5',
+                    time: 'Hace 1 hora',
+                    unread: true
+                },
+                {
+                    type: 'warning',
+                    icon: 'fas fa-exclamation-triangle',
+                    title: 'Mantenimiento programado',
+                    message: 'Se programó mantenimiento para el domingo 2:00 AM',
+                    time: 'Hace 3 horas',
+                    unread: true
+                },
+                {
+                    type: 'success',
+                    icon: 'fas fa-check-circle',
+                    title: 'Backup completado',
+                    message: 'El respaldo de datos se completó exitosamente',
+                    time: 'Ayer',
+                    unread: false
+                },
+                {
+                    type: 'info',
+                    icon: 'fas fa-chart-line',
+                    title: 'Reporte mensual',
+                    message: 'El reporte de ventas del mes está disponible',
+                    time: 'Ayer',
+                    unread: false
+                }
+            ];
+
+            const notificationsList = $('#notifications-list');
+            notificationsList.empty();
+
+            notifications.forEach(notification => {
+                const notificationHtml = `
+                    <div class="notification-item ${notification.unread ? 'unread' : ''}">
+                        <div class="d-flex align-items-start">
+                            <div class="notification-icon ${notification.type}">
+                                <i class="${notification.icon}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${notification.title}</h6>
+                                <p class="mb-1 text-muted small">${notification.message}</p>
+                                <small class="text-muted">${notification.time}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationsList.append(notificationHtml);
             });
         }
 

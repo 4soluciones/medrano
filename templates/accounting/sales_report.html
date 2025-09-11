@@ -33,7 +33,7 @@
                                 <select class="form-control" id="subsidiary">
                                     <option value="0">Todas las Sucursales</option>
                                     {% for subsidiary in subsidiary_set %}
-                                        <option value="{{ subsidiary.id }}" {% if user_subsidiary and subsidiary.id == user_subsidiary.id %}selected{% endif %}>{{ subsidiary.name }}</option>
+                                        <option value="{{ subsidiary.id }}" {% if user_subsidiary and subsidiary.id == user_subsidiary.id %}selected{% endif %}>{{ subsidiary.name|upper }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

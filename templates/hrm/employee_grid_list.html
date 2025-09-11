@@ -91,12 +91,27 @@
                                 <i class="fas fa-shopping-cart mr-1"></i>Ventas
                             </span>
                         {% endif %}
+                        {% if u.has_access_to_hrm %}
+                            <span class="badge badge-info badge-sm mb-1">
+                                <i class="fas fa-users mr-1"></i>RRHH
+                            </span>
+                        {% endif %}
+                        {% if u.has_access_to_finances %}
+                            <span class="badge badge-warning badge-sm mb-1">
+                                <i class="fas fa-chart-line mr-1"></i>Finanzas
+                            </span>
+                        {% endif %}
+                        {% if u.has_access_to_report %}
+                            <span class="badge badge-secondary badge-sm mb-1">
+                                <i class="fas fa-chart-bar mr-1"></i>Reportes
+                            </span>
+                        {% endif %}
                         {% if u.has_access_to_all %}
                             <span class="badge badge-danger badge-sm">
                                 <i class="fas fa-user-shield mr-1"></i>Admin
                             </span>
                         {% endif %}
-                        {% if not u.has_access_system and not u.has_access_to_sales and not u.has_access_to_all %}
+                        {% if not u.has_access_system and not u.has_access_to_sales and not u.has_access_to_hrm and not u.has_access_to_finances and not u.has_access_to_report and not u.has_access_to_all %}
                             <span class="text-muted small">Sin permisos</span>
                         {% endif %}
                     </div>

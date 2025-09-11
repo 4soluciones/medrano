@@ -717,6 +717,7 @@ def sales_report(request):
             # Filtrar cashflows del día por sucursal
             if subsidiary_id and subsidiary_id != '0':
                 # Filtrar por sucursal del usuario logueado
+                subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
                 cashflows = CashFlow.objects.filter(
                     transaction_date__date=report_date,
                     cash__subsidiary_id=subsidiary_id
@@ -827,7 +828,7 @@ def sales_report(request):
             total_general = total_efectivo + total_yape + total_deposito
 
             context = {
-                'report_date': report_date,
+                'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
                 'advances_grouped': advances_grouped,
                 'advances_cashflows': advances_cashflows.order_by('id'),
                 'payments_cashflows': payments_cashflows.order_by('id'),
@@ -845,7 +846,8 @@ def sales_report(request):
                 'total_yape': total_yape,
                 'total_deposito': total_deposito,
                 'total_general': total_general,
-                'subsidiary': order_cashflows.first().order.subsidiary if order_cashflows.exists() else None,
+                # 'subsidiary': order_cashflows.first().order.subsidiary if order_cashflows.exists() else None,
+                'subsidiary': subsidiary_obj,
             }
             
             tpl = loader.get_template('accounting/sales_report_grid.html')

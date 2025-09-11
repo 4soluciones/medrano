@@ -238,6 +238,9 @@ def create_user(request):
             _check_access = request.POST.get('customCheckboxAccess', False)
             _check_active = request.POST.get('customCheckActive', False)
             _check_sales = request.POST.get('customCheckboxSales', False)
+            _check_hrm = request.POST.get('customCheckboxHrm', False)
+            _check_finances = request.POST.get('customCheckboxFinances', False)
+            _check_report = request.POST.get('customCheckboxReport', False)
             _check_admin = request.POST.get('customCheckboxAdmin', False)
 
             # Convertir checkboxes a boolean
@@ -247,6 +250,12 @@ def create_user(request):
                 _check_active = True
             if _check_sales == 'on':
                 _check_sales = True
+            if _check_hrm == 'on':
+                _check_hrm = True
+            if _check_finances == 'on':
+                _check_finances = True
+            if _check_report == 'on':
+                _check_report = True
             if _check_admin == 'on':
                 _check_admin = True
             
@@ -323,6 +332,9 @@ def create_user(request):
                 observations=_observations,
                 has_access_system=_check_access,
                 has_access_to_sales=_check_sales,
+                has_access_to_hrm=_check_hrm,
+                has_access_to_finances=_check_finances,
+                has_access_to_report=_check_report,
                 has_access_to_all=_check_admin
             )
             
@@ -419,6 +431,9 @@ def update_user(request):
             _check_active = request.POST.get('customCheckActive', False)
             _check_access = request.POST.get('customCheckboxAccess', False)
             _check_sales = request.POST.get('customCheckboxSales', False)
+            _check_hrm = request.POST.get('customCheckboxHrm', False)
+            _check_finances = request.POST.get('customCheckboxFinances', False)
+            _check_report = request.POST.get('customCheckboxReport', False)
             _check_admin = request.POST.get('customCheckboxAdmin', False)
             
             # Convertir checkboxes a boolean
@@ -428,6 +443,12 @@ def update_user(request):
                 _check_access = True
             if _check_sales == 'on':
                 _check_sales = True
+            if _check_hrm == 'on':
+                _check_hrm = True
+            if _check_finances == 'on':
+                _check_finances = True
+            if _check_report == 'on':
+                _check_report = True
             if _check_admin == 'on':
                 _check_admin = True
             
@@ -500,6 +521,9 @@ def update_user(request):
             user_obj.observations = _observations
             user_obj.has_access_system = _check_access
             user_obj.has_access_to_sales = _check_sales
+            user_obj.has_access_to_hrm = _check_hrm
+            user_obj.has_access_to_finances = _check_finances
+            user_obj.has_access_to_report = _check_report
             user_obj.has_access_to_all = _check_admin
             
             # Actualizar foto si se proporcionó una nueva
