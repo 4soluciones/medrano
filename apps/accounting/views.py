@@ -370,7 +370,7 @@ def cashflow_list(request):
 
             tpl = loader.get_template('accounting/cashflow_list_grid.html')
             context = {
-                'cashflows': cashflows,
+                'cashflows': cashflows.filter(type='S'),
                 'total_income': total_income,
                 'total_expenses': total_expenses,
                 'net_balance': net_balance,
@@ -707,6 +707,7 @@ def sales_report(request):
             report_date = request.POST.get('report_date')
             subsidiary_id = request.POST.get('subsidiary')
             cash_id = request.POST.get('cash_account')
+            subsidiary_obj = None
 
             if not report_date:
                 return JsonResponse({
@@ -731,7 +732,8 @@ def sales_report(request):
             cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
             
             # Filtrar cashflows con order_id (ventas) y sin order_id (gastos)
-            order_cashflows = cashflows.filter(order__isnull=False)
+            # Excluir órdenes anuladas (status='A')
+            order_cashflows = cashflows.filter(order__isnull=False, order__status__in=['P', 'C'])
             
             # Calcular totales desde accounting_cashflow
             # total_sales: Suma total de todas las órdenes relacionadas con cashflows del día
@@ -772,6 +774,7 @@ def sales_report(request):
             final_cash = real_income - net_expenses
 
             # Preparar datos de adelantos (order_type_entry A) agrupados por orden
+            # Excluir órdenes anuladas (status='A')
             advances_cashflows = order_cashflows.filter(
                 type='E',  # Solo entradas
                 order_type_entry='A'  # Solo adelantos
@@ -796,6 +799,7 @@ def sales_report(request):
                 data['saldo'] = float(data['order'].total) - data['total_advances']
             
             # Preparar datos de pagos totales/saldos (order_type_entry T)
+            # Excluir órdenes anuladas (status='A')
             payments_cashflows = order_cashflows.filter(
                 type='E',  # Solo entradas
                 order_type_entry='T'  # Solo pagos totales

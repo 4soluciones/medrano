@@ -148,15 +148,20 @@
                                 </tr>
                                 <tr class="table-success">
                                     <td colspan="4" class="text-right font-weight-bold">Adelanto:</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.cash_advance|safe }}</td>
+                                    <td class="text-right font-weight-bold">
+                                        {% load sales_tags %}
+                                        {% get_total_advances order as total_advances %}
+                                        S/ {{ total_advances|floatformat:2 }}
+                                    </td>
                                 </tr>
                                 <tr class="table-danger">
                                     <td colspan="4" class="text-right font-weight-bold">Saldo:</td>
                                     <td class="text-right font-weight-bold">
-                                        {% if order.saldo > 0 %}
-                                            S/ {{ order.saldo|safe }}
-                                        {% elif order.saldo < 0 %}
-                                            S/ {{ order.saldo|safe }} (Excedente)
+                                        {% get_balance order total_advances as balance %}
+                                        {% if balance > 0 %}
+                                            S/ {{ balance|floatformat:2 }}
+                                        {% elif balance < 0 %}
+                                            S/ {{ balance|floatformat:2 }} (Excedente)
                                         {% else %}
                                             S/ 0.00 (Pagado)
                                         {% endif %}

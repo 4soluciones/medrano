@@ -127,7 +127,7 @@
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h3 class="card-title mb-0">
-                                    <i class="fas fa-list mr-2"></i>Listado de Gastos y Transacciones
+                                    <i class="fas fa-list mr-2"></i>Listado de Gastos
                                     <small class="text-muted ml-2" id="expenses-count">
                                         <i class="fas fa-info-circle mr-1"></i>
                                         <span id="expenses-count-text">Cargando...</span>
@@ -191,10 +191,8 @@
                                     <i class="fas fa-exchange-alt mr-1"></i>Tipo de Transacción <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-control" id="transaction_type" name="transaction_type" required>
-                                    <option value="">Seleccione tipo</option>
-                                    {% for code, name in transaction_types %}
-                                        <option value="{{ code }}">{{ name }}</option>
-                                    {% endfor %}
+                                    <option value="E">Entrada</option>
+                                    <option value="S" selected>Salida</option>
                                 </select>
                             </div>
                         </div>
@@ -237,12 +235,9 @@
                                 <label for="user_id" class="form-label">
                                     <i class="fas fa-user mr-1"></i>Usuario <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-control" id="user_id" name="user_id" required>
-                                    <option value="">Seleccione usuario</option>
-                                    {% for user in user_set %}
-                                        <option value="{{ user.id }}">{{ user.first_name }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="text" class="form-control" id="user_id" name="user_id" 
+                                       value="{{ user.first_name }}" readonly required>
+                                <input type="hidden" id="user_id_hidden" name="user_id" value="{{ user.id }}">
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -782,6 +777,9 @@ function openCreateCashflowModal() {
     $('#cashflow-form')[0].reset();
     $('#transaction_date').val(new Date().toISOString().split('T')[0]);
     $('#document_type').val('O'); // Resetear a "Otro" por defecto
+    $('#transaction_type').val('S'); // Establecer "Salida" por defecto
+    $('#user_id').val('{{ user.first_name }}'); // Establecer usuario logueado
+    $('#user_id_hidden').val('{{ user.id }}'); // Establecer ID del usuario logueado
     
     // Ocultar campos de documento y financiero por defecto
     $('#document-fields').hide();
@@ -866,6 +864,9 @@ function saveCashflow() {
     // Preparar datos
     const formData = new FormData($('#cashflow-form')[0]);
     
+    // Usar el ID del usuario del campo hidden
+    formData.set('user_id', $('#user_id_hidden').val());
+    
     // Determinar qué campo de total usar según el tipo de documento
     const documentType = $('#document_type').val();
     if (documentType === 'F' || documentType === 'B') {
@@ -915,7 +916,7 @@ function saveCashflow() {
 }
 
 function validateCashflowForm() {
-    const requiredFields = ['transaction_date', 'transaction_type', 'cash_id', 'user_id', 'description'];
+    const requiredFields = ['transaction_date', 'transaction_type', 'cash_id', 'description'];
     const documentType = $('#document_type').val();
 
     // Validar campos obligatorios básicos
@@ -926,6 +927,13 @@ function validateCashflowForm() {
             $(`#${field}`).focus();
             return false;
         }
+    }
+
+    // Validar que el usuario esté seleccionado (usando el campo hidden)
+    const userId = $('#user_id_hidden').val();
+    if (!userId) {
+        Swal.fire('Error', 'Usuario no válido', 'error');
+        return false;
     }
 
     // Validar total según el tipo de documento
@@ -1245,6 +1253,19 @@ function validateCashClosingForm() {
     border-color: #007bff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     transform: translateY(-1px);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.form-control[readonly]:focus {
+    border-color: #e9ecef;
+    box-shadow: none;
+    transform: none;
 }
 
 .modal-content {
