@@ -527,10 +527,13 @@ def generate_ticket_pdf(order_id):
 
         # Agregar productos/servicios
         for detail in order_details:
+            product_detail = detail.product.productdetail_set.last()
+            unit_name = product_detail.unit.name if product_detail and product_detail.unit else ""
+
             table_data.append([
                 Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_6']),
                 Paragraph(detail.product_name, styles['Helvetica_Left_6']),
-                Paragraph(detail.product.productdetail_set.last().unit.name, styles['Helvetica_Left_6']),
+                Paragraph(unit_name, styles['Helvetica_Left_6']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_6']),
                 Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_6'])
             ])
