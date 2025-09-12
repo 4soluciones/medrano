@@ -65,7 +65,13 @@
                         <div class="col-md-3">
                             <strong>Documento:</strong><br>
                             <span class="text-muted">
-                                {% if order.client.document == '01' %}DNI{% else %}RUC{% endif %}: {{ order.client.number }}
+                                {% if order.client.document == '01' %}
+                                    DNI
+                                {% elif order.client.document == '06' %}
+                                    RUC
+                                {% else %}
+                                    S/N
+                                {% endif %}: {{ order.client.number }}
                             </span>
                         </div>
                         <div class="col-md-3">
@@ -122,35 +128,35 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-center">{{ detail.quantity }}</td>
-                                    <td class="text-right">S/ {{ detail.price_unit|floatformat:2 }}</td>
-                                    <td class="text-right font-weight-bold">S/ {{ detail.multiply|floatformat:2 }}</td>
+                                    <td class="text-right">S/ {{ detail.price_unit|safe }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ detail.multiply|safe }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                             <tfoot class="table-info">
-                                <tr>
-                                    <td colspan="4" class="text-right font-weight-bold">Subtotal:</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.subtotal|floatformat:2 }}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="4" class="text-right font-weight-bold">IGV (18%):</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.igv|floatformat:2 }}</td>
-                                </tr>
+{#                                <tr>#}
+{#                                    <td colspan="4" class="text-right font-weight-bold">Subtotal:</td>#}
+{#                                    <td class="text-right font-weight-bold">S/ {{ order.subtotal|floatformat:2 }}</td>#}
+{#                                </tr>#}
+{#                                <tr>#}
+{#                                    <td colspan="4" class="text-right font-weight-bold">IGV (18%):</td>#}
+{#                                    <td class="text-right font-weight-bold">S/ {{ order.igv|floatformat:2 }}</td>#}
+{#                                </tr>#}
                                 <tr class="table-warning">
                                     <td colspan="4" class="text-right font-weight-bold">Total:</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.total|floatformat:2 }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.total|safe }}</td>
                                 </tr>
                                 <tr class="table-success">
                                     <td colspan="4" class="text-right font-weight-bold">Adelanto:</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.cash_advance|floatformat:2 }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.cash_advance|safe }}</td>
                                 </tr>
                                 <tr class="table-danger">
                                     <td colspan="4" class="text-right font-weight-bold">Saldo:</td>
                                     <td class="text-right font-weight-bold">
                                         {% if order.saldo > 0 %}
-                                            S/ {{ order.saldo|floatformat:2 }}
+                                            S/ {{ order.saldo|safe }}
                                         {% elif order.saldo < 0 %}
-                                            S/ {{ order.saldo|floatformat:2|slice:"1:" }} (Excedente)
+                                            S/ {{ order.saldo|safe }} (Excedente)
                                         {% else %}
                                             S/ 0.00 (Pagado)
                                         {% endif %}
@@ -185,7 +191,13 @@
                         </div>
                         <div class="col-md-3">
                             <strong>Forma de Pago:</strong><br>
-                            <span class="text-muted">{{ order.get_way_to_pay_display }}</span>
+                            {% if order.cashflow_set.exists %}
+                                {% for cashflow in order.cashflow_set.all %}
+                                    <span class="badge badge-info mr-1">{{ cashflow.get_way_to_pay_display }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">{{ order.get_way_to_pay_display }}</span>
+                            {% endif %}
                         </div>
                         <div class="col-md-3">
                             <strong>Comprobante:</strong><br>

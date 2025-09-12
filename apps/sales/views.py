@@ -893,29 +893,22 @@ def order_list(request):
             current_date = datetime.now(peru_tz).strftime('%Y-%m-%d')
 
             # Si hay cliente -> solo buscar por cliente (ignora demás filtros)
+            orders = Order.objects.all()  # queryset vacío por defecto
+
             if client_id_filter and client_id_filter != '':
                 orders = Order.objects.filter(client_id=client_id_filter)
 
-            else:
-                # Si no hay cliente -> iniciar filtrando por la fecha actual
-                # orders = Order.objects.filter(register_date=current_date)
-                orders = Order.objects.filter(subsidiary=user_obj.subsidiary)
-
-                # Aplicar filtros adicionales
-                if subsidiary_id and subsidiary_id != '0':
-                    orders = orders.filter(subsidiary_id=subsidiary_id)
-                if user_id and user_id != '0':
-                    orders = orders.filter(user_id=user_id)
-                if order_type and order_type != '0':
-                    orders = orders.filter(type=order_type)
-                if status and status != '0':
-                    orders = orders.filter(status=status)
-                # if date_from:
-                #     orders = orders.filter(register_date__gte=date_from)
-                # if date_to:
-                #     orders = orders.filter(register_date__lte=date_to)
-                if date_from and date_to:
-                    orders = orders.filter(register_date__range=(date_from, date_to))
+            # Aplicar filtros adicionales
+            if subsidiary_id and subsidiary_id != '0':
+                orders = orders.filter(subsidiary_id=subsidiary_id)
+            if user_id and user_id != '0':
+                orders = orders.filter(user_id=user_id)
+            if order_type and order_type != '0':
+                orders = orders.filter(type=order_type)
+            if status and status != '0':
+                orders = orders.filter(status=status)
+            if date_from and date_to:
+                orders = orders.filter(register_date__range=(date_from, date_to))
 
             # Optimización de consultas
             orders = orders.select_related(
@@ -1487,7 +1480,10 @@ def order_detail_modal(request):
             try:
                 order_obj = Order.objects.select_related(
                     'client', 'user', 'subsidiary'
-                ).prefetch_related('orderdetail_set__product').get(id=int(order_id))
+                ).prefetch_related(
+                    'orderdetail_set__product',
+                    'cashflow_set'
+                ).get(id=int(order_id))
                 
                 t = loader.get_template('sales/order_detail_modal.html')
                 context = {'order': order_obj}
