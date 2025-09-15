@@ -110,11 +110,11 @@ class District(models.Model):
 
 
 class PaymentPeriod(models.Model):
-    """Período de pago semanal"""
+    """Período de pago"""
     id = models.AutoField(primary_key=True)
     employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='payment_periods')
-    start_date = models.DateField('Fecha de inicio (Lunes)')
-    end_date = models.DateField('Fecha de fin (Sábado)')
+    start_date = models.DateField('Fecha de inicio')
+    end_date = models.DateField('Fecha de fin')
     total_amount = models.DecimalField('Monto total', max_digits=10, decimal_places=2, default=0.00)
     is_paid = models.BooleanField('Pagado', default=False)
     payment_date = models.DateField('Fecha de pago', null=True, blank=True)
@@ -150,11 +150,16 @@ class PaymentPeriod(models.Model):
         """Retorna el número de días de falta"""
         return self.daily_payments.filter(status='FALTA').count()
 
+    def get_half_days_count(self):
+        """Retorna el número de días de medio día"""
+        return self.daily_payments.filter(status='MEDIO_DIA').count()
+
 
 class DailyPayment(models.Model):
     """Pago diario individual"""
     STATUS_CHOICES = [
         ('COMPLETO', 'Completo'),
+        ('MEDIO_DIA', 'Medio Día'),
         ('PERMISO', 'Permiso'),
         ('FALTA', 'Falta'),
         ('VACACIONES', 'Vacaciones'),
@@ -187,6 +192,8 @@ class DailyPayment(models.Model):
         """Calcula automáticamente el monto basado en el estado y tarifa diaria"""
         if self.status == 'COMPLETO':
             self.amount = self.daily_rate
+        elif self.status == 'MEDIO_DIA':
+            self.amount = self.daily_rate / 2  # 50% del pago diario
         elif self.status == 'PERMISO':
             self.amount = 0.00
         elif self.status == 'FALTA':

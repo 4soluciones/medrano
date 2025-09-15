@@ -79,13 +79,13 @@
                                 <table class="table table-hover mb-0">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th class="border-0 text-white">Día</th>
-                                            <th class="border-0 text-white">Fecha</th>
-                                            <th class="border-0 text-white text-center">Estado</th>
-                                            <th class="border-0 text-white text-center">Tarifa Diaria</th>
-                                            <th class="border-0 text-white text-center">Monto</th>
-                                            <th class="border-0 text-white text-center">Observaciones</th>
-                                            <th class="border-0 text-white text-center">Acciones</th>
+                                            <th class="border-0 text-dark">Día</th>
+                                            <th class="border-0 text-dark">Fecha</th>
+                                            <th class="border-0 text-dark text-center">Estado</th>
+                                            <th class="border-0 text-dark text-center">Tarifa Diaria</th>
+                                            <th class="border-0 text-dark text-center">Monto</th>
+                                            <th class="border-0 text-dark text-center">Observaciones</th>
+                                            <th class="border-0 text-dark text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -101,6 +101,8 @@
                                                     <span class="status-badge status-{{ daily.status|lower }}">
                                                         {% if daily.status == 'COMPLETO' %}
                                                             <i class="fas fa-check-circle mr-1"></i>Completo
+                                                        {% elif daily.status == 'MEDIO_DIA' %}
+                                                            <i class="fas fa-clock-half mr-1"></i>Medio Día
                                                         {% elif daily.status == 'PERMISO' %}
                                                             <i class="fas fa-clock mr-1"></i>Permiso
                                                         {% elif daily.status == 'FALTA' %}
@@ -197,6 +199,20 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="icon-circle bg-secondary">
+                                <i class="fas fa-clock-half text-white"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-secondary mb-1">{{ payment_period.get_half_days_count }}</h4>
+                        <p class="text-muted mb-0">Medio Día</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
                             <div class="icon-circle bg-danger">
                                 <i class="fas fa-times-circle text-white"></i>
                             </div>
@@ -207,7 +223,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-4">
+            <div class="col-xl-2 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
@@ -221,7 +237,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-4">
+            <div class="col-xl-2 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
@@ -258,7 +274,7 @@
     <!-- Modal para editar pago diario -->
     <div class="modal fade" id="modal-edit-daily-payment" data-backdrop="static" data-keyboard="false" tabindex="-1"
          role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog roboto-condensed-regular" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-gradient-primary text-white border-0">
                     <h5 class="modal-title">
@@ -281,6 +297,7 @@
                                 </label>
                                 <select class="form-control" id="edit_status" name="status" required>
                                     <option value="COMPLETO">Completo</option>
+                                    <option value="MEDIO_DIA">Medio Día</option>
                                     <option value="PERMISO">Permiso</option>
                                     <option value="FALTA">Falta</option>
                                     <option value="VACACIONES">Vacaciones</option>
@@ -302,6 +319,7 @@
                                 <div>
                                     <small class="mb-0">
                                         <strong>Completo:</strong> Se paga la tarifa completa<br>
+                                        <strong>Medio Día:</strong> Se paga el 50% de la tarifa<br>
                                         <strong>Permiso:</strong> No se paga (S/ 0.00)<br>
                                         <strong>Falta:</strong> No se paga (S/ 0.00)<br>
                                         <strong>Vacaciones:</strong> Se paga la tarifa completa
@@ -327,7 +345,7 @@
     <!-- Modal para registrar pago del empleado -->
     <div class="modal fade" id="modal-register-payment" data-backdrop="static" data-keyboard="false" tabindex="-1"
          role="dialog" aria-labelledby="ModalRegisterPaymentTitle" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-lg roboto-condensed-regular" role="document">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-gradient-success text-white border-0">
                     <h5 class="modal-title">
@@ -361,7 +379,7 @@
                                                     <i class="fas fa-calendar-week mr-2"></i>Período
                                                 </h6>
                                                 <p class="mb-1"><strong>{{ payment_period.start_date|date:'d/m/Y' }} - {{ payment_period.end_date|date:'d/m/Y' }}</strong></p>
-                                                <small class="text-muted">Total: S/ {{ payment_period.total_amount|safe }}</small>
+                                                <small class="text-muted" id="total-header"></small>
                                             </div>
                                         </div>
                                     </div>
@@ -442,7 +460,7 @@
                                             <p class="mb-1">
                                                 <strong>Empleado:</strong> {{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}<br>
                                                 <strong>Período:</strong> {{ payment_period.start_date|date:'d/m/Y' }} - {{ payment_period.end_date|date:'d/m/Y' }}<br>
-                                                <strong>Total a Pagar:</strong> S/ {{ payment_period.total_amount|safe }}
+                                                <strong>Total a Pagar:</strong> <span id="modal-total-amount">S/ {{ payment_period.total_amount|safe }}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -537,6 +555,11 @@
         .status-completo {
             background-color: #d4edda;
             color: #155724;
+        }
+        
+        .status-medio_dia {
+            background-color: #e2e3e5;
+            color: #495057;
         }
         
         .status-permiso {
@@ -710,6 +733,13 @@
             $('#payment_subsidiary').on('change', function() {
                 loadCashAccounts();
             });
+            
+            // Evento para actualizar el total cuando se abra el modal de pago
+            $('#modal-register-payment').on('show.bs.modal', function() {
+                let currentTotal = $('tfoot h4').text().replace('S/ ', '');
+                $('#modal-total-amount').text(`S/ ${currentTotal}`);
+                $('#total-header').text(`S/ ${currentTotal}`);
+            });
         });
 
         function editDailyPayment(dailyId) {
@@ -720,7 +750,8 @@
             
             // Mapear estado a valor del select
             let statusValue = 'COMPLETO';
-            if (status.includes('Permiso')) statusValue = 'PERMISO';
+            if (status.includes('Medio Día')) statusValue = 'MEDIO_DIA';
+            else if (status.includes('Permiso')) statusValue = 'PERMISO';
             else if (status.includes('Falta')) statusValue = 'FALTA';
             else if (status.includes('Vacaciones')) statusValue = 'VACACIONES';
             
@@ -734,6 +765,12 @@
         }
 
         function markAsPaid() {
+            // Obtener el total actual del período desde la tabla
+            let currentTotal = $('tfoot h4').text().replace('S/ ', '');
+            
+            // Actualizar el total en el modal
+            updatePaymentTotal(currentTotal);
+            
             // Generar descripción automática
             generatePaymentDescription();
             
@@ -742,6 +779,11 @@
             
             // Mostrar modal
             $('#modal-register-payment').modal('show');
+        }
+
+        function updatePaymentTotal(currentTotal) {
+            // Actualizar el total en el resumen del pago del modal
+            $('#modal-total-amount').text(`S/ ${currentTotal}`);
         }
 
         function generatePaymentDescription() {
@@ -842,6 +884,9 @@
             if (newStatus === 'COMPLETO') {
                 statusText = '<i class="fas fa-check-circle mr-1"></i>Completo';
                 statusClass = 'status-completo';
+            } else if (newStatus === 'MEDIO_DIA') {
+                statusText = '<i class="fas fa-clock-half mr-1"></i>Medio Día';
+                statusClass = 'status-medio_dia';
             } else if (newStatus === 'PERMISO') {
                 statusText = '<i class="fas fa-clock mr-1"></i>Permiso';
                 statusClass = 'status-permiso';
@@ -874,6 +919,7 @@
         function updateStatistics() {
             // Recalcular estadísticas basadas en la tabla
             let workingDays = $('.status-completo').length;
+            let halfDays = $('.status-medio_dia').length;
             let permissionDays = $('.status-permiso').length;
             let absenceDays = $('.status-falta').length;
             let totalAmount = parseFloat($('tfoot h4').text().replace('S/ ', ''));
@@ -881,8 +927,14 @@
             // Actualizar tarjetas de estadísticas
             $('.icon-circle.bg-primary + h4').text(workingDays);
             $('.icon-circle.bg-warning + h4').text(permissionDays);
+            $('.icon-circle.bg-secondary + h4').text(halfDays);
             $('.icon-circle.bg-danger + h4').text(absenceDays);
             $('.icon-circle.bg-success + h4').text(`S/ ${totalAmount.toFixed(2)}`);
+            
+            // Actualizar el total en el modal si está abierto
+            if ($('#modal-register-payment').hasClass('show')) {
+                $('#modal-total-amount').text(`S/ ${totalAmount.toFixed(2)}`);
+            }
         }
 
         // Manejo del formulario de registro de pago

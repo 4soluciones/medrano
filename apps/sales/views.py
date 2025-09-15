@@ -1114,26 +1114,20 @@ def order_save(request):
 
             from datetime import datetime
 
-            # Verificar si el total de adelantos cubre el total de la orden
-            if cash_advance_decimal == order_obj.total and order_obj.total > 0:
-
-                order_obj.status = 'C'  # COMPLETADO
-                order_obj.cash_pay = order_obj.total  # El pago total es igual al total
-                order_obj.completed_by = request.user
-                order_obj.completed_at = datetime.now()
-                order_obj.save()
-            
             # Procesar adelantos múltiples en CashFlow (solo si NO es cotización)
             if advance_payments and order_obj.type != 'C':
                 try:
                     from apps.accounting.models import Cash, CashFlow
 
-                    if order_obj.status == 'P':
-                        description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
-                        order_type_entry = 'A'
-                    else:
+                    # Determinar si es adelanto o pago completo ANTES de cambiar el status
+                    is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
+                    
+                    if is_full_payment:
                         description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
                         order_type_entry = 'T'
+                    else:
+                        description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                        order_type_entry = 'A'
 
                     # Registrar cada adelanto en CashFlow
                     for advance in advance_payments:
@@ -1165,6 +1159,14 @@ def order_save(request):
                                     way_to_pay=way_to_pay_advance,  # Forma de pago específica
                                     order_type_entry=order_type_entry,
                                 )
+                    
+                    # Cambiar el status de la orden después de procesar los adelantos
+                    if is_full_payment:
+                        order_obj.status = 'C'  # COMPLETADO
+                        order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                        order_obj.completed_by = request.user
+                        order_obj.completed_at = datetime.now()
+                        order_obj.save()
                         
                 except Exception as e:
                     # Si hay error al registrar en CashFlow, continuar con el proceso

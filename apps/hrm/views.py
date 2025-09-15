@@ -632,10 +632,10 @@ def modal_payment_period_create(request):
         # Obtener fecha actual
         current_date = datetime.now()
         
-        # Calcular lunes de la semana actual
-        days_since_monday = current_date.weekday()
-        monday_date = current_date - timedelta(days=days_since_monday)
-        saturday_date = monday_date + timedelta(days=5)
+        # Usar la fecha actual como fecha de inicio por defecto
+        default_start_date = current_date.strftime('%Y-%m-%d')
+        # Usar la fecha actual + 5 días como fecha de fin por defecto
+        default_end_date = (current_date + timedelta(days=5)).strftime('%Y-%m-%d')
         
         # Obtener empleados con plantillas activas
         employees = PaymentTemplate.objects.filter(
@@ -644,8 +644,8 @@ def modal_payment_period_create(request):
         
         t = loader.get_template('hrm/payment_period_create.html')
         c = {
-            'monday_date': monday_date.strftime('%Y-%m-%d'),
-            'saturday_date': saturday_date.strftime('%Y-%m-%d'),
+            'monday_date': default_start_date,
+            'saturday_date': default_end_date,
             'employees': employees,
         }
         return JsonResponse({
@@ -675,11 +675,11 @@ def create_payment_period(request):
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
             
-            # Verificar que sea de lunes a sábado
-            if start_date.weekday() != 0 or end_date.weekday() != 5:
+            # Verificar que la fecha de fin sea posterior a la de inicio
+            if end_date < start_date:
                 return JsonResponse({
                     'success': False,
-                    'message': 'El período debe ser de lunes a sábado'
+                    'message': 'La fecha de fin debe ser posterior a la fecha de inicio'
                 }, status=HTTPStatus.BAD_REQUEST)
             
             # Verificar que no exista un período para el mismo empleado y fechas
@@ -709,7 +709,7 @@ def create_payment_period(request):
             daily_rate_decimal = decimal.Decimal(daily_rate)
             
             while current_date <= end_date:
-                day_names = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO']
+                day_names = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
                 day_name = day_names[current_date.weekday()]
                 
                 daily_payment = DailyPayment(

@@ -43,26 +43,26 @@
                 </div>
 
                 <div class="row">
-                    <!-- Fecha de Inicio (Lunes) -->
+                    <!-- Fecha de Inicio -->
                     <div class="col-md-6 mb-3">
                         <label for="start_date" class="form-label">
-                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Inicio (Lunes) <span
+                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Inicio <span
                                 class="text-danger">*</span>
                         </label>
                         <input type="date" class="form-control" id="start_date" name="start_date"
                                value="{{ monday_date }}" required>
-                        <small class="form-text text-muted">Debe ser un lunes</small>
+                        <small class="form-text text-muted">Selecciona la fecha de inicio del período</small>
                     </div>
 
-                    <!-- Fecha de Fin (Sábado) -->
+                    <!-- Fecha de Fin -->
                     <div class="col-md-6 mb-3">
                         <label for="end_date" class="form-label">
-                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Fin (Sábado) <span
+                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Fin <span
                                 class="text-danger">*</span>
                         </label>
                         <input type="date" class="form-control" id="end_date" name="end_date"
                                value="{{ saturday_date }}" required>
-                        <small class="form-text text-muted">Debe ser un sábado</small>
+                        <small class="form-text text-muted">Selecciona la fecha de fin del período</small>
                     </div>
                 </div>
 
@@ -96,7 +96,6 @@
                     </div>
                 </div>
             </div>
-            f
 
             <div class="modal-footer border-0 bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
@@ -205,25 +204,35 @@
             if (employee && startDate && endDate && dailyRate) {
                 let start = new Date(startDate);
                 let end = new Date(endDate);
+                
+                // Validar que la fecha de fin sea posterior a la de inicio
+                if (end < start) {
+                    $('#period-preview').html('<p class="text-danger text-center"><i class="fas fa-exclamation-triangle mr-2"></i>La fecha de fin debe ser posterior a la fecha de inicio</p>');
+                    return;
+                }
+                
                 let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                let totalAmount = days * parseFloat(dailyRate);
 
-                if (days === 6 && start.getDay() === 1 && end.getDay() === 6) {
-                    let totalAmount = days * parseFloat(dailyRate);
+                // 🔹 Formatear fechas a dd-mm-yyyy
+                let formatDate = (date) => {
+                    let d = date.getDate().toString().padStart(2, '0');
+                    let m = (date.getMonth() + 1).toString().padStart(2, '0');
+                    let y = date.getFullYear();
+                    return `${d}-${m}-${y}`;
+                };
 
-                    // 🔹 Formatear fechas a dd-mm-yyyy
-                    let formatDate = (date) => {
-                        let d = date.getDate().toString().padStart(2, '0');
-                        let m = (date.getMonth() + 1).toString().padStart(2, '0');
-                        let y = date.getFullYear();
-                        return `${d}-${m}-${y}`;
-                    };
+                // Obtener nombres de días
+                let dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                let startDayName = dayNames[start.getDay()];
+                let endDayName = dayNames[end.getDay()];
 
-                    let previewHtml = `
+                let previewHtml = `
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Empleado:</strong> ${employee}</p>
                         <p><strong>Período:</strong> ${formatDate(start)} a ${formatDate(end)}</p>
-                        <p><strong>Días:</strong> ${days} días (Lunes a Sábado)</p>
+                        <p><strong>Días:</strong> ${days} días (${startDayName} a ${endDayName})</p>
                     </div>
                     <div class="col-md-6">
                         <p><strong>Tarifa diaria:</strong> S/ ${dailyRate}</p>
@@ -233,10 +242,7 @@
                 </div>
             `;
 
-                    $('#period-preview').html(previewHtml);
-                } else {
-                    $('#period-preview').html('<p class="text-danger text-center"><i class="fas fa-exclamation-triangle mr-2"></i>Las fechas deben ser de lunes a sábado (6 días)</p>');
-                }
+                $('#period-preview').html(previewHtml);
             }
         }
 
@@ -251,24 +257,20 @@
 
             let startDate = parseLocalDate($('#start_date').val());
             let endDate = parseLocalDate($('#end_date').val());
-            // Validar que sea lunes
-            if (startDate.getDay() !== 1) {
-                toastr.error('La fecha de inicio debe ser un lunes', 'Error de Validación');
+            
+            // Validar que la fecha de fin sea posterior a la de inicio
+            if (endDate < startDate) {
+                toastr.error('La fecha de fin debe ser posterior a la fecha de inicio', 'Error de Validación');
                 return;
             }
 
-            // Validar que sea sábado
-            if (endDate.getDay() !== 6) {
-                toastr.error('La fecha de fin debe ser un sábado', 'Error de Validación');
+            // Validar que el período tenga al menos 1 día
+            let days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            if (days < 1) {
+                toastr.error('El período debe tener al menos 1 día', 'Error de Validación');
                 return;
             }
-
-            // Validar que el rango sea exactamente de lunes a sábado (6 días)
-            let days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
-            if (days !== 5) {
-                toastr.error('El período debe ser exactamente de 6 días (lunes a sábado)', 'Error de Validación');
-                return;
-            }
+            
             // Enviar formulario
             submitForm();
         });
