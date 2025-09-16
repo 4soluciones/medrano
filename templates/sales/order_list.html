@@ -1051,32 +1051,54 @@
                             </div>
                         </div>
 
-                        <!-- Forma de pago y cuenta -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="complete_way_to_pay" class="form-label">
-                                        <i class="fas fa-credit-card mr-1"></i>Forma de Pago <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-control" id="complete_way_to_pay" name="way_to_pay" required>
-                                        <option value="">Seleccione forma de pago</option>
-                                        <option value="E">Efectivo</option>
-                                        <option value="Y">Yape</option>
-                                        <option value="D">Depósito y/o Transferencia</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="complete_cash_account" class="form-label">
-                                        <i class="fas fa-university mr-1"></i>Cuenta de Caja <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-control" id="complete_cash_account" name="cash_account" required>
-                                        <option value="">Seleccione una cuenta</option>
-                                        {% for cash in cash_accounts %}
-                                            <option value="{{ cash.id }}" data-account-type="{{ cash.account_type }}">{{ cash.name }} - {{ cash.subsidiary.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                        <!-- Formas de pago múltiples -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-light py-2">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-credit-card mr-2"></i>Formas de Pago
+                                                    <small class="text-muted d-block">Múltiples formas de pago para completar la orden</small>
+                                                </h6>
+                                            </div>
+                                            <div class="col-md-4 text-right">
+                                                <button type="button" class="btn btn-success btn-sm" onclick="addCompletePayment()">
+                                                    <i class="fas fa-plus mr-1"></i>Agregar Pago
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
+                                                <thead class="table-light">
+                                                <tr>
+                                                    <th style="padding: 0.3rem;">Forma de Pago</th>
+                                                    <th style="padding: 0.3rem;">Monto</th>
+                                                    <th style="padding: 0.3rem;">Cuenta Destino</th>
+                                                    <th style="padding: 0.3rem; width: 60px;">Acciones</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="complete_payments_body">
+                                                <!-- Los pagos se agregarán dinámicamente aquí -->
+                                                </tbody>
+                                                <tfoot>
+                                                <tr class="table-info">
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="2">Total Pagado:</td>
+                                                    <td class="text-right font-weight-bold" id="complete_total_payments" style="padding: 0.3rem;">S/ 0.00</td>
+                                                    <td style="padding: 0.3rem;"></td>
+                                                </tr>
+                                                <tr class="table-warning">
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="2">Saldo Pendiente:</td>
+                                                    <td class="text-right font-weight-bold" id="complete_remaining_balance" style="padding: 0.3rem;">S/ 0.00</td>
+                                                    <td style="padding: 0.3rem;"></td>
+                                                </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2533,6 +2555,12 @@
                 $('#complete_client_document').val('');
                 $('#complete_client_name').val('');
                 resetElectronicDocumentFields();
+                
+                // Limpiar pagos múltiples
+                completePayments = [];
+                completePaymentCounter = 0;
+                $('#complete_payments_body').empty();
+                updateCompletePayments();
             });
 
             // Filtrar cuentas de caja según forma de pago
@@ -2641,6 +2669,10 @@
         let detailCounter = 0;
         let advancePayments = [];
         let advanceCounter = 0;
+        
+        // Variables para completar orden con pagos múltiples
+        let completePayments = [];
+        let completePaymentCounter = 0;
 
         function openCreateOrderModal() {
             // Limpiar formulario
@@ -4684,6 +4716,12 @@
                         // Limpiar campos del comprobante electrónico
                         resetElectronicDocumentFields();
 
+                        // Inicializar pagos múltiples
+                        completePayments = [];
+                        completePaymentCounter = 0;
+                        $('#complete_payments_body').empty();
+                        updateCompletePayments();
+
                         // Mostrar modal
                         $('#completeOrderModal').modal('show');
                     } else {
@@ -4807,17 +4845,125 @@
             return isValid;
         }
 
+        // Funciones para manejar pagos múltiples en completar orden
+        function addCompletePayment() {
+            const balance = parseFloat($('#complete_order_balance').val()) || 0;
+            const totalPayments = completePayments.reduce((sum, payment) => sum + payment.amount, 0);
+            const remaining = balance - totalPayments;
+
+            if (remaining <= 0) {
+                toastr.warning('El saldo ya está cubierto por los pagos existentes');
+                return;
+            }
+
+            const paymentId = ++completePaymentCounter;
+            const payment = {
+                id: paymentId,
+                way_to_pay: 'E', // Efectivo por defecto
+                amount: 0,
+                cash_account_id: ''
+            };
+
+            completePayments.push(payment);
+            addCompletePaymentRow(payment);
+            updateCompletePayments();
+        }
+
+        function addCompletePaymentRow(payment) {
+            const row = `
+                <tr id="complete-payment-row-${payment.id}">
+                    <td style="padding: 0.3rem;">
+                        <select class="form-control form-control-sm" onchange="updateCompletePaymentField(${payment.id}, 'way_to_pay', this.value)" style="font-size: 0.8rem;">
+                            <option value="E" ${payment.way_to_pay === 'E' ? 'selected' : ''}>Efectivo</option>
+                            <option value="Y" ${payment.way_to_pay === 'Y' ? 'selected' : ''}>Yape</option>
+                            <option value="D" ${payment.way_to_pay === 'D' ? 'selected' : ''}>Depósito/Transferencia</option>
+                        </select>
+                    </td>
+                    <td style="padding: 0.3rem;">
+                        <input type="number" class="form-control form-control-sm text-right"
+                               value=""
+                               min="0" step="0.01"
+                               onkeyup="updateCompletePaymentField(${payment.id}, 'amount', this.value)"
+                               placeholder="0.00" style="font-size: 0.8rem;">
+                    </td>
+                    <td style="padding: 0.3rem;">
+                        <select class="form-control form-control-sm" onchange="updateCompletePaymentField(${payment.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
+                            <option value="">Seleccionar cuenta</option>
+                            {% for cash in cash_accounts %}
+                            <option value="{{ cash.id }}" ${payment.cash_account_id === {{ cash.id }} ? 'selected' : ''}>{{ cash.name }} - {{ cash.subsidiary.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td class="text-center" style="padding: 0.3rem;">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeCompletePayment(${payment.id})" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#complete_payments_body').append(row);
+        }
+
+        function updateCompletePaymentField(paymentId, field, value) {
+            const payment = completePayments.find(p => p.id === paymentId);
+            if (payment) {
+                payment[field] = field === 'amount' ? parseFloat(value) || 0 : value;
+                updateCompletePayments();
+            }
+        }
+
+        function removeCompletePayment(paymentId) {
+            completePayments = completePayments.filter(p => p.id !== paymentId);
+            $(`#complete-payment-row-${paymentId}`).remove();
+            updateCompletePayments();
+        }
+
+        function updateCompletePayments() {
+            const balance = parseFloat($('#complete_order_balance').val()) || 0;
+            const totalPayments = completePayments.reduce((sum, payment) => sum + payment.amount, 0);
+            const remaining = balance - totalPayments;
+
+            // Actualizar total de pagos
+            $('#complete_total_payments').text(`S/ ${totalPayments.toFixed(2)}`);
+
+            // Actualizar saldo pendiente
+            $('#complete_remaining_balance').text(`S/ ${remaining.toFixed(2)}`);
+
+            // Cambiar color del saldo según el valor
+            const remainingRow = $('#complete_remaining_balance').closest('tr');
+            if (remaining < 0) {
+                remainingRow.removeClass('table-warning table-success').addClass('table-danger');
+                $('#complete_remaining_balance').text(`S/ ${Math.abs(remaining).toFixed(2)} (Excedente)`);
+            } else if (remaining === 0) {
+                remainingRow.removeClass('table-warning table-danger').addClass('table-success');
+                $('#complete_remaining_balance').text('S/ 0.00 (Pagado)');
+            } else {
+                remainingRow.removeClass('table-success table-danger').addClass('table-warning');
+                $('#complete_remaining_balance').text(`S/ ${remaining.toFixed(2)}`);
+            }
+        }
+
         // Función para confirmar la completación de la orden
         function confirmCompleteOrder() {
             const orderId = $('#complete_order_id').val();
-            const paymentAmount = $('#complete_payment_amount').val();
             const paymentDate = $('#complete_payment_date').val();
-            const cashAccountId = $('#complete_cash_account').val();
             const completedBy = '{{ request.user.id }}'; // Usar ID del usuario logueado
-            const wayToPay = $('#complete_way_to_pay').val();
 
-            if (!orderId || !paymentAmount || !paymentDate || !cashAccountId || !completedBy || !wayToPay) {
+            if (!orderId || !paymentDate || !completedBy) {
                 toastr.error('Por favor complete todos los campos obligatorios', 'Error');
+                return;
+            }
+
+            // Validar que haya al menos un pago
+            if (completePayments.length === 0) {
+                toastr.error('Debe agregar al menos una forma de pago', 'Error');
+                return;
+            }
+
+            // Validar que todos los pagos tengan monto y cuenta
+            const invalidPayments = completePayments.filter(p => !p.amount || p.amount <= 0 || !p.cash_account_id);
+            if (invalidPayments.length > 0) {
+                toastr.error('Todos los pagos deben tener un monto válido y una cuenta de destino', 'Error');
                 return;
             }
 
@@ -4827,13 +4973,16 @@
                 return;
             }
 
-            if (confirm('¿Está seguro de completar la orden?\n\nSe registrará el pago del saldo faltante y se marcará la orden como completada')) {
-                completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId, completedBy, wayToPay);
+            const totalPayments = completePayments.reduce((sum, payment) => sum + payment.amount, 0);
+            const balance = parseFloat($('#complete_order_balance').val()) || 0;
+
+            if (confirm(`¿Está seguro de completar la orden?\n\nTotal de pagos: S/ ${totalPayments.toFixed(2)}\nSaldo de la orden: S/ ${balance.toFixed(2)}\n\nSe registrarán los pagos y se marcará la orden como completada`)) {
+                completeOrderWithMultiplePayments(orderId, paymentDate, completedBy);
             }
         }
 
-        // Función para completar orden con pago
-        function completeOrderWithPayment(orderId, paymentAmount, paymentDate, cashAccountId, completedBy, wayToPay) {
+        // Función para completar orden con pagos múltiples
+        function completeOrderWithMultiplePayments(orderId, paymentDate, completedBy) {
             // Mostrar loading
             const confirmButton = $('#completeOrderModal .btn-success');
             const originalText = confirmButton.html();
@@ -4852,16 +5001,18 @@
                 documentData.client_address = $('#client_address').val();
             }
 
+            // Preparar pagos múltiples como JSON
+            const paymentsJson = JSON.stringify(completePayments);
+
             $.ajax({
                 url: '{% url "apps.sales:complete_order_with_payment" %}',
                 type: 'POST',
                 data: {
                     'order_id': orderId,
-                    'payment_amount': paymentAmount,
                     'payment_date': paymentDate,
-                    'cash_account_id': cashAccountId,
                     'completed_by': completedBy,
-                    'way_to_pay': wayToPay,
+                    'multiple_payments': true,
+                    'payments': paymentsJson,
                     ...documentData
                 },
                 headers: {

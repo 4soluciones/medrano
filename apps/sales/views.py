@@ -896,19 +896,20 @@ def order_list(request):
             orders = Order.objects.all()  # queryset vacío por defecto
 
             if client_id_filter and client_id_filter != '':
+                # Solo filtrar por cliente y nada más
                 orders = Order.objects.filter(client_id=client_id_filter)
-
-            # Aplicar filtros adicionales
-            if subsidiary_id and subsidiary_id != '0':
-                orders = orders.filter(subsidiary_id=subsidiary_id)
-            if user_id and user_id != '0':
-                orders = orders.filter(user_id=user_id)
-            if order_type and order_type != '0':
-                orders = orders.filter(type=order_type)
-            if status and status != '0':
-                orders = orders.filter(status=status)
-            if date_from and date_to:
-                orders = orders.filter(register_date__range=(date_from, date_to))
+            else:
+                # Aplicar los demás filtros solo si NO se filtró por cliente
+                if subsidiary_id and subsidiary_id != '0':
+                    orders = orders.filter(subsidiary_id=subsidiary_id)
+                if user_id and user_id != '0':
+                    orders = orders.filter(user_id=user_id)
+                if order_type and order_type != '0':
+                    orders = orders.filter(type=order_type)
+                if status and status != '0':
+                    orders = orders.filter(status=status)
+                if date_from and date_to:
+                    orders = orders.filter(register_date__range=(date_from, date_to))
 
             # Optimización de consultas
             orders = orders.select_related(
@@ -1158,6 +1159,7 @@ def order_save(request):
                                     type_expense='O',  # Otros
                                     way_to_pay=way_to_pay_advance,  # Forma de pago específica
                                     order_type_entry=order_type_entry,
+                                    subsidiary=subsidiary_obj
                                 )
                     
                     # Cambiar el status de la orden después de procesar los adelantos
@@ -1442,7 +1444,8 @@ def order_update(request):
                                     order=order_obj,
                                     user=request.user,
                                     type_expense='O',  # Otros
-                                    way_to_pay=way_to_pay_advance  # Forma de pago específica
+                                    way_to_pay=way_to_pay_advance,  # Forma de pago específica
+                                    subsidiary=order_obj.subsidiary
                                 )
                     
                     # Verificar si el total de adelantos cubre el total de la orden
@@ -2191,13 +2194,11 @@ def complete_order_with_payment(request):
     if request.method == 'POST':
         try:
             order_id = request.POST.get('order_id')
-            payment_amount = request.POST.get('payment_amount')
             payment_date = request.POST.get('payment_date')
-            cash_account_id = request.POST.get('cash_account_id')
             completed_by_id = request.POST.get('completed_by')
-            way_to_pay = request.POST.get('way_to_pay')
+            multiple_payments = request.POST.get('multiple_payments') == 'true'
             
-            if not all([order_id, payment_amount, payment_date, cash_account_id, completed_by_id, way_to_pay]):
+            if not all([order_id, payment_date, completed_by_id]):
                 return JsonResponse({
                     'success': False,
                     'message': 'Faltan datos obligatorios'
@@ -2220,16 +2221,6 @@ def complete_order_with_payment(request):
                     'message': 'No se puede completar una orden anulada'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Obtener la cuenta de caja
-            try:
-                from apps.accounting.models import Cash
-                cash_account = Cash.objects.get(id=int(cash_account_id))
-            except Cash.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Cuenta de caja no encontrada'
-                }, status=HTTPStatus.NOT_FOUND)
-            
             # Obtener el usuario que completó la orden
             try:
                 completed_by_user = CustomUser.objects.get(id=int(completed_by_id))
@@ -2241,55 +2232,199 @@ def complete_order_with_payment(request):
             
             # Calcular el saldo faltante
             balance = order.total - order.cash_advance
-            payment_amount_decimal = Decimal(payment_amount)
             
-            # Verificar que el monto del pago sea correcto
-            if payment_amount_decimal != balance:
+            # Manejar pagos múltiples o único
+            if multiple_payments:
+                # Procesar pagos múltiples
+                import json
+                payments_data = request.POST.get('payments')
+                if not payments_data:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No se proporcionaron datos de pagos'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                try:
+                    payments = json.loads(payments_data)
+                except json.JSONDecodeError:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Formato de pagos inválido'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                if not payments:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Debe proporcionar al menos un pago'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                # Validar y procesar cada pago
+                total_payments = Decimal('0.00')
+                cashflow_entries = []
+                
+                from apps.accounting.models import CashFlow, Cash
+                from datetime import datetime
+                
+                # Convertir la fecha del pago
+                payment_datetime = datetime.strptime(payment_date, '%Y-%m-%d')
+                
+                for payment in payments:
+                    amount = Decimal(str(payment.get('amount', 0)))
+                    way_to_pay = payment.get('way_to_pay')
+                    cash_account_id = payment.get('cash_account_id')
+                    
+                    if not all([amount, way_to_pay, cash_account_id]):
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'Cada pago debe tener monto, forma de pago y cuenta de destino'
+                        }, status=HTTPStatus.BAD_REQUEST)
+                    
+                    if amount <= 0:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'El monto de cada pago debe ser mayor a 0'
+                        }, status=HTTPStatus.BAD_REQUEST)
+                    
+                    # Obtener la cuenta de caja
+                    try:
+                        cash_account = Cash.objects.get(id=int(cash_account_id))
+                    except Cash.DoesNotExist:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Cuenta de caja no encontrada: {cash_account_id}'
+                        }, status=HTTPStatus.NOT_FOUND)
+                    
+                    # Crear entrada en cashflow
+                    cashflow_entry = CashFlow.objects.create(
+                        transaction_date=payment_datetime,
+                        created_at=datetime.now(),
+                        description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name} ({way_to_pay})",
+                        serial=order.subsidiary.serial,
+                        n_receipt=order.correlative,
+                        document_type_attached='O',  # Otro
+                        type='E',  # Entrada
+                        subtotal=amount,
+                        total=amount,
+                        igv=Decimal('0.00'),
+                        cash=cash_account,
+                        order=order,
+                        user=request.user,
+                        type_expense='O',  # Otros
+                        way_to_pay=way_to_pay,
+                        order_type_entry='T',
+                        subsidiary=order.subsidiary
+                    )
+                    
+                    cashflow_entries.append(cashflow_entry)
+                    total_payments += amount
+                
+                # Verificar que el total de pagos sea correcto
+                if total_payments != balance:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'El total de pagos (S/ {total_payments}) debe ser igual al saldo (S/ {balance})'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                # Actualizar el estado de la orden a completado
+                order.status = 'C'
+                order.cash_pay = total_payments  # Guardar el monto total pagado
+                order.completed_by = completed_by_user
+                order.completed_at = datetime.now()
+                order.save()
+                
+                # Crear mensaje de éxito con detalles de los pagos
+                payment_details = []
+                for i, payment in enumerate(payments, 1):
+                    way_to_pay_name = {
+                        'E': 'Efectivo',
+                        'Y': 'Yape',
+                        'D': 'Depósito/Transferencia'
+                    }.get(payment.get('way_to_pay'), 'Desconocido')
+                    
+                    cash_account = Cash.objects.get(id=int(payment.get('cash_account_id')))
+                    payment_details.append(f"Pago {i}: S/ {payment.get('amount')} ({way_to_pay_name}) - {cash_account.name}")
+                
+                success_message = f'Orden completada exitosamente por {completed_by_user.first_name} {completed_by_user.last_name}.\n\nDetalles de pagos:\n' + '\n'.join(payment_details)
+                
                 return JsonResponse({
-                    'success': False,
-                    'message': f'El monto del pago debe ser exactamente S/ {balance}'
-                }, status=HTTPStatus.BAD_REQUEST)
-            
-            # Registrar el pago en cashflow
-            from apps.accounting.models import CashFlow
-            from datetime import datetime
-            
-            # Convertir la fecha del pago
-            payment_datetime = datetime.strptime(payment_date, '%Y-%m-%d')
-            
-            # Crear entrada en cashflow
-            cashflow_entry = CashFlow.objects.create(
-                transaction_date=payment_datetime,
-                created_at=datetime.now(),
-                description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name}",
-                serial=order.subsidiary.serial,
-                n_receipt=order.correlative,
-                document_type_attached='O',  # Otro
-                type='E',  # Entrada
-                subtotal=payment_amount_decimal,
-                total=payment_amount_decimal,
-                igv=Decimal('0.00'),
-                cash=cash_account,
-                order=order,
-                user=request.user,
-                type_expense='O',  # Otros
-                way_to_pay=way_to_pay,  # Forma de pago,
-                order_type_entry='T'
-            )
-            
-            # Actualizar el estado de la orden a completado
-            order.status = 'C'
-            order.cash_pay = payment_amount_decimal  # Guardar el monto pagado
-            order.completed_by = completed_by_user  # Guardar quién completó la orden
-            order.completed_at = datetime.now()  # Guardar cuándo se completó
-            order.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': f'Orden completada exitosamente por {completed_by_user.first_name} {completed_by_user.last_name}. Pago de S/ {payment_amount} registrado en {cash_account.name}',
-                'order_id': order_id,
-                'cashflow_id': cashflow_entry.id
-            }, status=HTTPStatus.OK)
+                    'success': True,
+                    'message': success_message,
+                    'order_id': order_id,
+                    'total_payments': str(total_payments),
+                    'cashflow_count': len(cashflow_entries)
+                }, status=HTTPStatus.OK)
+                
+            else:
+                # Manejo de pago único (compatibilidad con versión anterior)
+                payment_amount = request.POST.get('payment_amount')
+                cash_account_id = request.POST.get('cash_account_id')
+                way_to_pay = request.POST.get('way_to_pay')
+                
+                if not all([payment_amount, cash_account_id, way_to_pay]):
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Faltan datos de pago único'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                # Obtener la cuenta de caja
+                try:
+                    from apps.accounting.models import Cash
+                    cash_account = Cash.objects.get(id=int(cash_account_id))
+                except Cash.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Cuenta de caja no encontrada'
+                    }, status=HTTPStatus.NOT_FOUND)
+                
+                payment_amount_decimal = Decimal(payment_amount)
+                
+                # Verificar que el monto del pago sea correcto
+                if payment_amount_decimal != balance:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'El monto del pago debe ser exactamente S/ {balance}'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                # Registrar el pago en cashflow
+                from apps.accounting.models import CashFlow
+                from datetime import datetime
+                
+                # Convertir la fecha del pago
+                payment_datetime = datetime.strptime(payment_date, '%Y-%m-%d')
+                
+                # Crear entrada en cashflow
+                cashflow_entry = CashFlow.objects.create(
+                    transaction_date=payment_datetime,
+                    created_at=datetime.now(),
+                    description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name}",
+                    serial=order.subsidiary.serial,
+                    n_receipt=order.correlative,
+                    document_type_attached='O',  # Otro
+                    type='E',  # Entrada
+                    subtotal=payment_amount_decimal,
+                    total=payment_amount_decimal,
+                    igv=Decimal('0.00'),
+                    cash=cash_account,
+                    order=order,
+                    user=request.user,
+                    type_expense='O',  # Otros
+                    way_to_pay=way_to_pay,  # Forma de pago,
+                    order_type_entry='T'
+                )
+                
+                # Actualizar el estado de la orden a completado
+                order.status = 'C'
+                order.cash_pay = payment_amount_decimal  # Guardar el monto pagado
+                order.completed_by = completed_by_user  # Guardar quién completó la orden
+                order.completed_at = datetime.now()  # Guardar cuándo se completó
+                order.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Orden completada exitosamente por {completed_by_user.first_name} {completed_by_user.last_name}. Pago de S/ {payment_amount} registrado en {cash_account.name}',
+                    'order_id': order_id,
+                    'cashflow_id': cashflow_entry.id
+                }, status=HTTPStatus.OK)
             
         except Order.DoesNotExist:
             return JsonResponse({
@@ -2378,7 +2513,8 @@ def cancel_order_with_reason(request):
                     cash=cash_account,
                     order=order,
                     user=request.user,
-                    type_expense='O'  # Otros
+                    type_expense='O',  # Otros
+                    subsidiary=order.subsidiary
                 )
             
             # Actualizar la orden
@@ -2736,7 +2872,8 @@ def convert_order_to_service(request):
                                     order=order_obj,
                                     user=request.user,
                                     type_expense='O',  # Otros
-                                    way_to_pay=way_to_pay_advance  # Forma de pago específica
+                                    way_to_pay=way_to_pay_advance,  # Forma de pago específica
+                                    subsidiary=order_obj.subsidiary
                                 )
                     
                     # Verificar si el total de adelantos cubre el total de la orden

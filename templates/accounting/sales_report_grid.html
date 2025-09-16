@@ -24,7 +24,7 @@
                 <div class="card-header bg-primary text-white py-2">
                     <h6 class="card-title mb-0 text-dark" style="font-size: 1rem;">
                         <i class="fas fa-hand-holding-usd mr-1"></i>
-                        ADELANTOS
+                        INGRESOS DEL DÍA
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -36,8 +36,8 @@
                                 <th class="text-center" style="width: 19%">CLIENTE O RAZON SOCIAL</th>
                                 <th class="text-center" style="width: 5%">CANT.</th>
                                 <th class="text-center" style="width: 25%">DESCRIPCIÓN DEL PRODUCTO</th>
-                                <th class="text-center" style="width: 5%">TIPO PAGO</th>
-                                <th class="text-center" style="width: 11%">USUARIO</th>
+                                <th class="text-center" style="width: 5%">USUARIO</th>
+                                <th class="text-center" style="width: 11%">TIPO PAGO</th>
                                 <th class="text-center" style="width: 10%">A CUENTA S/.</th>
                                 <th class="text-center" style="width: 10%">SALDO S/.</th>
                                 <th class="text-center" style="width: 10%">TOTAL S/.</th>
@@ -45,52 +45,119 @@
                             </thead>
                             <tbody>
                             {% if advances_grouped %}
+                                {% comment %}Primero mostrar adelantos (órdenes no pagadas en su totalidad){% endcomment %}
                                 {% for order_id, data in advances_grouped.items %}
-                                    {% for advance in data.advances %}
-                                        <tr>
-                                            {% if forloop.first %}
-                                                <td class="text-center"
-                                                    rowspan="{{ data.advances|length }}">{{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}</td>
-                                                <td rowspan="{{ data.advances|length }}">{{ data.order.client.full_name|default:"-" }}</td>
-                                                <td class="text-center"
-                                                    rowspan="{{ data.advances|length }}">{{ data.order|sum_order_quantities|floatformat:0 }}</td>
-                                                <td rowspan="{{ data.advances|length }}">
-                                                    {% for detail in data.order.orderdetail_set.all %}
-                                                        {{ detail.product_name|default:"Producto Manual" }}
-                                                        {% if not forloop.last %}<br>{% endif %}
-                                                    {% empty %}
-                                                        {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
-                                                    {% endfor %}
-                                                </td>
-                                                <td class="text-center" rowspan="{{ data.advances|length }}">
-                                                    {{ advance.user.first_name|default:advance.user.username|default:"-" }}
-                                                </td>
-                                            {% endif %}
-                                            <td class="text-center" style="padding: 0.3rem 0.4rem">
-                                                {% if advance.way_to_pay == 'E' %}
-                                                    <span class="badge badge-success small">EFECTIVO</span>
-                                                {% elif advance.way_to_pay == 'Y' %}
-                                                    <span class="badge badge-info small">YAPE</span>
-                                                {% elif advance.way_to_pay == 'D' %}
-                                                    <span class="badge badge-warning small">DEPÓSITO</span>
+                                    {% if not data.is_paid_in_full %}
+                                        {% for cashflow in data.cashflows %}
+                                            <tr>
+                                                {% if forloop.first %}
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.client.full_name|default:"-" }}
+                                                    </td>
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order|sum_order_quantities|floatformat:0 }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {% for detail in data.order.orderdetail_set.all %}
+                                                            {{ detail.product_name|default:"Producto Manual" }}
+                                                            {% if not forloop.last %}<br>{% endif %}
+                                                        {% empty %}
+                                                            {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
+                                                        {% endfor %}
+                                                    </td>
                                                 {% endif %}
-                                            </td>
-                                            <td class="text-right" style="padding: 0.3rem 0.4rem;">
-                                                S/ {{ advance.total|floatformat:2 }}</td>
-                                            {% if forloop.first %}
-                                                <td class="text-right" rowspan="{{ data.advances|length }}">
-                                                    S/ {{ data.saldo|floatformat:2 }}</td>
-                                                <td class="text-right" rowspan="{{ data.advances|length }}">
-                                                    S/ {{ data.order.total|floatformat:2 }}</td>
-                                            {% endif %}
+                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
+                                                    {% if cashflow.way_to_pay == 'E' %}
+                                                        <span class="badge badge-success small">EFECTIVO</span>
+                                                    {% elif cashflow.way_to_pay == 'Y' %}
+                                                        <span class="badge badge-info small">YAPE</span>
+                                                    {% elif cashflow.way_to_pay == 'D' %}
+                                                        <span class="badge badge-warning small">DEPÓSITO</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right" style="padding: 0.3rem 0.4rem;">
+                                                    S/ {{ cashflow.total|floatformat:2 }}
+                                                </td>
+                                                {% if forloop.first %}
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.saldo|floatformat:2 }}
+                                                    </td>
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.order.total|floatformat:2 }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% comment %}Separador visual{% endcomment %}
+                                {% for order_id, data in advances_grouped.items %}
+                                    {% if data.is_paid_in_full and forloop.first %}
+                                        <tr>
+                                            <td colspan="9" class="payment-separator" style="padding: 0;"></td>
                                         </tr>
-                                    {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% comment %}Luego mostrar pagos completos{% endcomment %}
+                                {% for order_id, data in advances_grouped.items %}
+                                    {% if data.is_paid_in_full %}
+                                        {% for cashflow in data.cashflows %}
+                                            <tr class="payment-full-row">
+                                                {% if forloop.first %}
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.client.full_name|default:"-" }}
+                                                    </td>
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order|sum_order_quantities|floatformat:0 }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {% for detail in data.order.orderdetail_set.all %}
+                                                            {{ detail.product_name|default:"Producto Manual" }}
+                                                            {% if not forloop.last %}<br>{% endif %}
+                                                        {% empty %}
+                                                            {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endif %}
+                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
+                                                    {% if cashflow.way_to_pay == 'E' %}
+                                                        <span class="badge badge-payment-full small">EFECTIVO</span>
+                                                    {% elif cashflow.way_to_pay == 'Y' %}
+                                                        <span class="badge badge-payment-full small">YAPE</span>
+                                                    {% elif cashflow.way_to_pay == 'D' %}
+                                                        <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right" style="padding: 0.3rem 0.4rem;">
+                                                    S/ {{ cashflow.total|floatformat:2 }}
+                                                </td>
+                                                {% if forloop.first %}
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        <span class="saldo-completo">PAGADO</span>
+                                                    </td>
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.order.total|floatformat:2 }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
                                 {% endfor %}
                             {% else %}
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-3">
                                         <i class="fas fa-info-circle mr-2"></i>
-                                        No hay adelantos para esta fecha
+                                        No hay ingresos para esta fecha
                                     </td>
                                 </tr>
                             {% endif %}
@@ -107,7 +174,7 @@
 
                             </tr>
                             <tr class="bg-primary text-white">
-                                <td colspan="8" class="text-right"><strong>TOTAL:</strong></td>
+                                <td colspan="8" class="text-right"><strong>TOTAL INGRESOS:</strong></td>
                                 <td class="text-right"><strong>S/ {{ total_advances|floatformat:2 }}</strong></td>
 
                             </tr>
@@ -138,6 +205,7 @@
                             <thead class="bg-success text-white">
                             <tr>
                                 <th class="text-center" style="width: 10%">N° COMPROBANTE</th>
+                                <th class="text-center" style="width: 10%">FECHA</th>
                                 <th class="text-center" style="width: 30%">DESCRIPCIÓN</th>
                                 <th class="text-center" style="width: 15%">USUARIO</th>
                                 <th class="text-center" style="width: 15%">TIPO PAGO</th>
@@ -149,6 +217,7 @@
                                 {% for cashflow in payments_cashflows %}
                                     <tr>
                                         <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
+                                        <td class="text-center">{{ cashflow.order.register_date|date:'d-m-Y' }}</td>
                                         <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
                                         <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
                                         <td class="text-center">
@@ -167,22 +236,22 @@
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-3">
                                         <i class="fas fa-info-circle mr-2"></i>
-                                        No hay pagos totales para esta fecha
+                                        No hay cancelaciones para esta fecha
                                     </td>
                                 </tr>
                             {% endif %}
                             </tbody>
                             <tfoot class="bg-light">
                             <tr>
-                                <td colspan="4" class="text-right"><strong>YAPE:</strong></td>
+                                <td colspan="5" class="text-right"><strong>YAPE:</strong></td>
                                 <td class="text-right"><strong>S/ {{ payments_yape|floatformat:2 }}</strong></td>
                             </tr>
                             <tr>
-                                <td colspan="4" class="text-right"><strong>EFECTIVO:</strong></td>
+                                <td colspan="5" class="text-right"><strong>EFECTIVO:</strong></td>
                                 <td class="text-right"><strong>S/ {{ payments_efectivo|floatformat:2 }}</strong></td>
                             </tr>
                             <tr class="bg-success text-white">
-                                <td colspan="4" class="text-right"><strong>TOTAL:</strong></td>
+                                <td colspan="5" class="text-right"><strong>TOTAL CANCELACIONES:</strong></td>
                                 <td class="text-right"><strong>S/ {{ total_payments|floatformat:2 }}</strong></td>
                             </tr>
                             </tfoot>
@@ -281,12 +350,12 @@
                             <div class="table-responsive">
                                 <table class="table table-sm" style="font-size: 0.75rem;">
                                     <tr>
-                                        <td><strong>INGRESO TIENDA (Adelantos):</strong></td>
+                                        <td><strong>INGRESOS DEL DÍA:</strong></td>
                                         <td class="text-right"><strong>S/ {{ total_advances|floatformat:2 }}</strong>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><strong>SALDOS TIENDA (Pagos Totales):</strong></td>
+                                        <td><strong>SALDOS:</strong></td>
                                         <td class="text-right"><strong>S/ {{ total_payments|floatformat:2 }}</strong>
                                         </td>
                                     </tr>
@@ -614,5 +683,84 @@
             font-weight: 500;
         }
     }
+
+    /* ===== ESTILOS PARA DIFERENCIAR ADELANTOS VS PAGOS TOTALES ===== */
+    
+    /* Fila de pago completo - fondo azul claro */
+    .payment-full-row {
+        background-color: #e3f2fd !important; /* Azul muy claro */
+        {#border-left: 4px solid #2196f3 !important; /* Borde azul */#}
+        position: relative;
+    }
+    
+    .payment-full-row:hover {
+        background-color: #bbdefb !important; /* Azul un poco más intenso al hacer hover */
+    }
+    
+    /* Separador visual entre adelantos y pagos totales */
+    .payment-separator {
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #2196f3 50%, transparent 100%);
+        margin: 10px 0;
+        border-radius: 1px;
+    }
+    
+    /* Badge especial para pagos completos */
+    .badge-payment-full {
+        background-color: #2196f3 !important;
+        color: white !important;
+        border: 1px solid #1976d2 !important;
+        font-weight: 600 !important;
+        position: relative;
+    }
+    
+    .badge-payment-full::after {
+        content: " ✓";
+        font-weight: bold;
+        color: #4caf50;
+    }
+    
+    /* Indicador visual en el saldo para pagos completos */
+    .saldo-completo {
+        background-color: #e8f5e8 !important;
+        color: #2e7d32 !important;
+        font-weight: 700 !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
+    }
+    
+    /* Animación sutil para pagos completos */
+    .payment-full-row {
+        animation: fadeInHighlight 0.5s ease-in;
+    }
+    
+    @keyframes fadeInHighlight {
+        from {
+            background-color: transparent;
+            border-left-color: transparent;
+        }
+        to {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+    }
+    
+    /* Mejorar el contraste en modo oscuro */
+    @media (prefers-color-scheme: dark) {
+        .payment-full-row {
+            background-color: #d2d4e5 !important;
+            border-left-color: #3f51b5 !important;
+        }
+        
+        .payment-full-row:hover {
+            background-color: #d2d4e5 !important;
+        }
+        
+        .saldo-completo {
+            background-color: #1b5e20 !important;
+            color: #81c784 !important;
+        }
+    }
+
 </style>
 

@@ -54,6 +54,7 @@ class CashFlow(models.Model):
     type_expense = models.CharField('Tipo de gasto', max_length=1, choices=TYPE_EXPENSE, default='O')
     way_to_pay = models.CharField('Tipo de pago', max_length=1, choices=TYPE_CHOICES_PAYMENT, default='E')
     order_type_entry = models.CharField('Tipo entrada de orden', max_length=1, choices=TYPE_ENTRY_ORDER_CHOICES, default='T')
+    subsidiary = models.ForeignKey('hrm.Subsidiary', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return str(self.pk)

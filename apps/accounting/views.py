@@ -475,7 +475,8 @@ def cashflow_save(request):
                 cash=cash_obj,
                 operation_code=operation_code.upper() if operation_code else None,
                 type_expense=expense_type,
-                user=user_obj
+                user=user_obj,
+                subsidiary=cash_obj.subsidiary
             )
             cashflow_obj.save()
             
@@ -773,36 +774,55 @@ def sales_report(request):
             # Donde: Gastos netos = Gastos totales - Ingresos por otros conceptos
             final_cash = real_income - net_expenses
 
-            # Preparar datos de adelantos (order_type_entry A) agrupados por orden
-            # Excluir órdenes anuladas (status='A')
-            advances_cashflows = order_cashflows.filter(
-                type='E',  # Solo entradas
-                order_type_entry='A'  # Solo adelantos
+            # NUEVA LÓGICA: 
+            # 1. ADELANTOS = Todas las órdenes del día (con sus cashflows)
+            # 2. SALDOS = Solo cashflows de cancelación (order_type_entry='T')
+            
+            # Obtener todas las órdenes del día del reporte
+            orders_of_day = Order.objects.filter(
+                register_date=report_date,
+                status__in=['P', 'C']  # Pendientes y completadas
             )
             
-            # Agrupar adelantos por orden para calcular saldo único
+            if subsidiary_id and subsidiary_id != '0':
+                orders_of_day = orders_of_day.filter(subsidiary_id=subsidiary_id)
+            
+            orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
+            
+            # Crear estructura de datos más clara para el template
             advances_grouped = {}
-            for cashflow in advances_cashflows:
-                order_id = cashflow.order.id
-                if order_id not in advances_grouped:
-                    advances_grouped[order_id] = {
-                        'order': cashflow.order,
-                        'advances': [],
-                        'total_advances': 0,
-                        'saldo': 0
+            for order in orders_of_day:
+                # Obtener todos los cashflows relacionados con esta orden del día del reporte
+                order_cashflows_day = cashflows.filter(
+                    order=order,
+                    type='E',  # Solo entradas
+                    transaction_date__date=report_date  # Solo del día del reporte
+                ).order_by('id')
+                
+                if order_cashflows_day.exists():
+                    total_paid = sum(float(cf.total) for cf in order_cashflows_day)
+                    saldo = float(order.total) - total_paid
+                    
+                    # Determinar si la orden se pagó en su totalidad (con tolerancia de 1 céntimo)
+                    is_paid_in_full = abs(saldo) < 0.01
+                    
+                    # Crear estructura con información de la orden y sus cashflows
+                    advances_grouped[order.id] = {
+                        'order': order,
+                        'cashflows': list(order_cashflows_day),  # Lista de cashflows individuales
+                        'total_advances': total_paid,
+                        'saldo': saldo,
+                        'is_paid_in_full': is_paid_in_full,
+                        'cashflow_count': order_cashflows_day.count()  # Cantidad de cashflows
                     }
-                advances_grouped[order_id]['advances'].append(cashflow)
-                advances_grouped[order_id]['total_advances'] += float(cashflow.total)
             
-            # Calcular saldo para cada orden
-            for order_id, data in advances_grouped.items():
-                data['saldo'] = float(data['order'].total) - data['total_advances']
-            
-            # Preparar datos de pagos totales/saldos (order_type_entry T)
-            # Excluir órdenes anuladas (status='A')
+            # Preparar datos de saldos (solo cashflows de cancelación - order_type_entry='T')
+            # EXCLUIR órdenes que fueron creadas el mismo día del reporte (esas van en ingresos del día)
             payments_cashflows = order_cashflows.filter(
                 type='E',  # Solo entradas
-                order_type_entry='T'  # Solo pagos totales
+                order_type_entry='T'  # Solo pagos totales (cancelaciones)
+            ).exclude(
+                order__register_date=report_date  # Excluir órdenes del mismo día
             )
             
             # Preparar datos de cashflows sin order_id (egresos)
@@ -812,14 +832,24 @@ def sales_report(request):
             )
 
             # Calcular totales para resúmenes
-            total_advances = advances_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            # Total de ingresos del día (suma de todos los cashflows de las órdenes del día)
+            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
             total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
             total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
-            # Calcular totales por tipo de pago
-            advances_efectivo = advances_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
-            advances_yape = advances_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
-            advances_deposito = advances_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            # Calcular totales por tipo de pago para adelantos (ingresos del día)
+            advances_efectivo = 0
+            advances_yape = 0
+            advances_deposito = 0
+            
+            for data in advances_grouped.values():
+                for cashflow in data['cashflows']:
+                    if cashflow.way_to_pay == 'E':
+                        advances_efectivo += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'Y':
+                        advances_yape += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'D':
+                        advances_deposito += decimal.Decimal(cashflow.total)
             
             payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
             payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
@@ -834,11 +864,11 @@ def sales_report(request):
             context = {
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
                 'advances_grouped': advances_grouped,
-                'advances_cashflows': advances_cashflows.order_by('id'),
-                'payments_cashflows': payments_cashflows.order_by('id'),
+                'orders_of_day': orders_of_day,  # Todas las órdenes del día
+                'payments_cashflows': payments_cashflows.order_by('id'),  # Solo cancelaciones
                 'expenses_cashflows': expenses_cashflows.order_by('id'),
-                'total_advances': total_advances,
-                'total_payments': total_payments,
+                'total_advances': total_advances,  # Total ingresos del día
+                'total_payments': total_payments,  # Total cancelaciones
                 'total_expenses_amount': total_expenses_amount,
                 'advances_efectivo': advances_efectivo,
                 'advances_yape': advances_yape,
@@ -850,7 +880,6 @@ def sales_report(request):
                 'total_yape': total_yape,
                 'total_deposito': total_deposito,
                 'total_general': total_general,
-                # 'subsidiary': order_cashflows.first().order.subsidiary if order_cashflows.exists() else None,
                 'subsidiary': subsidiary_obj,
             }
             
