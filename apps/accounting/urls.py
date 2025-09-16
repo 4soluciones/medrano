@@ -23,6 +23,8 @@ urlpatterns = [
     
     # URLs para reportes
     path('sales-report/', login_required(sales_report), name='sales_report'),
+    path('monthly-report/', login_required(monthly_report), name='monthly_report'),
+    path('weekly-report/', login_required(weekly_report), name='weekly_report'),
     # path('sales-report-test/', login_required(sales_report_test), name='sales_report_test'),
     path('export-sales-report-excel/', login_required(export_sales_report_excel), name='export_sales_report_excel'),
     path('export-sales-report-pdf/', login_required(export_sales_report_pdf), name='export_sales_report_pdf'),

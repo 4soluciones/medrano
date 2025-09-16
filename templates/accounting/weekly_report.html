@@ -1,0 +1,720 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}Reporte Semanal - Medrano{% endblock %}
+
+{% block body %}
+<div class="container-fluid roboto-condensed-regular">
+    <!-- Header del Reporte -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-white py-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h2 class="mb-2">
+                                <i class="fas fa-chart-line mr-3"></i>
+                                Reporte Semanal de Gestión
+                            </h2>
+                            <p class="mb-0 opacity-90">
+                                Análisis detallado de órdenes, ingresos y gastos de la semana seleccionada
+                            </p>
+                        </div>
+                        <div class="col-lg-4 text-right">
+                            <div class="report-period">
+                                <h4 class="mb-1" id="current-week">Semana Actual</h4>
+                                <small class="opacity-75" id="subsidiary-name">Todas las sucursales</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter mr-2"></i>
+                        Filtros de Reporte
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="report-form">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="report_week" class="font-weight-bold">Semana a Reportar</label>
+                                    <input type="week" class="form-control" id="report_week" name="report_week" 
+                                           value="{{ current_week }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="subsidiary" class="font-weight-bold">Sucursal</label>
+                                    <select class="form-control" id="subsidiary" name="subsidiary">
+                                        <option value="0">Todas las sucursales</option>
+                                        {% for subsidiary in subsidiary_set %}
+                                            <option value="{{ subsidiary.id }}"> {{ subsidiary.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-info btn-lg">
+                                            <i class="fas fa-chart-area mr-2"></i>
+                                            Generar Reporte
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4" id="stats-section" style="display: none;">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-gradient-success text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="completed-orders-count">0</h3>
+                            <p class="mb-0">Órdenes Completadas</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                <span id="completed-orders-total">S/ 0.00</span>
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-gradient-warning text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="pending-orders-count">0</h3>
+                            <p class="mb-0">Órdenes Pendientes</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span id="pending-orders-total">S/ 0.00</span>
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-gradient-primary text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="weekly-income">S/ 0.00</h3>
+                            <p class="mb-0">Ingresos Totales</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                Entradas de caja
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-gradient-danger text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="weekly-expenses">S/ 0.00</h3>
+                            <p class="mb-0">Gastos Totales</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-arrow-down mr-1"></i>
+                                Salidas de caja
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-receipt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Principales -->
+    <div class="row mb-4" id="charts-section" style="display: none;">
+        <!-- Gráfico de Órdenes Completadas por Sucursal -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        Órdenes Completadas por Sucursal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="completedOrdersChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Órdenes Pendientes por Sucursal -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-warning text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Órdenes Pendientes por Sucursal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="pendingOrdersChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Ingresos por Sucursal -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Ingresos por Sucursal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="incomeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Gastos por Sucursal -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area mr-2"></i>
+                        Gastos por Sucursal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expensesChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Secundarios -->
+    <div class="row mb-4" id="secondary-charts-section" style="display: none;">
+        <!-- Productos Más Solicitados -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star mr-2"></i>
+                        Productos Más Solicitados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="topProductsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Órdenes Completadas por Día -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-day mr-2"></i>
+                        Órdenes Completadas por Día
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyOrdersChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Resumen -->
+    <div class="row mb-4" id="summary-section" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-gradient-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table mr-2"></i>
+                        Resumen Ejecutivo Semanal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Métrica</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-right">Valor Total</th>
+                                    <th class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-check-circle text-success mr-2"></i>Órdenes Completadas</td>
+                                    <td class="text-center" id="summary-completed-count">0</td>
+                                    <td class="text-right" id="summary-completed-total">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-success">Completado</span></td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-clock text-warning mr-2"></i>Órdenes Pendientes</td>
+                                    <td class="text-center" id="summary-pending-count">0</td>
+                                    <td class="text-right" id="summary-pending-total">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-warning">Pendiente</span></td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-truck text-info mr-2"></i>Pendientes de Entrega</td>
+                                    <td class="text-center" id="summary-delivery-count">0</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-center"><span class="badge badge-info">En Proceso</span></td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td><i class="fas fa-arrow-up text-success mr-2"></i>Ingresos Totales</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right font-weight-bold" id="summary-income-total">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-success">Ingreso</span></td>
+                                </tr>
+                                <tr class="table-danger">
+                                    <td><i class="fas fa-arrow-down text-danger mr-2"></i>Gastos Totales</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right font-weight-bold" id="summary-expenses-total">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-danger">Gasto</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje de Carga -->
+    <div class="row" id="loading-section">
+        <div class="col-12 text-center py-5">
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="spinner-border text-info mb-3" role="status">
+                        <span class="sr-only">Cargando...</span>
+                    </div>
+                    <h5 class="text-muted">Seleccione una semana y genere el reporte</h5>
+                    <p class="text-muted">Los datos se cargarán automáticamente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<!-- Chart.js Datalabels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+$(document).ready(function() {
+    // Registrar el plugin de datalabels
+    Chart.register(ChartDataLabels);
+    
+    // Variables globales para los gráficos
+    let completedOrdersChart = null;
+    let pendingOrdersChart = null;
+    let incomeChart = null;
+    let expensesChart = null;
+    let topProductsChart = null;
+    let dailyOrdersChart = null;
+
+    // Manejar envío del formulario
+    $('#report-form').on('submit', function(e) {
+        e.preventDefault();
+        generateReport();
+    });
+
+    // Cargar automáticamente el reporte de la semana actual
+    setTimeout(function() {
+        generateReport();
+    }, 500);
+
+    function generateReport() {
+        // Mostrar loading
+        $('#loading-section').show();
+        $('#stats-section, #charts-section, #secondary-charts-section, #summary-section').hide();
+
+        const formData = {
+            'report_week': $('#report_week').val(),
+            'subsidiary': $('#subsidiary').val(),
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        };
+
+        console.log('Generando reporte con datos:', formData);
+
+        $.ajax({
+            url: '{% url "apps.accounting:weekly_report" %}',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    updateStats(response.stats);
+                    updateCharts(response.chart_data);
+                    updateSummary(response.stats);
+                    updateHeader(response.week_name, response.subsidiary);
+                    
+                    // Mostrar secciones
+                    $('#loading-section').hide();
+                    $('#stats-section, #charts-section, #secondary-charts-section, #summary-section').show();
+                } else {
+                    showError('Error: ' + response.message);
+                    $('#loading-section').hide();
+                }
+            },
+            error: function() {
+                showError('Error de conexión al generar el reporte');
+                $('#loading-section').hide();
+            }
+        });
+    }
+
+    function updateStats(stats) {
+        $('#completed-orders-count').text(stats.completed_orders_count);
+        $('#completed-orders-total').text('S/ ' + parseFloat(stats.completed_orders_total).toFixed(2));
+        $('#pending-orders-count').text(stats.pending_orders_count);
+        $('#pending-orders-total').text('S/ ' + parseFloat(stats.pending_orders_total).toFixed(2));
+        $('#weekly-income').text('S/ ' + parseFloat(stats.weekly_income_total).toFixed(2));
+        $('#weekly-expenses').text('S/ ' + parseFloat(stats.weekly_expenses_total).toFixed(2));
+    }
+
+    function updateCharts(chartData) {
+        // Destruir gráficos existentes
+        if (completedOrdersChart) completedOrdersChart.destroy();
+        if (pendingOrdersChart) pendingOrdersChart.destroy();
+        if (incomeChart) incomeChart.destroy();
+        if (expensesChart) expensesChart.destroy();
+        if (topProductsChart) topProductsChart.destroy();
+        if (dailyOrdersChart) dailyOrdersChart.destroy();
+
+        // Gráfico de Órdenes Completadas por Sucursal
+        if (chartData.completed_orders_by_subsidiary.length > 0) {
+            const ctx1 = document.getElementById('completedOrdersChart').getContext('2d');
+            completedOrdersChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.completed_orders_by_subsidiary.map(item => item.subsidiary__name || 'Sin sucursal'),
+                    datasets: [{
+                        data: chartData.completed_orders_by_subsidiary.map(item => item.count),
+                        backgroundColor: [
+                            '#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6f42c1',
+                            '#20c997', '#fd7e14', '#e83e8c', '#6c757d', '#007bff'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        datalabels: {
+                            display: true,
+                            color: 'white',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: function(value) {
+                                return value;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Órdenes Pendientes por Sucursal
+        if (chartData.pending_orders_by_subsidiary.length > 0) {
+            const ctx2 = document.getElementById('pendingOrdersChart').getContext('2d');
+            pendingOrdersChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: chartData.pending_orders_by_subsidiary.map(item => item.subsidiary__name || 'Sin sucursal'),
+                    datasets: [{
+                        label: 'Órdenes Pendientes',
+                        data: chartData.pending_orders_by_subsidiary.map(item => item.count),
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return value;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Ingresos por Sucursal
+        if (chartData.income_by_subsidiary.length > 0) {
+            const ctx3 = document.getElementById('incomeChart').getContext('2d');
+            incomeChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: chartData.income_by_subsidiary.map(item => item.cash__subsidiary__name || 'Sin sucursal'),
+                    datasets: [{
+                        label: 'Ingresos (S/)',
+                        data: chartData.income_by_subsidiary.map(item => parseFloat(item.total)),
+                        backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return 'S/ ' + value.toFixed(2);
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'S/ ' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Gastos por Sucursal
+        if (chartData.expenses_by_subsidiary.length > 0) {
+            const ctx4 = document.getElementById('expensesChart').getContext('2d');
+            expensesChart = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: chartData.expenses_by_subsidiary.map(item => item.cash__subsidiary__name || 'Sin sucursal'),
+                    datasets: [{
+                        label: 'Gastos (S/)',
+                        data: chartData.expenses_by_subsidiary.map(item => parseFloat(item.total)),
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return 'S/ ' + value.toFixed(2);
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'S/ ' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Productos Más Solicitados
+        if (chartData.top_products.length > 0) {
+            const ctx5 = document.getElementById('topProductsChart').getContext('2d');
+            topProductsChart = new Chart(ctx5, {
+                type: 'bar',
+                data: {
+                    labels: chartData.top_products.map(item => item.product__name || 'Sin nombre'),
+                    datasets: [{
+                        label: 'Cantidad Solicitada',
+                        data: chartData.top_products.map(item => parseFloat(item.total_quantity)),
+                        backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                        borderColor: 'rgba(23, 162, 184, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'right',
+                            formatter: function(value) {
+                                return value;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Órdenes Completadas por Día
+        if (chartData.daily_completed_orders.length > 0) {
+            const ctx6 = document.getElementById('dailyOrdersChart').getContext('2d');
+            dailyOrdersChart = new Chart(ctx6, {
+                type: 'line',
+                data: {
+                    labels: chartData.daily_completed_orders.map(item => {
+                        const date = new Date(item.day);
+                        return date.toLocaleDateString('es-ES', { 
+                            weekday: 'short', 
+                            day: '2-digit', 
+                            month: '2-digit' 
+                        });
+                    }),
+                    datasets: [{
+                        label: 'Órdenes Completadas',
+                        data: chartData.daily_completed_orders.map(item => item.count),
+                        borderColor: 'rgba(108, 117, 125, 1)',
+                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(108, 117, 125, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return value;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function updateSummary(stats) {
+        $('#summary-completed-count').text(stats.completed_orders_count);
+        $('#summary-completed-total').text('S/ ' + parseFloat(stats.completed_orders_total).toFixed(2));
+        $('#summary-pending-count').text(stats.pending_orders_count);
+        $('#summary-pending-total').text('S/ ' + parseFloat(stats.pending_orders_total).toFixed(2));
+        $('#summary-delivery-count').text(stats.pending_delivery_count);
+        $('#summary-income-total').text('S/ ' + parseFloat(stats.weekly_income_total).toFixed(2));
+        $('#summary-expenses-total').text('S/ ' + parseFloat(stats.weekly_expenses_total).toFixed(2));
+    }
+
+    function updateHeader(weekName, subsidiaryName) {
+        $('#current-week').text(weekName);
+        $('#subsidiary-name').text(subsidiaryName);
+    }
+
+    function showError(message) {
+        const errorDiv = $(`
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `);
+        $('.container-fluid').prepend(errorDiv);
+        setTimeout(() => errorDiv.fadeOut(), 5000);
+    }
+});
+</script>
+{% endblock %}

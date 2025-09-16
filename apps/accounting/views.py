@@ -37,7 +37,7 @@ from decimal import Decimal
 from django.db.models import F
 
 
-from ..sales.models import Person, Order
+from ..sales.models import Person, Order, OrderDetail
 from ..sales.views_API import query_apis_net_money
 from ..users.models import CustomUser
 from ..hrm.models import Subsidiary
@@ -655,6 +655,336 @@ def get_cash_accounts_by_subsidiary(request):
 # =============================================================================
 # VISTAS PARA REPORTES
 # =============================================================================
+@csrf_exempt
+def monthly_report(request):
+    """Vista para reporte mensual con gráficos profesionales"""
+    if request.method == 'GET':
+        subsidiary_set = Subsidiary.objects.all()
+        
+        # Obtener la sucursal del usuario actual
+        user_subsidiary = None
+        if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
+            user_subsidiary = request.user.subsidiary
+        
+        # Fecha actual para el filtro
+        current_date = datetime.now()
+        current_month = current_date.strftime('%Y-%m')
+        
+        return render(request, 'accounting/monthly_report.html', {
+            'subsidiary_set': subsidiary_set,
+            'user_subsidiary': user_subsidiary,
+            'current_month': current_month,
+        })
+    elif request.method == 'POST':
+        try:
+            # Obtener parámetros del filtro
+            report_month = request.POST.get('report_month')
+            subsidiary_id = request.POST.get('subsidiary')
+            
+            if not report_month:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar un mes'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Convertir mes a rango de fechas
+            year, month = report_month.split('-')
+            start_date = datetime(int(year), int(month), 1)
+            if int(month) == 12:
+                end_date = datetime(int(year) + 1, 1, 1)
+            else:
+                end_date = datetime(int(year), int(month) + 1, 1)
+            
+            # Filtrar datos por sucursal si se especifica
+            subsidiary_obj = None
+            if subsidiary_id and subsidiary_id != '0':
+                subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
+                orders_filter = {'subsidiary_id': subsidiary_id}
+                cashflows_filter = {'cash__subsidiary_id': subsidiary_id}
+            else:
+                orders_filter = {}
+                cashflows_filter = {}
+            
+            # 1. Órdenes completadas del mes
+            completed_orders = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                status='C',
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 2. Órdenes pendientes por sucursal y en general
+            pending_orders = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                status='P',
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 3. Productos más solicitados
+            from django.db.models import Sum, Count
+            top_products = OrderDetail.objects.filter(
+                order__register_date__gte=start_date,
+                order__register_date__lt=end_date,
+                order__status__in=['P', 'C'],
+                **{'order__' + k: v for k, v in orders_filter.items()}
+            ).values('product__name').annotate(
+                total_quantity=Sum('quantity'),
+                total_orders=Count('order')
+            ).order_by('-total_quantity')[:10]
+            
+            # 4. Órdenes pendientes de entrega
+            pending_delivery = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                delivery_status='P',
+                status__in=['P', 'C'],
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 5. Ingresos mensuales (CashFlow tipo 'E')
+            monthly_income = CashFlow.objects.filter(
+                transaction_date__gte=start_date,
+                transaction_date__lt=end_date,
+                type='E',
+                **cashflows_filter
+            ).select_related('cash', 'cash__subsidiary')
+            
+            # 6. Gastos por sucursal
+            monthly_expenses = CashFlow.objects.filter(
+                transaction_date__gte=start_date,
+                transaction_date__lt=end_date,
+                type='S',
+                **cashflows_filter
+            ).select_related('cash', 'cash__subsidiary')
+            
+            # Calcular estadísticas
+            stats = {
+                'completed_orders_count': completed_orders.count(),
+                'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_orders_count': pending_orders.count(),
+                'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_delivery_count': pending_delivery.count(),
+                'monthly_income_total': monthly_income.aggregate(Sum('total'))['total__sum'] or 0,
+                'monthly_expenses_total': monthly_expenses.aggregate(Sum('total'))['total__sum'] or 0,
+            }
+            
+            # Datos para gráficos
+            chart_data = {
+                'completed_orders_by_subsidiary': list(
+                    completed_orders.values('subsidiary__name')
+                    .annotate(count=Count('id'), total=Sum('total'))
+                    .order_by('-count')
+                ),
+                'pending_orders_by_subsidiary': list(
+                    pending_orders.values('subsidiary__name')
+                    .annotate(count=Count('id'), total=Sum('total'))
+                    .order_by('-count')
+                ),
+                'top_products': list(top_products),
+                'income_by_subsidiary': list(
+                    monthly_income.values('cash__subsidiary__name')
+                    .annotate(total=Sum('total'))
+                    .order_by('-total')
+                ),
+                'expenses_by_subsidiary': list(
+                    monthly_expenses.values('cash__subsidiary__name')
+                    .annotate(total=Sum('total'))
+                    .order_by('-total')
+                ),
+                'daily_completed_orders': list(
+                    completed_orders.extra(
+                        select={'day': 'DATE(register_date)'}
+                    ).values('day').annotate(count=Count('id')).order_by('day')
+                ),
+                'daily_income': list(
+                    monthly_income.extra(
+                        select={'day': 'DATE(transaction_date)'}
+                    ).values('day').annotate(total=Sum('total')).order_by('day')
+                ),
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'stats': stats,
+                'chart_data': chart_data,
+                'subsidiary': subsidiary_obj.name if subsidiary_obj else 'Todas las sucursales',
+                'month_name': start_date.strftime('%B %Y')
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al generar reporte mensual: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
+def weekly_report(request):
+    from datetime import datetime
+    """Vista para reporte semanal con gráficos profesionales"""
+    if request.method == 'GET':
+        subsidiary_set = Subsidiary.objects.all()
+        
+        # Obtener la sucursal del usuario actual
+        user_subsidiary = None
+        if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
+            user_subsidiary = request.user.subsidiary
+        
+        # Fecha actual para el filtro
+        current_date = datetime.now()
+        current_week = current_date.isocalendar()
+        current_week_str = f"{current_week[0]}-W{current_week[1]:02d}"
+        
+        return render(request, 'accounting/weekly_report.html', {
+            'subsidiary_set': subsidiary_set,
+            'user_subsidiary': user_subsidiary,
+            'current_week': current_week_str,
+        })
+    elif request.method == 'POST':
+        try:
+            # Obtener parámetros del filtro
+            report_week = request.POST.get('report_week')
+            subsidiary_id = request.POST.get('subsidiary')
+            
+            if not report_week:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar una semana'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Convertir semana a rango de fechas
+            year, week = report_week.split('-W')
+            year = int(year)
+            week = int(week)
+            
+            # Calcular fechas de inicio y fin de la semana
+            from datetime import datetime, timedelta
+            jan_1 = datetime(year, 1, 1)
+            start_date = jan_1 + timedelta(weeks=week-1, days=-jan_1.weekday())
+            end_date = start_date + timedelta(days=7)
+            
+            # Filtrar datos por sucursal si se especifica
+            subsidiary_obj = None
+            if subsidiary_id and subsidiary_id != '0':
+                subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
+                orders_filter = {'subsidiary_id': subsidiary_id}
+                cashflows_filter = {'cash__subsidiary_id': subsidiary_id}
+            else:
+                orders_filter = {}
+                cashflows_filter = {}
+            
+            # 1. Órdenes completadas de la semana
+            completed_orders = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                status='C',
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 2. Órdenes pendientes por sucursal y en general
+            pending_orders = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                status='P',
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 3. Productos más solicitados
+            from django.db.models import Sum, Count
+            top_products = OrderDetail.objects.filter(
+                order__register_date__gte=start_date,
+                order__register_date__lt=end_date,
+                order__status__in=['P', 'C'],
+                **{'order__' + k: v for k, v in orders_filter.items()}
+            ).values('product__name').annotate(
+                total_quantity=Sum('quantity'),
+                total_orders=Count('order')
+            ).order_by('-total_quantity')[:10]
+            
+            # 4. Órdenes pendientes de entrega
+            pending_delivery = Order.objects.filter(
+                register_date__gte=start_date,
+                register_date__lt=end_date,
+                delivery_status='P',
+                status__in=['P', 'C'],
+                **orders_filter
+            ).select_related('subsidiary', 'client')
+            
+            # 5. Ingresos semanales (CashFlow tipo 'E')
+            weekly_income = CashFlow.objects.filter(
+                transaction_date__gte=start_date,
+                transaction_date__lt=end_date,
+                type='E',
+                **cashflows_filter
+            ).select_related('cash', 'cash__subsidiary')
+            
+            # 6. Gastos por sucursal
+            weekly_expenses = CashFlow.objects.filter(
+                transaction_date__gte=start_date,
+                transaction_date__lt=end_date,
+                type='S',
+                **cashflows_filter
+            ).select_related('cash', 'cash__subsidiary')
+            
+            # Calcular estadísticas
+            stats = {
+                'completed_orders_count': completed_orders.count(),
+                'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_orders_count': pending_orders.count(),
+                'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_delivery_count': pending_delivery.count(),
+                'weekly_income_total': weekly_income.aggregate(Sum('total'))['total__sum'] or 0,
+                'weekly_expenses_total': weekly_expenses.aggregate(Sum('total'))['total__sum'] or 0,
+            }
+            
+            # Datos para gráficos
+            chart_data = {
+                'completed_orders_by_subsidiary': list(
+                    completed_orders.values('subsidiary__name')
+                    .annotate(count=Count('id'), total=Sum('total'))
+                    .order_by('-count')
+                ),
+                'pending_orders_by_subsidiary': list(
+                    pending_orders.values('subsidiary__name')
+                    .annotate(count=Count('id'), total=Sum('total'))
+                    .order_by('-count')
+                ),
+                'top_products': list(top_products),
+                'income_by_subsidiary': list(
+                    weekly_income.values('cash__subsidiary__name')
+                    .annotate(total=Sum('total'))
+                    .order_by('-total')
+                ),
+                'expenses_by_subsidiary': list(
+                    weekly_expenses.values('cash__subsidiary__name')
+                    .annotate(total=Sum('total'))
+                    .order_by('-total')
+                ),
+                'daily_completed_orders': list(
+                    completed_orders.extra(
+                        select={'day': 'DATE(register_date)'}
+                    ).values('day').annotate(count=Count('id')).order_by('day')
+                ),
+                'daily_income': list(
+                    weekly_income.extra(
+                        select={'day': 'DATE(transaction_date)'}
+                    ).values('day').annotate(total=Sum('total')).order_by('day')
+                ),
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'stats': stats,
+                'chart_data': chart_data,
+                'subsidiary': subsidiary_obj.name if subsidiary_obj else 'Todas las sucursales',
+                'week_name': f'Semana {week} de {year}'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al generar reporte semanal: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 def sales_report_test(request):
     """Vista de prueba para el reporte"""

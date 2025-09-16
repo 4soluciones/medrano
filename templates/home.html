@@ -889,11 +889,11 @@
         <!-- Información del Usuario en el Sidebar -->
         <div class="user-info-sidebar" data-tooltip="">
             <div class="user-avatar-sidebar">
-                {% if user.photo.url %}
-                    <img src="{{ user.subsidiary.photo.url }}" class="img-circle" alt="User Image" width="50" height="50">
-                {% else %}
+{#                {% if user.photo.url %}#}
+{#                    <img src="{{ user.subsidiary.photo.url }}" class="img-circle" alt="User Image" width="50" height="50">#}
+{#                {% else %}#}
                     <img src="{% static 'assets/img/logo_medrano.jpeg' %}" class="img-circle" alt="User Image" width="50" height="50">
-                {% endif %}
+{#                {% endif %}#}
             </div>
             <div class="user-details-sidebar">
                 <div class="user-name-sidebar">{{ user.first_name }} {{ user.last_name }}</div>
@@ -1009,7 +1009,7 @@
                                         <a href="{% url 'apps.accounting:cashflow_list' %}"
                                            class="nav-link text-cyan font-weight-light">
                                             <i class="nav-icon fas fa-chart-line"></i>
-                                            <p>Gastos y Flujo de Caja</p>
+                                            <p>Gastos</p>
                                         </a>
                                     </li>
                                 </ul>
@@ -1033,14 +1033,16 @@
                                         </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="" class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-chart-line"></i>
+                                        <a href="{% url 'apps.accounting:monthly_report' %}"
+                                           class="nav-link text-cyan font-weight-light">
+                                            <i class="nav-icon fas fa-calendar-alt"></i>
                                             <p>Reporte Mensual</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="" class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-chart-line"></i>
+                                        <a href="{% url 'apps.accounting:weekly_report' %}"
+                                           class="nav-link text-cyan font-weight-light">
+                                            <i class="nav-icon fas fa-calendar-week"></i>
                                             <p>Reporte Semanal</p>
                                         </a>
                                     </li>
@@ -1048,12 +1050,6 @@
                                         <a href="" class="nav-link text-cyan font-weight-light">
                                             <i class="nav-icon fas fa-chart-line"></i>
                                             <p>Reporte Facturas y Boletas</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="" class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-chart-line"></i>
-                                            <p>Reporte por Sede</p>
                                         </a>
                                     </li>
                                 </ul>
@@ -1115,7 +1111,7 @@
                                 <div class="card-body">
                                     <div class="row">
                                         {% if user.has_access_to_all or user.has_access_to_sales %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
+                                            <div class="col-lg-3 col-md-6 mb-3">
                                                 <a href="{% url 'apps.sales:order_list' %}"
                                                    class="text-decoration-none">
                                                     <div class="quick-access-card bg-gradient-primary text-white text-center p-4 rounded-lg shadow-lg h-100">
@@ -1134,7 +1130,7 @@
                                             </div>
                                         {% endif %}
                                         {% if user.has_access_to_all or user.has_access_to_finances %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
+                                            <div class="col-lg-3 col-md-6 mb-3">
                                                 <a href="{% url 'apps.accounting:cash_list' %}"
                                                    class="text-decoration-none">
                                                     <div class="quick-access-card bg-gradient-success text-white text-center p-4 rounded-lg shadow-lg h-100">
@@ -1153,7 +1149,7 @@
                                             </div>
                                         {% endif %}
                                         {% if user.has_access_to_all or user.has_access_to_hrm %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
+                                            <div class="col-lg-3 col-md-6 mb-3">
                                                 <a href="{% url 'apps.hrm:subsidiary' %}" class="text-decoration-none">
                                                     <div class="quick-access-card bg-gradient-warning text-white text-center p-4 rounded-lg shadow-lg h-100">
                                                         <div class="quick-access-icon mb-3">
@@ -1171,7 +1167,7 @@
                                             </div>
                                         {% endif %}
                                         {% if user.has_access_to_all or user.has_access_to_report %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
+                                            <div class="col-lg-3 col-md-6 mb-3">
                                                 <a href="{% url 'apps.accounting:sales_report' %}"
                                                    class="text-decoration-none">
                                                     <div class="quick-access-card bg-gradient-info text-white text-center p-4 rounded-lg shadow-lg h-100">
@@ -1379,54 +1375,6 @@
                             </div>
                         </div>
 
-                        <!-- Actividades Recientes y Notificaciones -->
-                        <div class="row mb-4">
-                            <!-- Actividades Recientes -->
-                            <div class="col-lg-8 mb-3">
-                                <div class="card shadow">
-                                    <div class="card-header bg-gradient-info text-white">
-                                        <h3 class="card-title mb-0">
-                                            <i class="fas fa-history mr-2"></i>
-                                            Actividades Recientes
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="timeline" id="recent-activities">
-                                            <!-- Las actividades se cargarán dinámicamente -->
-                                            <div class="text-center py-4">
-                                                <div class="spinner-border text-primary" role="status">
-                                                    <span class="sr-only">Cargando...</span>
-                                                </div>
-                                                <p class="mt-2 text-muted">Cargando actividades...</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Notificaciones y Alertas -->
-                            <div class="col-lg-4 mb-3">
-                                <div class="card shadow">
-                                    <div class="card-header bg-gradient-warning text-white">
-                                        <h3 class="card-title mb-0">
-                                            <i class="fas fa-bell mr-2"></i>
-                                            Notificaciones
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="notifications-list">
-                                            <!-- Las notificaciones se cargarán dinámicamente -->
-                                            <div class="text-center py-3">
-                                                <div class="spinner-border text-warning" role="status">
-                                                    <span class="sr-only">Cargando...</span>
-                                                </div>
-                                                <p class="mt-2 text-muted">Cargando notificaciones...</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     {% else %}
                         <!-- Contenido profesional para usuarios sin permisos de reportes -->
                         <div class="row mb-4">
@@ -1498,122 +1446,6 @@
                         </div>
                     {% endif %}
 
-                    <!-- Tabla de Órdenes Recientes -->
-                    {% if user.has_access_to_all %}
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-table mr-2"></i>
-                                            Órdenes Recientes
-                                        </h3>
-                                        <div class="card-tools">
-                                            <a href="{% url 'apps.sales:order_list' %}" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-external-link-alt mr-1"></i>
-                                                Ver Todas
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover" id="recentOrdersTable">
-                                                <thead class="thead-light">
-                                                <tr>
-                                                    <th class="text-white">Código</th>
-                                                    <th class="text-white">Cliente</th>
-                                                    <th class="text-white">Tipo</th>
-                                                    <th class="text-white">Fecha</th>
-                                                    <th class="text-white">Total</th>
-                                                    <th class="text-white">Estado</th>
-                                                    <th class="text-white">Acciones</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody id="recentOrdersTableBody">
-                                                <!-- Los datos se cargarán dinámicamente -->
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% else %}
-                        <!-- Contenido profesional para usuarios sin permisos de órdenes -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card border-0 shadow-lg restricted-content-card">
-                                    <div class="card-body text-center py-5">
-                                        <div class="row align-items-center">
-                                            <div class="col-lg-6">
-                                                <div class="mb-4 logo-container">
-                                                    <img src="{% static 'assets/img/logo_medrano.jpeg' %}"
-                                                         alt="Logo Medrano"
-                                                         class="img-fluid floating-animation"
-                                                         style="max-height: 80px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
-                                                </div>
-                                                <h3 class="text-dark font-weight-bold mb-3">
-                                                    <i class="fas fa-shield-alt text-primary mr-2"></i>
-                                                    Acceso Restringido
-                                                </h3>
-                                                <p class="text-muted lead mb-4">
-                                                    Las órdenes y ventas están disponibles solo para administradores del
-                                                    sistema.
-                                                </p>
-                                                <div class="d-flex justify-content-center">
-                                                    <div class="badge badge-primary badge-lg px-4 py-2">
-                                                        <i class="fas fa-user-shield mr-2"></i>
-                                                        Requiere Permisos de Administrador
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <div class="card border-0 shadow-sm h-100 module-card">
-                                                            <div class="card-body text-center">
-                                                                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
-                                                                <h6 class="font-weight-bold text-dark">Reportes</h6>
-                                                                <small class="text-muted">Análisis y
-                                                                    estadísticas</small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <div class="card border-0 shadow-sm h-100 module-card">
-                                                            <div class="card-body text-center">
-                                                                <i class="fas fa-users fa-2x text-warning mb-2"></i>
-                                                                <h6 class="font-weight-bold text-dark">RRHH</h6>
-                                                                <small class="text-muted">Gestión de personal</small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <div class="card border-0 shadow-sm h-100 module-card">
-                                                            <div class="card-body text-center">
-                                                                <i class="fas fa-calculator fa-2x text-info mb-2"></i>
-                                                                <h6 class="font-weight-bold text-dark">Finanzas</h6>
-                                                                <small class="text-muted">Control financiero</small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <div class="card border-0 shadow-sm h-100 module-card">
-                                                            <div class="card-body text-center">
-                                                                <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
-                                                                <h6 class="font-weight-bold text-dark">Ventas</h6>
-                                                                <small class="text-muted">Gestión comercial</small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             {% endblock body %}
         </section>
@@ -1732,16 +1564,10 @@
 
         function loadDashboardData() {
             // Solo cargar estadísticas si tiene permisos de reportes
+            {% comment %} Verificar permisos de usuario {% endcomment %}
             {% if user.has_access_to_all or user.has_access_to_report %}
-                loadDashboardStats();
-                loadCharts();
-                loadRecentActivities();
-                loadNotifications();
-            {% endif %}
-
-            // Solo cargar órdenes recientes si tiene acceso completo
-            {% if user.has_access_to_all %}
-                loadRecentOrders();
+            loadDashboardStats();
+            loadCharts();
             {% endif %}
         }
 
@@ -1827,269 +1653,8 @@
             $('#sidebar-pending').text(pendingOrders);
         }
 
-        function loadRecentActivities() {
-            // Simular actividades recientes (en una implementación real vendrían del backend)
-            const activities = [
-                {
-                    type: 'success',
-                    icon: 'fas fa-check-circle',
-                    title: 'Orden completada',
-                    description: 'Orden #001-001 ha sido completada exitosamente',
-                    time: 'Hace 5 minutos'
-                },
-                {
-                    type: 'info',
-                    icon: 'fas fa-plus-circle',
-                    title: 'Nueva orden creada',
-                    description: 'Se creó una nueva orden de servicio para Cliente ABC',
-                    time: 'Hace 15 minutos'
-                },
-                {
-                    type: 'warning',
-                    icon: 'fas fa-exclamation-triangle',
-                    title: 'Orden pendiente',
-                    description: 'Orden #001-002 requiere revisión de entrega',
-                    time: 'Hace 30 minutos'
-                },
-                {
-                    type: 'success',
-                    icon: 'fas fa-user-plus',
-                    title: 'Nuevo cliente',
-                    description: 'Cliente XYZ se registró en el sistema',
-                    time: 'Hace 1 hora'
-                },
-                {
-                    type: 'info',
-                    icon: 'fas fa-edit',
-                    title: 'Orden actualizada',
-                    description: 'Orden #001-003 fue modificada por el usuario',
-                    time: 'Hace 2 horas'
-                }
-            ];
 
-            const timeline = $('#recent-activities');
-            timeline.empty();
 
-            activities.forEach(activity => {
-                const activityHtml = `
-                    <div class="timeline-item ${activity.type}">
-                        <div class="timeline-content">
-                            <div class="d-flex align-items-center">
-                                <i class="${activity.icon} mr-2 text-${activity.type}"></i>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">${activity.title}</h6>
-                                    <p class="mb-1 text-muted">${activity.description}</p>
-                                    <small class="text-muted">${activity.time}</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                timeline.append(activityHtml);
-            });
-        }
-
-        function loadNotifications() {
-            // Simular notificaciones (en una implementación real vendrían del backend)
-            const notifications = [
-                {
-                    type: 'info',
-                    icon: 'fas fa-info-circle',
-                    title: 'Sistema actualizado',
-                    message: 'El sistema ha sido actualizado a la versión 1.5',
-                    time: 'Hace 1 hora',
-                    unread: true
-                },
-                {
-                    type: 'warning',
-                    icon: 'fas fa-exclamation-triangle',
-                    title: 'Mantenimiento programado',
-                    message: 'Se programó mantenimiento para el domingo 2:00 AM',
-                    time: 'Hace 3 horas',
-                    unread: true
-                },
-                {
-                    type: 'success',
-                    icon: 'fas fa-check-circle',
-                    title: 'Backup completado',
-                    message: 'El respaldo de datos se completó exitosamente',
-                    time: 'Ayer',
-                    unread: false
-                },
-                {
-                    type: 'info',
-                    icon: 'fas fa-chart-line',
-                    title: 'Reporte mensual',
-                    message: 'El reporte de ventas del mes está disponible',
-                    time: 'Ayer',
-                    unread: false
-                }
-            ];
-
-            const notificationsList = $('#notifications-list');
-            notificationsList.empty();
-
-            notifications.forEach(notification => {
-                const notificationHtml = `
-                    <div class="notification-item ${notification.unread ? 'unread' : ''}">
-                        <div class="d-flex align-items-start">
-                            <div class="notification-icon ${notification.type}">
-                                <i class="${notification.icon}"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${notification.title}</h6>
-                                <p class="mb-1 text-muted small">${notification.message}</p>
-                                <small class="text-muted">${notification.time}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                notificationsList.append(notificationHtml);
-            });
-        }
-
-        function loadRecentOrders() {
-            // Mostrar indicador de carga en la tabla
-            $('#recentOrdersTableBody').html(`
-                <tr>
-                    <td colspan="7" class="text-center">
-                        <div class="dashboard-loading">
-                            <div class="loading-spinner"></div>
-                        </div>
-                    </td>
-                </tr>
-            `);
-
-            $.ajax({
-                url: '{% url "apps.sales:recent_orders" %}',
-                method: 'GET',
-                success: function (response) {
-                    if (response.success) {
-                        renderRecentOrdersTable(response.orders);
-                    } else {
-                        showError('Error al cargar órdenes recientes: ' + response.message);
-                    }
-                },
-                error: function () {
-                    showError('Error de conexión al cargar órdenes recientes');
-                    $('#recentOrdersTableBody').html(`
-                        <tr>
-                            <td colspan="7" class="text-center text-danger">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                <br>Error al cargar datos
-                            </td>
-                        </tr>
-                    `);
-                }
-            });
-        }
-
-        function renderRecentOrdersTable(orders) {
-            const tbody = $('#recentOrdersTableBody');
-            tbody.empty();
-
-            if (orders.length === 0) {
-                tbody.append(`
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-2x mb-2"></i>
-                            <br>No hay órdenes recientes
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            orders.forEach(order => {
-                const statusClass = getStatusClass(order.status);
-                const statusText = getStatusText(order.status);
-                const typeText = getTypeText(order.type);
-
-                tbody.append(`
-                    <tr>
-                        <td>
-                            <span class="font-weight-bold text-primary">${order.code}</span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center mr-2">
-                                    <i class="fas fa-user text-muted"></i>
-                                </div>
-                                <span class="font-weight-medium">${order.client_name}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge badge-outline-primary">${typeText}</span>
-                        </td>
-                        <td>
-                            <span class="text-muted">${formatDate(order.register_date)}</span>
-                        </td>
-                        <td>
-                            <span class="font-weight-bold text-success">S/ ${parseFloat(order.total).toFixed(2)}</span>
-                        </td>
-                        <td>
-                            <span class="badge ${statusClass}">${statusText}</span>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary btn-sm" onclick="viewOrderDetail(${order.id})" title="Ver Detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-outline-warning btn-sm" onclick="editOrder(${order.id})" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `);
-            });
-        }
-
-        function getStatusClass(status) {
-            switch (status) {
-                case 'P':
-                    return 'badge-warning';
-                case 'C':
-                    return 'badge-success';
-                case 'A':
-                    return 'badge-danger';
-                default:
-                    return 'badge-secondary';
-            }
-        }
-
-        function getStatusText(status) {
-            switch (status) {
-                case 'P':
-                    return 'PENDIENTE';
-                case 'C':
-                    return 'COMPLETADO';
-                case 'A':
-                    return 'ANULADO';
-                default:
-                    return 'DESCONOCIDO';
-            }
-        }
-
-        function getTypeText(type) {
-            switch (type) {
-                case 'O':
-                    return 'ORDEN';
-                case 'C':
-                    return 'COTIZACIÓN';
-                default:
-                    return 'DESCONOCIDO';
-            }
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-        }
 
         function loadCharts() {
             loadMonthlyOrdersChart();
@@ -2283,15 +1848,6 @@
             ctx2d.fillText(message, canvas.width / 2, canvas.height / 2);
         }
 
-        function viewOrderDetail(orderId) {
-            // Implementar vista de detalle de orden
-            window.open(`{% url 'apps.sales:order_list' %}?order_id=${orderId}`, '_blank');
-        }
-
-        function editOrder(orderId) {
-            // Implementar edición de orden
-            window.open(`{% url 'apps.sales:order_list' %}?edit_order=${orderId}`, '_blank');
-        }
 
         // Función para mostrar errores
         function showError(message) {
