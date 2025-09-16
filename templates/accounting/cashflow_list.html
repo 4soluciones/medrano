@@ -775,7 +775,7 @@ $(document).ready(function() {
 function openCreateCashflowModal() {
     // Limpiar formulario
     $('#cashflow-form')[0].reset();
-    $('#transaction_date').val(new Date().toISOString().split('T')[0]);
+    {#$('#transaction_date').val(new Date().toISOString().split('T')[0]);#}
     $('#document_type').val('O'); // Resetear a "Otro" por defecto
     $('#transaction_type').val('S'); // Establecer "Salida" por defecto
     $('#user_id').val('{{ user.first_name }}'); // Establecer usuario logueado

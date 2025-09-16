@@ -26,6 +26,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields.files import ImageFieldFile
 from django.template import loader
 from datetime import datetime, date, timedelta
+from django.utils import timezone
 from django.db import DatabaseError, IntegrityError
 from django.core import serializers
 from django.db.models import Min, Sum, Max, Q, Prefetch, Subquery, OuterRef, Value, IntegerField, Case, ExpressionWrapper, DecimalField
@@ -303,7 +304,8 @@ def cashflow_list(request):
         user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
         subsidiary_set = Subsidiary.objects.all()
         # Fecha actual para los filtros
-        date_now = datetime.now().strftime('%Y-%m-%d')
+        peru_tz = pytz.timezone("America/Lima")
+        date_now = datetime.now(peru_tz).strftime('%Y-%m-%d')
         
         # Obtener la sucursal del usuario actual
         user_subsidiary = None

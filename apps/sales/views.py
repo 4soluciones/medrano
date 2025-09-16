@@ -850,7 +850,7 @@ def order_list(request):
     """Vista principal del listado de órdenes"""
     if request.method == 'GET':
         subsidiary_set = Subsidiary.objects.all()
-        user_set = CustomUser.objects.filter(is_active=True, is_staff=False)
+        user_set = CustomUser.objects.filter(is_active=True, is_staff=False, has_access_system=True).order_by('id')
         client_set = Person.objects.filter(type='C')
         # Usar zona horaria de Perú (GMT-5)
         peru_tz = pytz.timezone('America/Lima')
