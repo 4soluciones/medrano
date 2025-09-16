@@ -23,6 +23,7 @@ class Subsidiary(models.Model):
     photo = models.ImageField(upload_to='subsidiary/', default='subsidiary/employee0.jpg', blank=True)
     photo_thumbnail = ImageSpecField([Adjust(contrast=1.2, sharpness=1.1), ResizeToFill(100, 100)], source='photo',
                                      format='JPEG', options={'quality': 90})
+    text_description = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return self.name

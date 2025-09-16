@@ -260,6 +260,19 @@
                                       placeholder="Ingrese observaciones adicionales si es necesario">{{ subsidiary_obj.observation|default:'' }}</textarea>
                             <small class="form-text text-muted">Máximo 500 caracteres</small>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label font-weight-bold">
+                                <i class="fas fa-align-left mr-1"></i>
+                                Descripción Textual
+                            </label>
+                            <textarea class="form-control form-control-sm"
+                                      id="id-text-description" 
+                                      maxlength="500"
+                                      name="text-description"
+                                      rows="3"
+                                      placeholder="Ingrese una descripción textual de la sucursal">{{ subsidiary_obj.text_description|default:'' }}</textarea>
+                            <small class="form-text text-muted">Máximo 500 caracteres</small>
+                        </div>
                     </div>
                 </div>
             </div>

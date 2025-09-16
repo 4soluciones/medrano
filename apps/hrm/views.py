@@ -81,6 +81,9 @@ def create_subsidiary(request):
                     'message': 'Los campos Nombre, RUC y Razón Social son obligatorios'
                 }, status=HTTPStatus.BAD_REQUEST)
             
+            # Obtener descripción textual
+            _text_description = request.POST.get('text-description', '')
+            
             # Crear objeto Subsidiary con los campos del modelo
             subsidiary_obj = Subsidiary(
                 name=_name,
@@ -93,6 +96,7 @@ def create_subsidiary(request):
                 representative_dni=_representative_dni,
                 representative_name=_representative_name,
                 observation=_observation,
+                text_description=_text_description,
             )
             
             # Manejar la foto si se subió una
@@ -145,6 +149,7 @@ def update_subsidiary(request):
         _representative_dni = request.POST.get('representative-dni', '')
         _representative_name = request.POST.get('representative-name', '')
         _observation_input = request.POST.get('observation-input', '')
+        _text_description = request.POST.get('text-description', '')
         if subsidiary_obj is not None:
             # Validar campos requeridos
             if not _name or not _ruc or not _business:
@@ -164,6 +169,7 @@ def update_subsidiary(request):
             subsidiary_obj.representative_dni = _representative_dni
             subsidiary_obj.representative_name = _representative_name
             subsidiary_obj.observation = _observation_input  # Usar el campo correcto del modelo
+            subsidiary_obj.text_description = _text_description
             
             # Manejar la foto si se subió una nueva
             if 'photo' in request.FILES:
