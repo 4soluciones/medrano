@@ -549,7 +549,7 @@ def generate_ticket_pdf(order_id):
             client_data.append([
                 Paragraph("HORA", styles['Helvetica_Left_8']),
                 Paragraph(":", styles['Helvetica_Left_8']),
-                Paragraph(date_hour.strftime('%I:%M %p'), styles['Helvetica_Left_8'])
+                Paragraph(order.creation_date.strftime('%I:%M %p'), styles['Helvetica_Left_8'])
             ])
 
         # Fila de fecha de entrega

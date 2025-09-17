@@ -986,6 +986,7 @@ def weekly_report(request):
                 'message': f'Error al generar reporte semanal: {str(e)}'
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
+
 def sales_report_test(request):
     """Vista de prueba para el reporte"""
     if request.method == 'GET':
