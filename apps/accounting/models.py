@@ -35,7 +35,7 @@ class CashFlow(models.Model):
     TYPE_EXPENSE = (('V', 'GASTOS VARIABLES'), ('F', 'GASTOS FIJOS'), ('P', 'GASTOS PERSONALES'), ('O', 'OTROS'))
     TYPE_CHOICES_PAYMENT = (('E', 'Efectivo'), ('Y', 'Yape'), ('D', 'Deposito y/o Transferencia'))
     TYPE_ENTRY_ORDER_CHOICES = (('A', 'ADELANTO'), ('T', 'PAGO TOTAL'),)
-    transaction_date = models.DateTimeField(null=True, blank=True)
+    transaction_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
     description = models.CharField('Descripcion', max_length=100, null=True, blank=True)
     serial = models.CharField('Serie', max_length=5, null=True, blank=True)

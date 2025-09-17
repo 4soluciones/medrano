@@ -1146,7 +1146,7 @@ def order_save(request):
                                 # Crear entrada en CashFlow para cada adelanto
                                 peru_tz = pytz_timezone("America/Lima")
                                 CashFlow.objects.create(
-                                    transaction_date=timezone.now().astimezone(peru_tz),
+                                    transaction_date=register_date,
                                     # created_at=datetime.now(),
                                     description=description,
                                     serial=order_obj.serial,
@@ -1433,8 +1433,8 @@ def order_update(request):
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
                                 cashflow_entry = CashFlow.objects.create(
-                                    transaction_date=datetime.now(),
-                                    created_at=datetime.now(),
+                                    transaction_date=request.POST.get('register_date'),
+                                    # created_at=datetime.now(),
                                     description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
                                     serial=order_obj.serial,
                                     n_receipt=order_obj.correlative,
@@ -2299,8 +2299,8 @@ def complete_order_with_payment(request):
                     
                     # Crear entrada en cashflow
                     cashflow_entry = CashFlow.objects.create(
-                        transaction_date=payment_datetime,
-                        created_at=datetime.now(),
+                        transaction_date=payment_date,
+                        # created_at=datetime.now(),
                         description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name} ({way_to_pay})",
                         serial=order.subsidiary.serial,
                         n_receipt=order.correlative,
@@ -2398,7 +2398,7 @@ def complete_order_with_payment(request):
                 # Crear entrada en cashflow
                 cashflow_entry = CashFlow.objects.create(
                     transaction_date=payment_datetime,
-                    created_at=datetime.now(),
+                    # created_at=datetime.now(),
                     description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name}",
                     serial=order.subsidiary.serial,
                     n_receipt=order.correlative,
@@ -2503,8 +2503,8 @@ def cancel_order_with_reason(request):
                 
                 # Crear salida en cashflow por la devolución
                 cashflow_refund = CashFlow.objects.create(
-                    transaction_date=datetime.now(),
-                    created_at=datetime.now(),
+                    transaction_date=date.today(),
+                    # created_at=datetime.now(),
                     description=f"Devolución de adelanto - Orden anulada {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}",
                     serial=order.subsidiary.serial,
                     n_receipt=order.correlative,
@@ -2797,8 +2797,8 @@ def convert_order_to_service(request):
             order_obj.serial = subsidiary_obj.serial
             order_obj.correlative = correlative
             order_obj.subsidiary = subsidiary_obj
-            order_obj.register_date = datetime.strptime(register_date, '%Y-%m-%d').date()
-            order_obj.delivery_date = datetime.strptime(delivery_date, '%Y-%m-%d').date() if delivery_date else None
+            order_obj.register_date = register_date
+            order_obj.delivery_date = delivery_date
             # Calcular el total de adelantos
             total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
             order_obj.cash_advance = Decimal(str(total_advance))
@@ -2861,8 +2861,8 @@ def convert_order_to_service(request):
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
                                 cashflow_entry = CashFlow.objects.create(
-                                    transaction_date=datetime.now(),
-                                    created_at=datetime.now(),
+                                    transaction_date=register_date,
+                                    # created_at=datetime.now(),
                                     description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
                                     serial=order_obj.serial,
                                     n_receipt=order_obj.correlative,
