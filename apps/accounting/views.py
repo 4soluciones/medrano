@@ -1054,13 +1054,13 @@ def sales_report(request):
                 # Filtrar por sucursal del usuario logueado
                 subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
                 cashflows = CashFlow.objects.filter(
-                    transaction_date__date=report_date,
+                    transaction_date=report_date,
                     cash__subsidiary_id=subsidiary_id
                 )
             else:
                 # Si no hay sucursal específica, mostrar todos los cashflows del día
                 cashflows = CashFlow.objects.filter(
-                    transaction_date__date=report_date
+                    transaction_date=report_date
                 )
             
             cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
@@ -1129,7 +1129,7 @@ def sales_report(request):
                 order_cashflows_day = cashflows.filter(
                     order=order,
                     type='E',  # Solo entradas
-                    transaction_date__date=report_date  # Solo del día del reporte
+                    transaction_date=report_date  # Solo del día del reporte
                 ).order_by('id')
                 
                 if order_cashflows_day.exists():
