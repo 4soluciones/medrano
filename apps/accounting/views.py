@@ -1155,7 +1155,7 @@ def sales_report(request):
                 type='E',  # Solo entradas
                 order_type_entry='T'  # Solo pagos totales (cancelaciones)
             ).exclude(
-                order__register_date=report_date  # Excluir órdenes del mismo día
+                order__register_date__gte=report_date  # Excluir órdenes del mismo día o posteriores
             )
             
             # Preparar datos de cashflows sin order_id (egresos)

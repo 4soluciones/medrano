@@ -1114,6 +1114,8 @@ def order_save(request):
             order_obj.calculate_totals()
 
             from datetime import datetime
+            from pytz import timezone as pytz_timezone
+            from django.utils import timezone
 
             # Procesar adelantos múltiples en CashFlow (solo si NO es cotización)
             if advance_payments and order_obj.type != 'C':
@@ -1142,9 +1144,10 @@ def order_save(request):
                             
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
+                                peru_tz = pytz_timezone("America/Lima")
                                 CashFlow.objects.create(
-                                    transaction_date=datetime.now(),
-                                    created_at=datetime.now(),
+                                    transaction_date=timezone.now().astimezone(peru_tz),
+                                    # created_at=datetime.now(),
                                     description=description,
                                     serial=order_obj.serial,
                                     n_receipt=order_obj.correlative,
