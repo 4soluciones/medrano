@@ -1115,7 +1115,7 @@ def sales_report(request):
             orders_of_day = Order.objects.filter(
                 register_date=report_date,
                 status__in=['P', 'C']  # Pendientes y completadas
-            )
+            ).order_by('id')
             
             if subsidiary_id and subsidiary_id != '0':
                 orders_of_day = orders_of_day.filter(subsidiary_id=subsidiary_id)
@@ -1198,7 +1198,7 @@ def sales_report(request):
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
                 'advances_grouped': advances_grouped,
                 'orders_of_day': orders_of_day,  # Todas las órdenes del día
-                'payments_cashflows': payments_cashflows.order_by('id'),  # Solo cancelaciones
+                'payments_cashflows': payments_cashflows.order_by('order_id'),  # Solo cancelaciones
                 'expenses_cashflows': expenses_cashflows.order_by('id'),
                 'total_advances': total_advances,  # Total ingresos del día
                 'total_payments': total_payments,  # Total cancelaciones
