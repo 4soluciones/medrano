@@ -985,7 +985,7 @@ function loadCashflows() {
 function updateExpensesCount() {
     const expensesCount = $('#cashflows-grid .table tbody tr').length;
     
-    if (expensesCount === 0) {
+    if (expensesCount === 1) {
         $('#expenses-count-text').text('No hay gastos');
     } else {
         $('#expenses-count-text').text(`${expensesCount} gasto${expensesCount !== 1 ? 's' : ''} encontrado${expensesCount !== 1 ? 's' : ''}`);

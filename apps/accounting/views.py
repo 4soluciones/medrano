@@ -348,9 +348,9 @@ def cashflow_list(request):
 
             # Filtros de fecha
             if date_from:
-                cashflows = cashflows.filter(transaction_date__date__gte=date_from)
+                cashflows = cashflows.filter(transaction_date__gte=date_from)
             if date_to:
-                cashflows = cashflows.filter(transaction_date__date__lte=date_to)
+                cashflows = cashflows.filter(transaction_date__lte=date_to)
 
             cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by('id')
 
