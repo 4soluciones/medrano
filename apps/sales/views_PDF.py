@@ -100,14 +100,14 @@ def generate_ticket_pdf(order_id):
         # Configurar el documento con el ancho especificado para tickets
         details = order.orderdetail_set.all()
         _counter = details.count()
-        _wt = 2.94 * inch - 4 * 0.05 * inch
+        _wt = 2.83 * inch - 4 * 0.05 * inch
 
         # Calcular altura adicional para las direcciones de sucursales
         subsidiaries_with_address = all_subsidiaries.filter(address__isnull=False).exclude(address='').count()
         additional_height = subsidiaries_with_address * 0.2 * inch  # Espacio adicional por sucursal
 
         # pz_thermal = (3.14961 * inch, (11.6 * inch + (_counter * 0.13 * inch)))
-        pz_thermal = (2.94 * inch, (11.6 * inch + (_counter * 0.13 * inch) + additional_height))
+        pz_thermal = (2.83 * inch, (11.6 * inch + (_counter * 0.13 * inch) + additional_height))
 
         ml = 0.05 * inch
         mr = 0.05 * inch
@@ -427,7 +427,7 @@ def generate_ticket_pdf(order_id):
             location_icon,
             Paragraph(subsidiary_address, styles['TicketHeaderAddress'])
         ])
-        _wt2 = 2.64 * inch - 4 * 0.05 * inch
+        _wt2 = 2.60 * inch - 4 * 0.05 * inch
         location_table = Table(location_data, colWidths=[0.1 * inch, _wt2 - 0.1 * inch])
         location_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'CENTER'),
@@ -634,7 +634,7 @@ def generate_ticket_pdf(order_id):
             Paragraph("P.U.", styles['Helvetica_Bold_Right_6']),
             Paragraph("Total", styles['Helvetica_Bold_Right_6'])
         ]]
-        _wt2 = 2.90 * inch - 4 * 0.05 * inch
+        _wt2 = 2.83 * inch - 4 * 0.05 * inch
         table_title = Table(table_data_title,
                             colWidths=[_wt2 * 9 / 100, _wt2 * 51 / 100, _wt2 * 8 / 100, _wt2 * 16 / 100,
                                        _wt2 * 16 / 100])
@@ -812,7 +812,7 @@ def download_ticket_pdf(request, order_id):
                 order_type = 'Order'
             else:
                 order_type = 'Cotizacion'
-            # response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
+            response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)
