@@ -686,11 +686,33 @@
 
     /* ===== ESTILOS PARA DIFERENCIAR ADELANTOS VS PAGOS TOTALES ===== */
     
+    /* Aumentar grosor de bordes de todas las tablas */
+    .table-bordered {
+        border: 2px solid #adb5bd !important;
+    }
+    
+    .table-bordered th,
+    .table-bordered td {
+        border: 2px solid #adb5bd !important;
+    }
+    
+    .table-bordered thead th {
+        border-bottom-width: 2px !important;
+    }
+    
+    .table-bordered tbody + tbody {
+        border-top-width: 2px !important;
+    }
+    
     /* Fila de pago completo - fondo azul claro */
     .payment-full-row {
         background-color: #e3f2fd !important; /* Azul muy claro */
         {#border-left: 4px solid #2196f3 !important; /* Borde azul */#}
         position: relative;
+    }
+    
+    .payment-full-row td {
+        padding: 0.3rem 0.4rem !important;
     }
     
     .payment-full-row:hover {
