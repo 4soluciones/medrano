@@ -297,7 +297,6 @@ def cash_update(request):
 def cashflow_list(request):
     """Vista principal del listado de gastos"""
     if request.method == 'GET':
-        cash_accounts = Cash.objects.all()
         document_types = CashFlow.DOCUMENT_TYPE_ATTACHED_CHOICES
         transaction_types = [('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida')]  # Apertura, cierre, entrada y salida
         expense_types = CashFlow.TYPE_EXPENSE
@@ -310,7 +309,7 @@ def cashflow_list(request):
         # Obtener la sucursal del usuario actual
         user_subsidiary = None
         first_cash_account = None
-        
+
         if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
             user_subsidiary = request.user.subsidiary
             # Buscar la primera cuenta de tipo 'E' (Entrada) de la sucursal del usuario
@@ -318,7 +317,9 @@ def cashflow_list(request):
                 subsidiary=user_subsidiary,
                 account_type='E'
             ).first()
-        
+
+        cash_accounts = Cash.objects.filter(subsidiary=user_subsidiary)
+
         # Si no hay cuenta de tipo 'E', buscar cualquier cuenta de la sucursal
         if not first_cash_account and user_subsidiary:
             first_cash_account = Cash.objects.filter(subsidiary=user_subsidiary).first()
