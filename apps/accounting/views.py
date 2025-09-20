@@ -1436,11 +1436,11 @@ def export_sales_report_excel(request):
                         elif cashflow.way_to_pay == 'D':
                             payment_type = "DEPÓSITO"
                         ws.cell(row=row, column=6, value=payment_type).border = border
-                        ws.cell(row=row, column=7, value=float(cashflow.total)).border = border
+                        ws.cell(row=row, column=7, value=Decimal(cashflow.total)).border = border
                         
                         if i == 0:  # Solo en la primera fila
-                            ws.cell(row=row, column=8, value=decimal.Decimal(data['saldo'])).border = border
-                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                            ws.cell(row=row, column=8, value=Decimal(data['saldo'])).border = border
+                            ws.cell(row=row, column=9, value=Decimal(data['order'].total)).border = border
                         else:
                             ws.cell(row=row, column=8, value="").border = border
                             ws.cell(row=row, column=9, value="").border = border
@@ -1481,7 +1481,7 @@ def export_sales_report_excel(request):
                         
                         if i == 0:
                             ws.cell(row=row, column=8, value="PAGADO").border = border
-                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                            ws.cell(row=row, column=9, value=Decimal(data['order'].total)).border = border
                         else:
                             ws.cell(row=row, column=8, value="").border = border
                             ws.cell(row=row, column=9, value="").border = border
@@ -1853,8 +1853,8 @@ def export_sales_report_pdf(request):
                                 cashflow.user.first_name or cashflow.user.username or '-',
                                 payment_type,
                                 f"S/. {decimal.Decimal(cashflow.total):.2f}",
-                                f"S/. {decimal.Decimal(data['saldo']):.2f}",
-                                f"S/. {decimal.Decimal(data['order'].total):.2f}"
+                                f"S/. {Decimal(data['saldo']):.2f}",
+                                f"S/. {Decimal(data['order'].total):.2f}"
                             ])
                         else:
                             # Filas adicionales sin datos de orden
@@ -1905,7 +1905,7 @@ def export_sales_report_pdf(request):
                                 payment_type,
                                 f"S/. {decimal.Decimal(cashflow.total):.2f}",
                                 "PAGADO",
-                                f"S/. {decimal.Decimal(data['order'].total):.2f}"
+                                f"S/. {Decimal(data['order'].total):.2f}"
                             ])
                         else:
                             payment_type = ""
@@ -2353,6 +2353,7 @@ def export_sales_report_by_user_excel(request):
             import openpyxl
             from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
             from openpyxl.utils import get_column_letter
+            from decimal import Decimal
             
             # Obtener datos del reporte
             report_date = request.POST.get('report_date')
@@ -2533,11 +2534,11 @@ def export_sales_report_by_user_excel(request):
                         elif cashflow.way_to_pay == 'D':
                             payment_type = "DEPÓSITO"
                         ws.cell(row=row, column=6, value=payment_type).border = border
-                        ws.cell(row=row, column=7, value=float(cashflow.total)).border = border
+                        ws.cell(row=row, column=7, value=Decimal(cashflow.total)).border = border
                         
                         if i == 0:  # Solo en la primera fila
-                            ws.cell(row=row, column=8, value=decimal.Decimal(data['saldo'])).border = border
-                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                            ws.cell(row=row, column=8, value=Decimal(data['saldo'])).border = border
+                            ws.cell(row=row, column=9, value=Decimal(data['order'].total)).border = border
                         else:
                             ws.cell(row=row, column=8, value="").border = border
                             ws.cell(row=row, column=9, value="").border = border
@@ -2578,7 +2579,7 @@ def export_sales_report_by_user_excel(request):
                         
                         if i == 0:
                             ws.cell(row=row, column=8, value="PAGADO").border = border
-                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                            ws.cell(row=row, column=9, value=Decimal(data['order'].total)).border = border
                         else:
                             ws.cell(row=row, column=8, value="").border = border
                             ws.cell(row=row, column=9, value="").border = border
@@ -2783,14 +2784,14 @@ def export_sales_report_by_user_pdf(request):
                                 data['order'].observation or "ORDEN DE SERVICIO",
                                 cashflow.user.first_name or cashflow.user.username or '-',
                                 'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                f"S/ {float(cashflow.total):.2f}",
-                                f"S/ {float(data['saldo']):.2f}",
-                                f"S/ {float(data['order'].total):.2f}"
+                                f"S/ {Decimal(cashflow.total):.2f}",
+                                f"S/ {Decimal(data['saldo']):.2f}",
+                                f"S/ {Decimal(data['order'].total):.2f}"
                             ]
                         else:
                             row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
                                       'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                      f"S/ {float(cashflow.total):.2f}", '', '']
+                                      f"S/ {Decimal(cashflow.total):.2f}", '', '']
                         income_data.append(row_data)
                 
                 # Pagos completos
@@ -2805,20 +2806,20 @@ def export_sales_report_by_user_pdf(request):
                                 data['order'].observation or "ORDEN DE SERVICIO",
                                 cashflow.user.first_name or cashflow.user.username or '-',
                                 'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                f"S/ {float(cashflow.total):.2f}",
+                                f"S/ {Decimal(cashflow.total):.2f}",
                                 "PAGADO",
                                 f"S/ {data['order'].total}"
                             ]
                         else:
                             row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
                                       'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                      f"S/ {float(cashflow.total):.2f}", '', '']
+                                      f"S/ {Decimal(cashflow.total):.2f}", '', '']
                         income_data.append(row_data)
             
             # Agregar totales
-            income_data.append(['', '', '', '', '', '', '', 'YAPE:', f"S/ {float(advances_yape):.2f}"])
-            income_data.append(['', '', '', '', '', '', '', 'EFECTIVO:', f"S/ {float(advances_efectivo):.2f}"])
-            income_data.append(['', '', '', '', '', '', '', 'TOTAL INGRESOS:', f"S/ {float(total_advances):.2f}"])
+            income_data.append(['', '', '', '', '', '', '', 'YAPE:', f"S/ {Decimal(advances_yape):.2f}"])
+            income_data.append(['', '', '', '', '', '', '', 'EFECTIVO:', f"S/ {Decimal(advances_efectivo):.2f}"])
+            income_data.append(['', '', '', '', '', '', '', 'TOTAL INGRESOS:', f"S/ {Decimal(total_advances):.2f}"])
             
             # Crear tabla
             income_table = Table(income_data)
@@ -2835,6 +2836,128 @@ def export_sales_report_by_user_pdf(request):
             ]))
             
             story.append(income_table)
+            story.append(Spacer(1, 20))
+            
+            # Sección de SALDOS (solo si hay datos)
+            if payments_cashflows.exists():
+                story.append(Paragraph("SALDOS", styles['Heading2']))
+                story.append(Spacer(1, 12))
+                
+                # Crear tabla de saldos
+                payments_data = [['N° COMPROBANTE', 'FECHA', 'DESCRIPCIÓN', 'USUARIO', 'TIPO PAGO', 'S/TOTAL']]
+                
+                for cashflow in payments_cashflows:
+                    payments_data.append([
+                        f"{cashflow.order.subsidiary.serial}-{cashflow.order.correlative:03d}",
+                        cashflow.order.register_date.strftime('%d-%m-%Y'),
+                        cashflow.description or "PAGO TOTAL",
+                        cashflow.user.first_name or cashflow.user.username or '-',
+                        'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
+                        f"S/ {Decimal(cashflow.total):.2f}"
+                    ])
+                
+                # Agregar totales de saldos
+                payments_efectivo_section = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+                payments_yape_section = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+                
+                payments_data.append(['', '', '', '', 'YAPE:', f"S/ {Decimal(payments_yape_section):.2f}"])
+                payments_data.append(['', '', '', '', 'EFECTIVO:', f"S/ {Decimal(payments_efectivo_section):.2f}"])
+                payments_data.append(['', '', '', '', 'TOTAL CANCELACIONES:', f"S/ {Decimal(total_payments):.2f}"])
+                
+                # Crear tabla de saldos
+                payments_table = Table(payments_data)
+                payments_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTSIZE', (0, 1), (-1, -1), 6),
+                ]))
+                
+                story.append(payments_table)
+                story.append(Spacer(1, 20))
+            
+            # Sección de EGRESOS (solo si hay datos)
+            if expenses_cashflows.exists():
+                story.append(Paragraph("EGRESOS", styles['Heading2']))
+                story.append(Spacer(1, 12))
+                
+                # Crear tabla de egresos
+                expenses_data = [['NRO', 'DESCRIPCIÓN', 'TIPO EGRESO', 'USUARIO', 'MONTO']]
+                
+                for i, cashflow in enumerate(expenses_cashflows, 1):
+                    expense_type = 'VARIABLE' if cashflow.type_expense == 'V' else 'FIJO' if cashflow.type_expense == 'F' else 'PERSONAL' if cashflow.type_expense == 'P' else 'OTRO'
+                    
+                    expenses_data.append([
+                        str(i),
+                        cashflow.description or '-',
+                        expense_type,
+                        cashflow.user.first_name or cashflow.user.username or '-',
+                        f"S/ {Decimal(cashflow.total):.2f}"
+                    ])
+                
+                # Agregar total de egresos
+                expenses_data.append(['', '', '', 'TOTAL EGRESOS:', f"S/ {Decimal(total_expenses_amount):.2f}"])
+                
+                # Crear tabla de egresos
+                expenses_table = Table(expenses_data)
+                expenses_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.red),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTSIZE', (0, 1), (-1, -1), 6),
+                ]))
+                
+                story.append(expenses_table)
+                story.append(Spacer(1, 20))
+            
+            # Sección de RESUMENES
+            story.append(Paragraph("RESUMENES", styles['Heading2']))
+            story.append(Spacer(1, 12))
+            
+            # Calcular totales de pagos para resúmenes
+            payments_efectivo_total = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            payments_yape_total = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            
+            # Crear tabla de resúmenes
+            total_general = advances_efectivo + advances_yape + advances_deposito + payments_efectivo_total + payments_yape_total
+            
+            summary_data = [
+                ['CONCEPTO', 'MONTO'],
+                ['INGRESOS DEL DÍA:', f"S/ {Decimal(total_advances):.2f}"],
+                ['SALDOS:', f"S/ {Decimal(total_payments):.2f}"],
+                ['SUBTOTAL INGRESOS:', f"S/ {float(total_advances + total_payments):.2f}"],
+                ['TOTAL EGRESOS:', f"S/ {Decimal(total_expenses_amount):.2f}"],
+                ['TOTAL EFECTIVO:', f"S/ {Decimal(advances_efectivo + payments_efectivo_total):.2f}"],
+                ['TOTAL YAPE:', f"S/ {Decimal(advances_yape + payments_yape_total):.2f}"],
+                ['TOTAL FINAL:', f"S/ {Decimal(total_general - total_expenses_amount):.2f}"]
+            ]
+            
+            # Crear tabla de resúmenes
+            summary_table = Table(summary_data)
+            summary_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.purple),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTSIZE', (0, 1), (-1, -1), 6),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica-Bold'),  # Hacer toda la tabla en negrita
+            ]))
+            
+            story.append(summary_table)
             story.append(Spacer(1, 20))
             
             # Construir PDF
