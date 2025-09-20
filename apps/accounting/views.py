@@ -2725,6 +2725,20 @@ def export_sales_report_by_user_pdf(request):
             total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
             total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
+            # Calcular totales por tipo de pago para adelantos (ingresos del día)
+            advances_efectivo = 0
+            advances_yape = 0
+            advances_deposito = 0
+            
+            for data in advances_grouped.values():
+                for cashflow in data['cashflows']:
+                    if cashflow.way_to_pay == 'E':
+                        advances_efectivo += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'Y':
+                        advances_yape += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'D':
+                        advances_deposito += decimal.Decimal(cashflow.total)
+            
             # Crear PDF
             filename = f"reporte_ventas_usuario_{report_date}.pdf"
             file_path = os.path.join(settings.MEDIA_ROOT, 'reports', filename)
@@ -2769,14 +2783,14 @@ def export_sales_report_by_user_pdf(request):
                                 data['order'].observation or "ORDEN DE SERVICIO",
                                 cashflow.user.first_name or cashflow.user.username or '-',
                                 'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                f"S/ {cashflow.total}",
-                                f"S/ {data['saldo']}",
-                                f"S/ {data['order'].total}"
+                                f"S/ {float(cashflow.total):.2f}",
+                                f"S/ {float(data['saldo']):.2f}",
+                                f"S/ {float(data['order'].total):.2f}"
                             ]
                         else:
                             row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
                                       'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                      f"S/ {cashflow.total}", '', '']
+                                      f"S/ {float(cashflow.total):.2f}", '', '']
                         income_data.append(row_data)
                 
                 # Pagos completos
@@ -2791,20 +2805,20 @@ def export_sales_report_by_user_pdf(request):
                                 data['order'].observation or "ORDEN DE SERVICIO",
                                 cashflow.user.first_name or cashflow.user.username or '-',
                                 'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                f"S/ {cashflow.total}",
+                                f"S/ {float(cashflow.total):.2f}",
                                 "PAGADO",
                                 f"S/ {data['order'].total}"
                             ]
                         else:
                             row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
                                       'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
-                                      f"S/ {cashflow.total}", '', '']
+                                      f"S/ {float(cashflow.total):.2f}", '', '']
                         income_data.append(row_data)
             
             # Agregar totales
-            income_data.append(['', '', '', '', '', '', '', 'YAPE:', f"S/ {advances_yape}"])
-            income_data.append(['', '', '', '', '', '', '', 'EFECTIVO:', f"S/ {advances_efectivo}"])
-            income_data.append(['', '', '', '', '', '', '', 'TOTAL INGRESOS:', f"S/ {total_advances}"])
+            income_data.append(['', '', '', '', '', '', '', 'YAPE:', f"S/ {float(advances_yape):.2f}"])
+            income_data.append(['', '', '', '', '', '', '', 'EFECTIVO:', f"S/ {float(advances_efectivo):.2f}"])
+            income_data.append(['', '', '', '', '', '', '', 'TOTAL INGRESOS:', f"S/ {float(total_advances):.2f}"])
             
             # Crear tabla
             income_table = Table(income_data)
