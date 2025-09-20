@@ -1,0 +1,787 @@
+{% load operations %}
+
+<!-- Título del reporte -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <h5 class="text-primary mb-2 mb-md-0">
+                <i class="fas fa-user-chart mr-2"></i>
+                <span class="d-block d-md-inline">USUARIO: {{ user.first_name|default:user.username|upper|default:"TODOS" }} {{ user.last_name|default:""|upper }}</span>
+            </h5>
+            <h5 class="text-primary mb-0">
+                <i class="fas fa-calendar mr-1"></i>
+                DÍA: {{ report_date }}
+            </h5>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Adelantos -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-center">
+            <div class="card" style="max-width: 95%; width: 100%;">
+                <div class="card-header bg-primary text-white py-2">
+                    <h6 class="card-title mb-0 text-dark" style="font-size: 1rem;">
+                        <i class="fas fa-hand-holding-usd mr-1"></i>
+                        INGRESOS DEL DÍA
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0 small" style="font-size: 0.75rem; min-width: 1000px;">
+                            <thead class="bg-primary text-white">
+                            <tr>
+                                <th class="text-center" style="width: 5%">Nª CPTE.</th>
+                                <th class="text-center" style="width: 19%">CLIENTE O RAZON SOCIAL</th>
+                                <th class="text-center" style="width: 5%">CANT.</th>
+                                <th class="text-center" style="width: 25%">DESCRIPCIÓN DEL PRODUCTO</th>
+                                <th class="text-center" style="width: 5%">USUARIO</th>
+                                <th class="text-center" style="width: 11%">TIPO PAGO</th>
+                                <th class="text-center" style="width: 10%">A CUENTA S/.</th>
+                                <th class="text-center" style="width: 10%">SALDO S/.</th>
+                                <th class="text-center" style="width: 10%">TOTAL S/.</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% if advances_grouped %}
+                                {% comment %}Primero mostrar adelantos (órdenes no pagadas en su totalidad){% endcomment %}
+                                {% for order_id, data in advances_grouped.items %}
+                                    {% if not data.is_paid_in_full %}
+                                        {% for cashflow in data.cashflows %}
+                                            <tr>
+                                                {% if forloop.first %}
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.client.full_name|default:"-" }}
+                                                    </td>
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order|sum_order_quantities|floatformat:0 }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {% for detail in data.order.orderdetail_set.all %}
+                                                            {{ detail.product_name|default:"Producto Manual" }}
+                                                            {% if not forloop.last %}<br>{% endif %}
+                                                        {% empty %}
+                                                            {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endif %}
+                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
+                                                    {% if cashflow.way_to_pay == 'E' %}
+                                                        <span class="badge badge-success small">EFECTIVO</span>
+                                                    {% elif cashflow.way_to_pay == 'Y' %}
+                                                        <span class="badge badge-info small">YAPE</span>
+                                                    {% elif cashflow.way_to_pay == 'D' %}
+                                                        <span class="badge badge-warning small">DEPÓSITO</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right" style="padding: 0.3rem 0.4rem;">
+                                                    S/ {{ cashflow.total|floatformat:2 }}
+                                                </td>
+                                                {% if forloop.first %}
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.saldo|floatformat:2 }}
+                                                    </td>
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.order.total|floatformat:2 }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% comment %}Separador visual{% endcomment %}
+                                {% for order_id, data in advances_grouped.items %}
+                                    {% if data.is_paid_in_full and forloop.first %}
+                                        <tr>
+                                            <td colspan="9" class="payment-separator" style="padding: 0;"></td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% comment %}Luego mostrar pagos completos{% endcomment %}
+                                {% for order_id, data in advances_grouped.items %}
+                                    {% if data.is_paid_in_full %}
+                                        {% for cashflow in data.cashflows %}
+                                            <tr class="payment-full-row">
+                                                {% if forloop.first %}
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.client.full_name|default:"-" }}
+                                                    </td>
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order|sum_order_quantities|floatformat:0 }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {% for detail in data.order.orderdetail_set.all %}
+                                                            {{ detail.product_name|default:"Producto Manual" }}
+                                                            {% if not forloop.last %}<br>{% endif %}
+                                                        {% empty %}
+                                                            {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endif %}
+                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
+                                                    {% if cashflow.way_to_pay == 'E' %}
+                                                        <span class="badge badge-payment-full small">EFECTIVO</span>
+                                                    {% elif cashflow.way_to_pay == 'Y' %}
+                                                        <span class="badge badge-payment-full small">YAPE</span>
+                                                    {% elif cashflow.way_to_pay == 'D' %}
+                                                        <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right" style="padding: 0.3rem 0.4rem;">
+                                                    S/ {{ cashflow.total|floatformat:2 }}
+                                                </td>
+                                                {% if forloop.first %}
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        <span class="saldo-completo">PAGADO</span>
+                                                    </td>
+                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.order.total|floatformat:2 }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        No hay ingresos para esta fecha
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            </tbody>
+                            <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="8" class="text-right"><strong>YAPE:</strong></td>
+                                <td class="text-right"><strong>S/ {{ advances_yape|floatformat:2 }}</strong></td>
+
+                            </tr>
+                            <tr>
+                                <td colspan="8" class="text-right"><strong>EFECTIVO:</strong></td>
+                                <td class="text-right"><strong>S/ {{ advances_efectivo|floatformat:2 }}</strong></td>
+
+                            </tr>
+                            <tr class="bg-primary text-white">
+                                <td colspan="8" class="text-right"><strong>TOTAL INGRESOS:</strong></td>
+                                <td class="text-right"><strong>S/ {{ total_advances|floatformat:2 }}</strong></td>
+
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Saldos (Pagos Totales) -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-center">
+            <div class="card" style="max-width: 95%; width: 100%;">
+                <div class="card-header bg-success text-white py-2">
+                    <h6 class="card-title mb-0 text-dark" style="font-size: 1rem;">
+                        <i class="fas fa-money-check-alt mr-1"></i>
+                        SALDOS
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0 small"
+                               style="font-size: 0.75rem; min-width: 700px;">
+                            <thead class="bg-success text-white">
+                            <tr>
+                                <th class="text-center" style="width: 10%">N° COMPROBANTE</th>
+                                <th class="text-center" style="width: 10%">FECHA</th>
+                                <th class="text-center" style="width: 30%">DESCRIPCIÓN</th>
+                                <th class="text-center" style="width: 15%">USUARIO</th>
+                                <th class="text-center" style="width: 15%">TIPO PAGO</th>
+                                <th class="text-center" style="width: 10%">S/TOTAL</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% if payments_cashflows %}
+                                {% for cashflow in payments_cashflows %}
+                                    <tr>
+                                        <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
+                                        <td class="text-center">{{ cashflow.order.register_date|date:'d-m-Y' }}</td>
+                                        <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
+                                        <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                        <td class="text-center">
+                                            {% if cashflow.way_to_pay == 'E' %}
+                                                <span class="badge badge-success small">EFECTIVO</span>
+                                            {% elif cashflow.way_to_pay == 'Y' %}
+                                                <span class="badge badge-info small">YAPE</span>
+                                            {% elif cashflow.way_to_pay == 'D' %}
+                                                <span class="badge badge-warning small">DEPÓSITO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        No hay cancelaciones para esta fecha
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            </tbody>
+                            <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="5" class="text-right"><strong>YAPE:</strong></td>
+                                <td class="text-right"><strong>S/ {{ payments_yape|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="text-right"><strong>EFECTIVO:</strong></td>
+                                <td class="text-right"><strong>S/ {{ payments_efectivo|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr class="bg-success text-white">
+                                <td colspan="5" class="text-right"><strong>TOTAL CANCELACIONES:</strong></td>
+                                <td class="text-right"><strong>S/ {{ total_payments|floatformat:2 }}</strong></td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Egresos -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-center">
+            <div class="card" style="max-width: 95%; width: 100%;">
+                <div class="card-header bg-danger text-white py-2">
+                    <h6 class="card-title mb-0 text-dark" style="font-size: 1rem;">
+                        <i class="fas fa-arrow-down mr-1"></i>
+                        EGRESOS
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0 small"
+                               style="font-size: 0.75rem; min-width: 600px;">
+                            <thead class="bg-danger text-white">
+                            <tr>
+                                <th class="text-center" style="width: 5%">NRO</th>
+                                <th class="text-center" style="width: 40%">DESCRIPCIÓN</th>
+                                <th class="text-center" style="width: 20%">TIPO EGRESO</th>
+                                <th class="text-center" style="width: 20%">USUARIO</th>
+                                <th class="text-center" style="width: 15%">MONTO</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% if expenses_cashflows %}
+                                {% for cashflow in expenses_cashflows %}
+                                    <tr>
+                                        <td class="text-center">{{ forloop.counter }}</td>
+                                        <td>{{ cashflow.description|default:"-" }}</td>
+                                        <td class="text-center">
+                                            {% if cashflow.type_expense == 'V' %}
+                                                <span class="badge badge-warning small">VARIABLE</span>
+                                            {% elif cashflow.type_expense == 'F' %}
+                                                <span class="badge badge-info small">FIJO</span>
+                                            {% elif cashflow.type_expense == 'P' %}
+                                                <span class="badge badge-danger small">PERSONAL</span>
+                                            {% elif cashflow.type_expense == 'O' %}
+                                                <span class="badge badge-secondary small">OTRO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                        <td class="text-right">S/ {{ cashflow.total|floatformat:2 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        No hay egresos para esta fecha
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            </tbody>
+                            <tfoot class="bg-danger text-white">
+                            <tr>
+                                <td colspan="4" class="text-right"><strong>TOTAL EGRESOS:</strong></td>
+                                <td class="text-right"><strong>S/ {{ total_expenses_amount|floatformat:2 }}</strong>
+                                </td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resúmenes -->
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-center">
+            <div class="card" style="max-width: 95%; width: 100%;">
+                <div class="card-header bg-success py-2">
+                    <h6 class="card-title mb-0 text-dark" style="font-size: 1rem;">
+                        <i class="fas fa-calculator mr-1"></i>
+                        RESUMENES
+                    </h6>
+                </div>
+                <div class="card-body py-2">
+                    <div class="row">
+                        <div class="col-lg-6 mb-3 mb-lg-0">
+                            <h6 class="text-primary" style="font-size: 0.85rem;">INGRESOS</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm" style="font-size: 0.75rem;">
+                                    <tr>
+                                        <td><strong>INGRESOS DEL DÍA:</strong></td>
+                                        <td class="text-right"><strong>S/ {{ total_advances|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>SALDOS:</strong></td>
+                                        <td class="text-right"><strong>S/ {{ total_payments|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-light">
+                                        <td><strong>SUBTOTAL INGRESOS:</strong></td>
+                                        <td class="text-right">
+                                            <strong>S/ {{ total_advances|add:total_payments|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="text-danger" style="font-size: 0.85rem;">EGRESOS</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm" style="font-size: 0.75rem;">
+                                    <tr>
+                                        <td><strong>TOTAL EGRESOS:</strong></td>
+                                        <td class="text-right">
+                                            <strong>S/ {{ total_expenses_amount|floatformat:2 }}</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="row">
+                        <div class="col-6 col-md-3 mb-2">
+                            <h6 class="text-success" style="font-size: 0.85rem;">TOTAL EFECTIVO</h6>
+                            <h5 class="text-success mb-1" style="font-size: 1rem;">
+                                S/ {{ total_efectivo|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <h6 class="text-info" style="font-size: 0.85rem;">TOTAL YAPE</h6>
+                            <h5 class="text-info mb-1" style="font-size: 1rem;">S/ {{ total_yape|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <h6 class="text-danger" style="font-size: 0.85rem;">TOTAL EGRESOS</h6>
+                            <h5 class="text-danger mb-1" style="font-size: 1rem;">
+                                S/ {{ total_expenses_amount|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <h6 class="text-warning" style="font-size: 0.85rem;">TOTAL FINAL</h6>
+                            <h5 class="text-warning mb-1" style="font-size: 1rem;">
+                                S/ {{ total_general|subtract:total_expenses_amount|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos personalizados -->
+<style>
+    .badge {
+        font-size: 0.75em;
+    }
+
+    .table-sm th, .table-sm td {
+        padding: 0.5rem;
+    }
+
+    .card-header h6 {
+        font-weight: 600;
+    }
+
+    /* Estilos para celdas con rowspan */
+    td[rowspan] {
+        vertical-align: middle;
+        border-right: 1px solid #dee2e6;
+    }
+
+    /* Mejorar la presentación de las filas agrupadas */
+    tbody tr:first-child td[rowspan] {
+        border-top: 1px solid #dee2e6;
+    }
+
+    tbody tr:last-child td[rowspan] {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    /* Estilos para tablas centradas y compactas */
+    .card {
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        border: none;
+    }
+
+    .table th, .table td {
+        padding: 0.3rem 0.4rem;
+    }
+
+    .table-sm th, .table-sm td {
+        padding: 0.25rem 0.35rem;
+    }
+
+    /* Reducir espaciado entre filas */
+    .table tbody tr {
+        line-height: 1.2;
+    }
+
+    /* Hacer badges más pequeños */
+    .badge {
+        font-size: 0.7em;
+        padding: 0.3em 0.5em;
+    }
+
+    /* Reducir margen entre secciones */
+    .row.mb-3 {
+        margin-bottom: 1rem !important;
+    }
+
+    /* ===== ESTILOS RESPONSIVE ===== */
+
+    /* Móviles (hasta 576px) */
+    @media (max-width: 575.98px) {
+        .card {
+            margin: 0 5px;
+            max-width: calc(100% - 10px) !important;
+        }
+
+        .table {
+            font-size: 0.7rem !important;
+        }
+
+        .table th, .table td {
+            padding: 0.2rem 0.25rem;
+        }
+
+        .badge {
+            font-size: 0.6em;
+            padding: 0.2em 0.4em;
+        }
+
+        .card-header h6 {
+            font-size: 0.9rem !important;
+        }
+
+        .card-body h6 {
+            font-size: 0.8rem !important;
+        }
+
+        .card-body h5 {
+            font-size: 0.9rem !important;
+        }
+
+        /* Ajustar ancho mínimo de tablas para móviles */
+        .table-responsive table {
+            min-width: 700px !important;
+        }
+
+        /* Mejorar el scroll horizontal */
+        .table-responsive {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+    }
+
+    /* Tablets (576px a 768px) */
+    @media (min-width: 576px) and (max-width: 767.98px) {
+        .card {
+            margin: 0 10px;
+            max-width: calc(100% - 20px) !important;
+        }
+
+        .table {
+            font-size: 0.72rem !important;
+        }
+
+        .table th, .table td {
+            padding: 0.25rem 0.3rem;
+        }
+
+        .badge {
+            font-size: 0.65em;
+            padding: 0.25em 0.45em;
+        }
+
+        .card-header h6 {
+            font-size: 0.95rem !important;
+        }
+
+        .card-body h6 {
+            font-size: 0.82rem !important;
+        }
+
+        .card-body h5 {
+            font-size: 0.95rem !important;
+        }
+
+        /* Ajustar ancho mínimo de tablas para tablets */
+        .table-responsive table {
+            min-width: 900px !important;
+        }
+    }
+
+    /* Tablets grandes (768px a 992px) */
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        .card {
+            margin: 0 15px;
+            max-width: calc(100% - 30px) !important;
+        }
+
+        .table {
+            font-size: 0.74rem !important;
+        }
+
+        .table th, .table td {
+            padding: 0.28rem 0.35rem;
+        }
+
+        .badge {
+            font-size: 0.68em;
+            padding: 0.28em 0.48em;
+        }
+
+        .card-header h6 {
+            font-size: 0.98rem !important;
+        }
+
+        .card-body h6 {
+            font-size: 0.84rem !important;
+        }
+
+        .card-body h5 {
+            font-size: 0.98rem !important;
+        }
+    }
+
+    /* Desktop (992px en adelante) */
+    @media (min-width: 992px) {
+        .card {
+            margin: 0 auto;
+            max-width: 95% !important;
+        }
+
+        .table {
+            font-size: 0.75rem !important;
+        }
+
+        .table th, .table td {
+            padding: 0.3rem 0.4rem;
+        }
+
+        .badge {
+            font-size: 0.7em;
+            padding: 0.3em 0.5em;
+        }
+
+        .card-header h6 {
+            font-size: 1rem !important;
+        }
+
+        .card-body h6 {
+            font-size: 0.85rem !important;
+        }
+
+        .card-body h5 {
+            font-size: 1rem !important;
+        }
+    }
+
+    /* Mejorar la experiencia táctil en dispositivos móviles */
+    @media (max-width: 991.98px) {
+        .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Mejorar el scroll horizontal en tablas */
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    }
+
+    /* Ajustes específicos para el título del reporte */
+    @media (max-width: 767.98px) {
+        .d-flex.flex-column.flex-md-row h5 {
+            font-size: 0.9rem !important;
+        }
+
+        .d-flex.flex-column.flex-md-row h5 i {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Mejorar la legibilidad en pantallas pequeñas */
+    @media (max-width: 575.98px) {
+        .text-right {
+            text-align: right !important;
+        }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        /* Asegurar que los números se vean bien */
+        .table td[style*="text-right"] {
+            font-weight: 500;
+        }
+    }
+
+    /* ===== ESTILOS PARA DIFERENCIAR ADELANTOS VS PAGOS TOTALES ===== */
+    
+    /* Aumentar grosor de bordes de todas las tablas */
+    .table-bordered {
+        border: 2px solid #adb5bd !important;
+    }
+    
+    .table-bordered th,
+    .table-bordered td {
+        border: 2px solid #adb5bd !important;
+    }
+    
+    .table-bordered thead th {
+        border-bottom-width: 2px !important;
+    }
+    
+    .table-bordered tbody + tbody {
+        border-top-width: 2px !important;
+    }
+    
+    /* Fila de pago completo - fondo azul claro */
+    .payment-full-row {
+        background-color: #e3f2fd !important; /* Azul muy claro */
+        {#border-left: 4px solid #2196f3 !important; /* Borde azul */#}
+        position: relative;
+    }
+    
+    .payment-full-row td {
+        padding: 0.3rem 0.4rem !important;
+    }
+    
+    .payment-full-row:hover {
+        background-color: #bbdefb !important; /* Azul un poco más intenso al hacer hover */
+    }
+    
+    /* Separador visual entre adelantos y pagos totales */
+    .payment-separator {
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #2196f3 50%, transparent 100%);
+        margin: 10px 0;
+        border-radius: 1px;
+    }
+    
+    /* Badge especial para pagos completos */
+    .badge-payment-full {
+        background-color: #2196f3 !important;
+        color: white !important;
+        border: 1px solid #1976d2 !important;
+        font-weight: 600 !important;
+        position: relative;
+    }
+    
+    .badge-payment-full::after {
+        content: " ✓";
+        font-weight: bold;
+        color: #4caf50;
+    }
+    
+    /* Indicador visual en el saldo para pagos completos */
+    .saldo-completo {
+        background-color: #e8f5e8 !important;
+        color: #2e7d32 !important;
+        font-weight: 700 !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
+    }
+    
+    /* Animación sutil para pagos completos */
+    .payment-full-row {
+        animation: fadeInHighlight 0.5s ease-in;
+    }
+    
+    @keyframes fadeInHighlight {
+        from {
+            background-color: transparent;
+            border-left-color: transparent;
+        }
+        to {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+    }
+    
+    /* Mejorar el contraste en modo oscuro */
+    @media (prefers-color-scheme: dark) {
+        .payment-full-row {
+            background-color: #d2d4e5 !important;
+            border-left-color: #3f51b5 !important;
+        }
+        
+        .payment-full-row:hover {
+            background-color: #d2d4e5 !important;
+        }
+        
+        .saldo-completo {
+            background-color: #1b5e20 !important;
+            color: #81c784 !important;
+        }
+    }
+
+</style>

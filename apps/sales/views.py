@@ -1137,6 +1137,7 @@ def order_save(request):
                         advance_amount = decimal.Decimal(str(advance.get('amount', 0)))
                         way_to_pay_advance = advance.get('way_to_pay', 'E')
                         advance_cash_account_id = advance.get('cash_account_id', '')
+                        advance_transaction_date = advance.get('transaction_date', register_date)
                         
                         if advance_amount > 0 and advance_cash_account_id:
                             # Obtener la cuenta de caja específica para este adelanto
@@ -1146,7 +1147,7 @@ def order_save(request):
                                 # Crear entrada en CashFlow para cada adelanto
                                 peru_tz = pytz_timezone("America/Lima")
                                 CashFlow.objects.create(
-                                    transaction_date=register_date,
+                                    transaction_date=advance_transaction_date,
                                     # created_at=datetime.now(),
                                     description=description,
                                     serial=order_obj.serial,
@@ -1256,7 +1257,7 @@ def get_order_for_edit(request):
             try:
                 order_obj = Order.objects.select_related(
                     'client', 'user', 'subsidiary'
-                ).prefetch_related('orderdetail_set__product').get(id=int(order_id))
+                ).prefetch_related('orderdetail_set__product', 'cashflow_set__cash').get(id=int(order_id))
                 
                 # Preparar datos de la orden
                 order_data = {
@@ -1278,7 +1279,8 @@ def get_order_for_edit(request):
                     'subtotal': float(order_obj.subtotal),
                     'igv': float(order_obj.igv),
                     'total': float(order_obj.total),
-                    'details': []
+                    'details': [],
+                    'advance_payments': []
                 }
                 
                 # Preparar detalles
@@ -1293,6 +1295,17 @@ def get_order_for_edit(request):
                         'observation': detail.observation
                     }
                     order_data['details'].append(detail_data)
+                
+                # Preparar adelantos múltiples desde CashFlow
+                for cashflow in order_obj.cashflow_set.filter(type='E'):  # Solo entradas (adelantos)
+                    advance_data = {
+                        'id': cashflow.id,
+                        'way_to_pay': cashflow.way_to_pay,
+                        'amount': float(cashflow.total),
+                        'transaction_date': cashflow.transaction_date.strftime('%Y-%m-%d') if cashflow.transaction_date else None,
+                        'cash_account_id': cashflow.cash.id if cashflow.cash else None
+                    }
+                    order_data['advance_payments'].append(advance_data)
                 
                 return JsonResponse({
                     'success': True,
@@ -1421,6 +1434,7 @@ def order_update(request):
                         advance_amount = decimal.Decimal(str(advance.get('amount', 0)))
                         way_to_pay_advance = advance.get('way_to_pay', 'E')
                         advance_cash_account_id = advance.get('cash_account_id', '')
+                        advance_transaction_date = advance.get('transaction_date', request.POST.get('register_date'))
                         
                         if advance_amount > 0 and advance_cash_account_id:
                             # Obtener la cuenta de caja específica para este adelanto
@@ -1433,7 +1447,7 @@ def order_update(request):
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
                                 cashflow_entry = CashFlow.objects.create(
-                                    transaction_date=request.POST.get('register_date'),
+                                    transaction_date=advance_transaction_date,
                                     # created_at=datetime.now(),
                                     description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
                                     serial=order_obj.serial,
@@ -2849,6 +2863,7 @@ def convert_order_to_service(request):
                         advance_amount = Decimal(str(advance.get('amount', 0)))
                         way_to_pay_advance = advance.get('way_to_pay', 'E')
                         advance_cash_account_id = advance.get('cash_account_id', '')
+                        advance_transaction_date = advance.get('transaction_date', register_date)
                         
                         if advance_amount > 0 and advance_cash_account_id:
                             # Obtener la cuenta de caja específica para este adelanto
@@ -2861,7 +2876,7 @@ def convert_order_to_service(request):
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
                                 cashflow_entry = CashFlow.objects.create(
-                                    transaction_date=register_date,
+                                    transaction_date=advance_transaction_date,
                                     # created_at=datetime.now(),
                                     description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
                                     serial=order_obj.serial,

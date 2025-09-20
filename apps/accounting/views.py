@@ -2111,3 +2111,734 @@ def export_sales_report_pdf(request):
     
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
+
+def sales_report_by_user(request):
+    """Vista principal del reporte de ventas y gastos por usuario"""
+    if request.method == 'GET':
+        from apps.users.models import CustomUser
+        
+        # Obtener todos los usuarios que tienen acceso al sistema
+        users_set = CustomUser.objects.filter(
+            has_access_system=True,
+            is_active=True
+        ).order_by('first_name', 'last_name')
+        
+        # Fecha actual para el filtro
+        date_now = datetime.now().strftime('%Y-%m-%d')
+        
+        return render(request, 'accounting/sales_report_by_user.html', {
+            'users_set': users_set,
+            'date_now': date_now,
+            'current_user': request.user,
+        })
+    elif request.method == 'POST':
+        try:
+            from apps.users.models import CustomUser
+            
+            # Obtener parámetros del filtro
+            report_date = request.POST.get('report_date')
+            user_id = request.POST.get('user')
+            user_obj = None
+
+            if not report_date:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar una fecha'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Filtrar cashflows del día por usuario
+            if user_id and user_id != '0':
+                user_obj = CustomUser.objects.get(id=int(user_id))
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date,
+                    user_id=user_id
+                )
+            else:
+                # Si no hay usuario específico, mostrar todos los cashflows del día
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date
+                )
+            
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
+            
+            # Filtrar cashflows con order_id (ventas) y sin order_id (gastos)
+            # Excluir órdenes anuladas (status='A')
+            order_cashflows = cashflows.filter(order__isnull=False, order__status__in=['P', 'C'])
+            
+            # Calcular totales desde accounting_cashflow
+            # total_sales: Suma total de todas las órdenes relacionadas con cashflows del día
+            total_sales = sum(cf.order.total for cf in order_cashflows if cf.order) or 0
+            
+            # total_cash_advance: Suma de adelantos (tipo 'A') desde accounting_cashflow
+            total_cash_advance = order_cashflows.filter(
+                type='E',  # Entrada
+                order_type_entry='A'  # Adelanto
+            ).aggregate(total=Sum('total'))['total'] or 0
+            
+            # total_paid: Suma de pagos totales (tipo 'T') desde accounting_cashflow
+            total_paid = order_cashflows.filter(
+                type='E',  # Entrada
+                order_type_entry='T'  # Pago Total
+            ).aggregate(total=Sum('total'))['total'] or 0
+            
+            # total_balance: Saldo pendiente (ventas totales - adelantos totales - pagos totales)
+            total_balance = total_sales - total_cash_advance - total_paid
+            
+            # Calcular totales de gastos
+            total_income = cashflows.filter(type='E').aggregate(total=Sum('total'))['total'] or 0
+            total_expenses = cashflows.filter(type='S').aggregate(total=Sum('total'))['total'] or 0
+            net_expenses = total_expenses - total_income
+            
+            # Calcular subtotales por tipo de gasto según TYPE_EXPENSE
+            total_variable_expenses = cashflows.filter(type='S', type_expense='V').aggregate(total=Sum('total'))['total'] or 0
+            total_fixed_expenses = cashflows.filter(type='S', type_expense='F').aggregate(total=Sum('total'))['total'] or 0
+            total_personal_expenses = cashflows.filter(type='S', type_expense='P').aggregate(total=Sum('total'))['total'] or 0
+            total_other_expenses = cashflows.filter(type='S', type_expense='O').aggregate(total=Sum('total'))['total'] or 0
+            
+            # Calcular ingreso real: A Cuenta + Total Pagado
+            real_income = total_cash_advance + total_paid
+            
+            # Calcular caja final
+            # final_cash: Caja final = Ingreso real - Gastos netos
+            # Donde: Gastos netos = Gastos totales - Ingresos por otros conceptos
+            final_cash = real_income - net_expenses
+
+            # NUEVA LÓGICA: 
+            # 1. ADELANTOS = Todas las órdenes del día (con sus cashflows)
+            # 2. SALDOS = Solo cashflows de cancelación (order_type_entry='T')
+            
+            # Obtener todas las órdenes del día del reporte
+            orders_of_day = Order.objects.filter(
+                register_date=report_date,
+                status__in=['P', 'C']  # Pendientes y completadas
+            ).order_by('id')
+            
+            if user_id and user_id != '0':
+                orders_of_day = orders_of_day.filter(user_id=user_id)
+            
+            orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
+            
+            # Crear estructura de datos más clara para el template
+            advances_grouped = {}
+            for order in orders_of_day:
+                # Obtener todos los cashflows relacionados con esta orden del día del reporte
+                order_cashflows_day = cashflows.filter(
+                    order=order,
+                    type='E',  # Solo entradas
+                    transaction_date=report_date  # Solo del día del reporte
+                ).order_by('id')
+                
+                if order_cashflows_day.exists():
+                    total_paid = sum(float(cf.total) for cf in order_cashflows_day)
+                    saldo = float(order.total) - total_paid
+                    
+                    # Determinar si la orden se pagó en su totalidad (con tolerancia de 1 céntimo)
+                    is_paid_in_full = abs(saldo) < 0.01
+                    
+                    # Crear estructura con información de la orden y sus cashflows
+                    advances_grouped[order.id] = {
+                        'order': order,
+                        'cashflows': list(order_cashflows_day),  # Lista de cashflows individuales
+                        'total_advances': total_paid,
+                        'saldo': saldo,
+                        'is_paid_in_full': is_paid_in_full,
+                        'cashflow_count': order_cashflows_day.count()  # Cantidad de cashflows
+                    }
+            
+            # Preparar datos de saldos (solo cashflows de cancelación - order_type_entry='T')
+            # EXCLUIR órdenes que fueron creadas el mismo día del reporte (esas van en ingresos del día)
+            payments_cashflows = order_cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='T'  # Solo pagos totales (cancelaciones)
+            ).exclude(
+                order__register_date__gte=report_date  # Excluir órdenes del mismo día o posteriores
+            )
+            
+            # Preparar datos de cashflows sin order_id (egresos)
+            expenses_cashflows = cashflows.filter(
+                order__isnull=True,
+                type='S'  # Solo salidas (gastos)
+            )
+
+            # Calcular totales para resúmenes
+            # Total de ingresos del día (suma de todos los cashflows de las órdenes del día)
+            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
+            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            
+            # Calcular totales por tipo de pago para adelantos (ingresos del día)
+            advances_efectivo = 0
+            advances_yape = 0
+            advances_deposito = 0
+            
+            for data in advances_grouped.values():
+                for cashflow in data['cashflows']:
+                    if cashflow.way_to_pay == 'E':
+                        advances_efectivo += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'Y':
+                        advances_yape += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'D':
+                        advances_deposito += decimal.Decimal(cashflow.total)
+            
+            payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            payments_deposito = payments_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            
+            # Totales generales
+            total_efectivo = advances_efectivo + payments_efectivo
+            total_yape = advances_yape + payments_yape
+            total_deposito = advances_deposito + payments_deposito
+            total_general = total_efectivo + total_yape + total_deposito
+
+            context = {
+                'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
+                'advances_grouped': advances_grouped,
+                'orders_of_day': orders_of_day,  # Todas las órdenes del día
+                'payments_cashflows': payments_cashflows.order_by('order_id'),  # Solo cancelaciones
+                'expenses_cashflows': expenses_cashflows.order_by('id'),
+                'total_advances': total_advances,  # Total ingresos del día
+                'total_payments': total_payments,  # Total cancelaciones
+                'total_expenses_amount': total_expenses_amount,
+                'advances_efectivo': advances_efectivo,
+                'advances_yape': advances_yape,
+                'advances_deposito': advances_deposito,
+                'payments_efectivo': payments_efectivo,
+                'payments_yape': payments_yape,
+                'payments_deposito': payments_deposito,
+                'total_efectivo': total_efectivo,
+                'total_yape': total_yape,
+                'total_deposito': total_deposito,
+                'total_general': total_general,
+                'user': user_obj,
+            }
+            
+            tpl = loader.get_template('accounting/sales_report_by_user_grid.html')
+            
+            return JsonResponse({
+                'success': True,
+                'grid': tpl.render(context, request),
+                'summary': {
+                    'total_sales': float(total_sales),
+                    'total_cash_advance': float(total_cash_advance),
+                    'total_paid': float(total_paid),
+                    'total_balance': float(total_balance),
+                    'real_income': float(real_income),
+                    'total_income': float(total_income),
+                    'total_expenses': float(total_expenses),
+                    'net_expenses': float(net_expenses),
+                    'final_cash': float(final_cash),
+                    'total_variable_expenses': float(total_variable_expenses),
+                    'total_fixed_expenses': float(total_fixed_expenses),
+                    'total_personal_expenses': float(total_personal_expenses),
+                    'total_other_expenses': float(total_other_expenses),
+                }
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            print(f"ERROR en sales_report_by_user: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al generar el reporte: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+def export_sales_report_by_user_excel(request):
+    """Exportar reporte de ventas por usuario a Excel"""
+    if request.method == 'POST':
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+            from openpyxl.utils import get_column_letter
+            
+            # Obtener datos del reporte
+            report_date = request.POST.get('report_date')
+            user_id = request.POST.get('user')
+            user_obj = None
+            
+            if not report_date:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar una fecha'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Filtrar cashflows del día por usuario
+            if user_id and user_id != '0':
+                from apps.users.models import CustomUser
+                user_obj = CustomUser.objects.get(id=int(user_id))
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date,
+                    user_id=user_id
+                )
+            else:
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date
+                )
+            
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
+            
+            # Filtrar cashflows con order_id (ventas) y sin order_id (gastos)
+            order_cashflows = cashflows.filter(order__isnull=False, order__status__in=['P', 'C'])
+            
+            # Obtener todas las órdenes del día del reporte
+            orders_of_day = Order.objects.filter(
+                register_date=report_date,
+                status__in=['P', 'C']
+            ).order_by('id')
+            
+            if user_id and user_id != '0':
+                orders_of_day = orders_of_day.filter(user_id=user_id)
+            
+            orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
+            
+            # Crear estructura de datos para adelantos (ingresos del día)
+            advances_grouped = {}
+            for order in orders_of_day:
+                order_cashflows_day = cashflows.filter(
+                    order=order,
+                    type='E',
+                    transaction_date=report_date
+                ).order_by('id')
+                
+                if order_cashflows_day.exists():
+                    total_paid = sum(decimal.Decimal(cf.total) for cf in order_cashflows_day)
+                    saldo = decimal.Decimal(order.total) - total_paid
+                    is_paid_in_full = abs(saldo) < 0.01
+                    
+                    advances_grouped[order.id] = {
+                        'order': order,
+                        'cashflows': list(order_cashflows_day),
+                        'total_advances': total_paid,
+                        'saldo': saldo,
+                        'is_paid_in_full': is_paid_in_full,
+                        'cashflow_count': order_cashflows_day.count()
+                    }
+            
+            # Preparar datos de saldos (cancelaciones)
+            payments_cashflows = order_cashflows.filter(
+                type='E',
+                order_type_entry='T'
+            ).exclude(
+                order__register_date__gte=report_date
+            )
+            
+            # Preparar datos de egresos
+            expenses_cashflows = cashflows.filter(
+                order__isnull=True,
+                type='S'
+            )
+            
+            # Calcular totales
+            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
+            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            
+            # Calcular totales por tipo de pago
+            advances_efectivo = 0
+            advances_yape = 0
+            advances_deposito = 0
+            
+            for data in advances_grouped.values():
+                for cashflow in data['cashflows']:
+                    if cashflow.way_to_pay == 'E':
+                        advances_efectivo += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'Y':
+                        advances_yape += decimal.Decimal(cashflow.total)
+                    elif cashflow.way_to_pay == 'D':
+                        advances_deposito += decimal.Decimal(cashflow.total)
+            
+            payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            
+            total_efectivo = advances_efectivo + payments_efectivo
+            total_yape = advances_yape + payments_yape
+            total_general = total_efectivo + total_yape
+            
+            # Crear workbook
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = f"Reporte {report_date}"
+            
+            # Estilos
+            header_font = Font(bold=True, color="FFFFFF", size=11)
+            header_fill_primary = PatternFill(start_color="007bff", end_color="007bff", fill_type="solid")
+            header_fill_success = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+            header_fill_danger = PatternFill(start_color="dc3545", end_color="dc3545", fill_type="solid")
+            title_font = Font(bold=True, size=16, color="007bff")
+            border = Border(
+                left=Side(style='medium', color='adb5bd'),
+                right=Side(style='medium', color='adb5bd'),
+                top=Side(style='medium', color='adb5bd'),
+                bottom=Side(style='medium', color='adb5bd')
+            )
+            
+            # Título principal
+            ws.merge_cells('A1:J1')
+            user_name = f"{user_obj.first_name} {user_obj.last_name}".strip() if user_obj else "TODOS"
+            ws['A1'] = f"USUARIO: {user_name.upper()} - DÍA: {datetime.strptime(report_date, '%Y-%m-%d').strftime('%d-%m-%Y')}"
+            ws['A1'].font = title_font
+            ws['A1'].alignment = Alignment(horizontal='center')
+            
+            # Sección de INGRESOS DEL DÍA
+            ws['A3'] = "INGRESOS DEL DÍA"
+            ws['A3'].font = header_font
+            ws['A3'].fill = header_fill_primary
+            ws.merge_cells('A3:J3')
+            ws['A3'].alignment = Alignment(horizontal='center')
+            
+            # Encabezados de ingresos
+            income_headers = ['N° CPTE.', 'CLIENTE O RAZON SOCIAL', 'CANT.', 'DESCRIPCIÓN DEL PRODUCTO', 'USUARIO', 'TIPO PAGO', 'A CUENTA S/.', 'SALDO S/.', 'TOTAL S/.']
+            for col, header in enumerate(income_headers, 1):
+                cell = ws.cell(row=4, column=col, value=header)
+                cell.font = header_font
+                cell.fill = header_fill_primary
+                cell.border = border
+                cell.alignment = Alignment(horizontal='center')
+            
+            # Datos de ingresos del día
+            row = 5
+            for order_id, data in advances_grouped.items():
+                if not data['is_paid_in_full']:  # Solo adelantos
+                    for i, cashflow in enumerate(data['cashflows']):
+                        if i == 0:  # Primera fila con datos de la orden
+                            ws.cell(row=row, column=1, value=f"{data['order'].subsidiary.serial}-{data['order'].correlative:03d}").border = border
+                            ws.cell(row=row, column=2, value=data['order'].client.full_name if data['order'].client else '-').border = border
+                            ws.cell(row=row, column=3, value=1).border = border  # Cantidad
+                            # Descripción del producto
+                            product_desc = ""
+                            if data['order'].orderdetail_set.exists():
+                                product_desc = " | ".join([detail.product_name or "Producto Manual" for detail in data['order'].orderdetail_set.all()])
+                            else:
+                                product_desc = data['order'].observation or "ORDEN DE SERVICIO"
+                            ws.cell(row=row, column=4, value=product_desc).border = border
+                        else:
+                            # Filas adicionales sin datos de orden
+                            ws.cell(row=row, column=1, value="").border = border
+                            ws.cell(row=row, column=2, value="").border = border
+                            ws.cell(row=row, column=3, value="").border = border
+                            ws.cell(row=row, column=4, value="").border = border
+                        
+                        # Datos del cashflow
+                        ws.cell(row=row, column=5, value=cashflow.user.first_name or cashflow.user.username or '-').border = border
+                        
+                        # Tipo de pago
+                        payment_type = ""
+                        if cashflow.way_to_pay == 'E':
+                            payment_type = "EFECTIVO"
+                        elif cashflow.way_to_pay == 'Y':
+                            payment_type = "YAPE"
+                        elif cashflow.way_to_pay == 'D':
+                            payment_type = "DEPÓSITO"
+                        ws.cell(row=row, column=6, value=payment_type).border = border
+                        ws.cell(row=row, column=7, value=float(cashflow.total)).border = border
+                        
+                        if i == 0:  # Solo en la primera fila
+                            ws.cell(row=row, column=8, value=decimal.Decimal(data['saldo'])).border = border
+                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                        else:
+                            ws.cell(row=row, column=8, value="").border = border
+                            ws.cell(row=row, column=9, value="").border = border
+                        
+                row += 1
+                
+                # Pagos completos
+                if data['is_paid_in_full']:
+                    for i, cashflow in enumerate(data['cashflows']):
+                        if i == 0:  # Primera fila con datos de la orden
+                            ws.cell(row=row, column=1, value=f"{data['order'].subsidiary.serial}-{data['order'].correlative:03d}").border = border
+                            ws.cell(row=row, column=2, value=data['order'].client.full_name if data['order'].client else '-').border = border
+                            ws.cell(row=row, column=3, value=1).border = border
+                            # Descripción del producto
+                            product_desc = ""
+                            if data['order'].orderdetail_set.exists():
+                                product_desc = " | ".join([detail.product_name or "Producto Manual" for detail in data['order'].orderdetail_set.all()])
+                            else:
+                                product_desc = data['order'].observation or "ORDEN DE SERVICIO"
+                            ws.cell(row=row, column=4, value=product_desc).border = border
+                        else:
+                            ws.cell(row=row, column=1, value="").border = border
+                            ws.cell(row=row, column=2, value="").border = border
+                            ws.cell(row=row, column=3, value="").border = border
+                            ws.cell(row=row, column=4, value="").border = border
+                        
+                        ws.cell(row=row, column=5, value=cashflow.user.first_name or cashflow.user.username or '-').border = border
+                        
+                        payment_type = ""
+                        if cashflow.way_to_pay == 'E':
+                            payment_type = "EFECTIVO"
+                        elif cashflow.way_to_pay == 'Y':
+                            payment_type = "YAPE"
+                        elif cashflow.way_to_pay == 'D':
+                            payment_type = "DEPÓSITO"
+                        ws.cell(row=row, column=6, value=payment_type).border = border
+                        ws.cell(row=row, column=7, value=decimal.Decimal(cashflow.total)).border = border
+                        
+                        if i == 0:
+                            ws.cell(row=row, column=8, value="PAGADO").border = border
+                            ws.cell(row=row, column=9, value=decimal.Decimal(data['order'].total)).border = border
+                        else:
+                            ws.cell(row=row, column=8, value="").border = border
+                            ws.cell(row=row, column=9, value="").border = border
+                        
+                        row += 1
+            
+            # Totales de ingresos
+            row += 1
+            ws.cell(row=row, column=8, value="YAPE:").font = Font(bold=True)
+            ws.cell(row=row, column=9, value=decimal.Decimal(advances_yape)).font = Font(bold=True)
+            row += 1
+            ws.cell(row=row, column=8, value="EFECTIVO:").font = Font(bold=True)
+            ws.cell(row=row, column=9, value=decimal.Decimal(advances_efectivo)).font = Font(bold=True)
+            row += 1
+            ws.cell(row=row, column=8, value="TOTAL INGRESOS:").font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=row, column=8).fill = header_fill_primary
+            ws.cell(row=row, column=9, value=decimal.Decimal(total_advances)).font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=row, column=9).fill = header_fill_primary
+            
+            # Ajustar ancho de columnas
+            for col in range(1, 10):
+                ws.column_dimensions[get_column_letter(col)].width = 15
+            
+            # Guardar archivo
+            filename = f"reporte_ventas_usuario_{report_date}.xlsx"
+            file_path = os.path.join(settings.MEDIA_ROOT, 'reports', filename)
+            
+            # Crear directorio si no existe
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            wb.save(file_path)
+            
+            # URL del archivo
+            file_url = f"{settings.MEDIA_URL}reports/{filename}"
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Reporte Excel generado exitosamente',
+                'file_url': file_url,
+                'filename': filename
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al generar el Excel: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+@csrf_exempt
+def export_sales_report_by_user_pdf(request):
+    """Exportar reporte de ventas por usuario a PDF"""
+    if request.method == 'POST':
+        try:
+            from reportlab.lib.pagesizes import letter, A4
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib import colors
+            from reportlab.lib.units import inch
+            from reportlab.pdfgen import canvas
+            from io import BytesIO
+            
+            # Obtener datos del reporte
+            report_date = request.POST.get('report_date')
+            user_id = request.POST.get('user')
+            user_obj = None
+            
+            if not report_date:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar una fecha'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Filtrar cashflows del día por usuario
+            if user_id and user_id != '0':
+                from apps.users.models import CustomUser
+                user_obj = CustomUser.objects.get(id=int(user_id))
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date,
+                    user_id=user_id
+                )
+            else:
+                cashflows = CashFlow.objects.filter(
+                    transaction_date=report_date
+                )
+            
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary', 'order', 'order__client', 'order__subsidiary').prefetch_related('order__orderdetail_set')
+            
+            # Filtrar cashflows con order_id (ventas) y sin order_id (gastos)
+            order_cashflows = cashflows.filter(order__isnull=False, order__status__in=['P', 'C'])
+            
+            # Obtener todas las órdenes del día del reporte
+            orders_of_day = Order.objects.filter(
+                register_date=report_date,
+                status__in=['P', 'C']
+            ).order_by('id')
+            
+            if user_id and user_id != '0':
+                orders_of_day = orders_of_day.filter(user_id=user_id)
+            
+            orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
+            
+            # Crear estructura de datos para adelantos (ingresos del día)
+            advances_grouped = {}
+            for order in orders_of_day:
+                order_cashflows_day = cashflows.filter(
+                    order=order,
+                    type='E',
+                    transaction_date=report_date
+                ).order_by('id')
+                
+                if order_cashflows_day.exists():
+                    total_paid = sum(decimal.Decimal(cf.total) for cf in order_cashflows_day)
+                    saldo = decimal.Decimal(order.total) - total_paid
+                    is_paid_in_full = abs(saldo) < 0.01
+                    
+                    advances_grouped[order.id] = {
+                        'order': order,
+                        'cashflows': list(order_cashflows_day),
+                        'total_advances': total_paid,
+                        'saldo': saldo,
+                        'is_paid_in_full': is_paid_in_full,
+                        'cashflow_count': order_cashflows_day.count()
+                    }
+            
+            # Preparar datos de saldos (cancelaciones)
+            payments_cashflows = order_cashflows.filter(
+                type='E',
+                order_type_entry='T'
+            ).exclude(
+                order__register_date__gte=report_date
+            )
+            
+            # Preparar datos de egresos
+            expenses_cashflows = cashflows.filter(
+                order__isnull=True,
+                type='S'
+            )
+            
+            # Calcular totales
+            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
+            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            
+            # Crear PDF
+            filename = f"reporte_ventas_usuario_{report_date}.pdf"
+            file_path = os.path.join(settings.MEDIA_ROOT, 'reports', filename)
+            
+            # Crear directorio si no existe
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            doc = SimpleDocTemplate(file_path, pagesize=A4)
+            styles = getSampleStyleSheet()
+            story = []
+            
+            # Título
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=16,
+                spaceAfter=30,
+                alignment=1  # Centrado
+            )
+            
+            user_name = f"{user_obj.first_name} {user_obj.last_name}".strip() if user_obj else "TODOS"
+            title = Paragraph(f"USUARIO: {user_name.upper()} - DÍA: {datetime.strptime(report_date, '%Y-%m-%d').strftime('%d-%m-%Y')}", title_style)
+            story.append(title)
+            story.append(Spacer(1, 20))
+            
+            # Sección de INGRESOS DEL DÍA
+            story.append(Paragraph("INGRESOS DEL DÍA", styles['Heading2']))
+            story.append(Spacer(1, 12))
+            
+            # Crear tabla de ingresos
+            income_data = [['N° CPTE.', 'CLIENTE', 'CANT.', 'DESCRIPCIÓN', 'USUARIO', 'TIPO PAGO', 'A CUENTA S/.', 'SALDO S/.', 'TOTAL S/.']]
+            
+            for order_id, data in advances_grouped.items():
+                if not data['is_paid_in_full']:  # Solo adelantos
+                    for i, cashflow in enumerate(data['cashflows']):
+                        row_data = []
+                        if i == 0:  # Primera fila con datos de la orden
+                            row_data = [
+                                f"{data['order'].subsidiary.serial}-{data['order'].correlative:03d}",
+                                data['order'].client.full_name if data['order'].client else '-',
+                                '1',
+                                data['order'].observation or "ORDEN DE SERVICIO",
+                                cashflow.user.first_name or cashflow.user.username or '-',
+                                'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
+                                f"S/ {cashflow.total}",
+                                f"S/ {data['saldo']}",
+                                f"S/ {data['order'].total}"
+                            ]
+                        else:
+                            row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
+                                      'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
+                                      f"S/ {cashflow.total}", '', '']
+                        income_data.append(row_data)
+                
+                # Pagos completos
+                if data['is_paid_in_full']:
+                    for i, cashflow in enumerate(data['cashflows']):
+                        row_data = []
+                        if i == 0:  # Primera fila con datos de la orden
+                            row_data = [
+                                f"{data['order'].subsidiary.serial}-{data['order'].correlative:03d}",
+                                data['order'].client.full_name if data['order'].client else '-',
+                                '1',
+                                data['order'].observation or "ORDEN DE SERVICIO",
+                                cashflow.user.first_name or cashflow.user.username or '-',
+                                'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
+                                f"S/ {cashflow.total}",
+                                "PAGADO",
+                                f"S/ {data['order'].total}"
+                            ]
+                        else:
+                            row_data = ['', '', '', '', cashflow.user.first_name or cashflow.user.username or '-', 
+                                      'EFECTIVO' if cashflow.way_to_pay == 'E' else 'YAPE' if cashflow.way_to_pay == 'Y' else 'DEPÓSITO',
+                                      f"S/ {cashflow.total}", '', '']
+                        income_data.append(row_data)
+            
+            # Agregar totales
+            income_data.append(['', '', '', '', '', '', '', 'YAPE:', f"S/ {advances_yape}"])
+            income_data.append(['', '', '', '', '', '', '', 'EFECTIVO:', f"S/ {advances_efectivo}"])
+            income_data.append(['', '', '', '', '', '', '', 'TOTAL INGRESOS:', f"S/ {total_advances}"])
+            
+            # Crear tabla
+            income_table = Table(income_data)
+            income_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTSIZE', (0, 1), (-1, -1), 6),
+            ]))
+            
+            story.append(income_table)
+            story.append(Spacer(1, 20))
+            
+            # Construir PDF
+            doc.build(story)
+            
+            # URL del archivo
+            file_url = f"{settings.MEDIA_URL}reports/{filename}"
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Reporte PDF generado exitosamente',
+                'file_url': file_url,
+                'filename': filename
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al generar el PDF: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)

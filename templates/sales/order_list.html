@@ -508,6 +508,7 @@
                                                 <tr>
                                                     <th style="padding: 0.3rem;">Forma de Pago</th>
                                                     <th style="padding: 0.3rem;">Monto</th>
+                                                    <th style="padding: 0.3rem;">Fecha</th>
                                                     <th style="padding: 0.3rem;">Cuenta Destino</th>
                                                     <th style="padding: 0.3rem; width: 60px;">Acciones</th>
                                                 </tr>
@@ -517,7 +518,7 @@
                                                 </tbody>
                                                 <tfoot>
                                                 <tr class="table-info">
-                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="2">Total:</td>
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="3">Total:</td>
                                                     <td class="text-right font-weight-bold" id="total_advances" style="padding: 0.3rem;">S/ 0.00</td>
                                                     <td style="padding: 0.3rem;"></td>
                                                 </tr>
@@ -861,9 +862,7 @@
                                     <i class="fas fa-calculator mr-1"></i>
                                     <small><strong>Lógica de cálculo:</strong> El total se calcula como (cantidad ×
                                         precio), luego se extrae el IGV para obtener el subtotal sin impuestos. El
-                                        adelanto se resta del total final.</small>
-                                    <br><small class="text-muted"><strong>Ejemplo:</strong> 9 × S/ 50 = S/ 450 (total) →
-                                    Subtotal: S/ 381.36, IGV: S/ 68.64</small>
+                                        adelanto se resta del total final.
                                 </div>
 
                                 <div class="table-responsive">
@@ -955,6 +954,7 @@
                                                 <tr>
                                                     <th style="padding: 0.3rem;">Forma de Pago</th>
                                                     <th style="padding: 0.3rem;">Monto</th>
+                                                    <th style="padding: 0.3rem;">Fecha</th>
                                                     <th style="padding: 0.3rem;">Cuenta Destino</th>
                                                     <th style="padding: 0.3rem; width: 60px;">Acciones</th>
                                                 </tr>
@@ -964,7 +964,7 @@
                                                 </tbody>
                                                 <tfoot>
                                                 <tr class="table-info">
-                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="2">Total:</td>
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="3">Total:</td>
                                                     <td class="text-right font-weight-bold" id="edit_total_advances" style="padding: 0.3rem;">S/ 0.00</td>
                                                     <td style="padding: 0.3rem;"></td>
                                                 </tr>
@@ -1077,6 +1077,7 @@
                                                 <tr>
                                                     <th style="padding: 0.3rem;">Forma de Pago</th>
                                                     <th style="padding: 0.3rem;">Monto</th>
+                                                    <th style="padding: 0.3rem;">Fecha</th>
                                                     <th style="padding: 0.3rem;">Cuenta Destino</th>
                                                     <th style="padding: 0.3rem; width: 60px;">Acciones</th>
                                                 </tr>
@@ -1815,6 +1816,7 @@
                                                 <tr>
                                                     <th style="padding: 0.3rem;">Forma de Pago</th>
                                                     <th style="padding: 0.3rem;">Monto</th>
+                                                    <th style="padding: 0.3rem;">Fecha</th>
                                                     <th style="padding: 0.3rem;">Cuenta Destino</th>
                                                     <th style="padding: 0.3rem; width: 60px;">Acciones</th>
                                                 </tr>
@@ -1824,7 +1826,7 @@
                                                 </tbody>
                                                 <tfoot>
                                                 <tr class="table-info">
-                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="2">Total:</td>
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="3">Total:</td>
                                                     <td class="text-right font-weight-bold" id="convert_total_advances" style="padding: 0.3rem;">S/ 0.00</td>
                                                     <td style="padding: 0.3rem;"></td>
                                                 </tr>
@@ -3116,10 +3118,12 @@
             }
 
             const advanceId = ++advanceCounter;
+            const today = new Date().toISOString().split('T')[0]; // Fecha actual
             const advancePayment = {
                 id: advanceId,
                 way_to_pay: 'E', // Efectivo por defecto
                 amount: 0,
+                transaction_date: today,
                 cash_account_id: ''
             };
 
@@ -3129,6 +3133,7 @@
         }
 
         function addAdvancePaymentRow(advance) {
+            const today = new Date().toISOString().split('T')[0]; // Fecha actual en formato YYYY-MM-DD
             const row = `
                 <tr id="advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
@@ -3140,16 +3145,22 @@
                     </td>
                     <td style="padding: 0.3rem;">
                         <input type="number" class="form-control form-control-sm text-right"
-                               value=""
+                               value="${advance.amount || ''}"
                                min="0" step="0.01"
                                onkeyup="updateAdvanceField(${advance.id}, 'amount', this.value)"
                                placeholder="0.00" style="font-size: 0.8rem;">
                     </td>
                     <td style="padding: 0.3rem;">
+                        <input type="date" class="form-control form-control-sm"
+                               value="${advance.transaction_date || today}"
+                               onchange="updateAdvanceField(${advance.id}, 'transaction_date', this.value)"
+                               style="font-size: 0.8rem;">
+                    </td>
+                    <td style="padding: 0.3rem;">
                         <select class="form-control form-control-sm" onchange="updateAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
                             <option value="">Seleccionar cuenta</option>
                             {% for cash in cash_accounts %}
-                            <option value="{{ cash.id }}" ${advance.cash_account_id === {{ cash.id }} ? 'selected' : ''}>{{ cash.name }}</option>
+                            <option value="{{ cash.id }}" data-cash-id="{{ cash.id }}">{{ cash.name }}</option>
                             {% endfor %}
                         </select>
                     </td>
@@ -3161,6 +3172,11 @@
                 </tr>
             `;
             $('#advance_payments_body').append(row);
+            
+            // Seleccionar la cuenta correcta si existe
+            if (advance.cash_account_id) {
+                $(`#advance-row-${advance.id} select[onchange*="cash_account_id"]`).val(advance.cash_account_id);
+            }
         }
 
         function updateAdvanceField(advanceId, field, value) {
@@ -3215,10 +3231,12 @@
             }
 
             const advanceId = ++editAdvanceCounter;
+            const today = new Date().toISOString().split('T')[0]; // Fecha actual
             const advancePayment = {
                 id: advanceId,
                 way_to_pay: 'E', // Efectivo por defecto
                 amount: 0,
+                transaction_date: today,
                 cash_account_id: ''
             };
 
@@ -3228,6 +3246,7 @@
         }
 
         function addEditAdvancePaymentRow(advance) {
+            const today = new Date().toISOString().split('T')[0]; // Fecha actual en formato YYYY-MM-DD
             const row = `
                 <tr id="edit-advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
@@ -3239,16 +3258,22 @@
                     </td>
                     <td style="padding: 0.3rem;">
                         <input type="number" class="form-control form-control-sm text-right"
-                               value="${advance.amount}"
+                               value="${advance.amount || ''}"
                                min="0" step="0.01"
                                onkeyup="updateEditAdvanceField(${advance.id}, 'amount', this.value)"
                                placeholder="0.00" style="font-size: 0.8rem;">
                     </td>
                     <td style="padding: 0.3rem;">
+                        <input type="date" class="form-control form-control-sm"
+                               value="${advance.transaction_date || today}"
+                               onchange="updateEditAdvanceField(${advance.id}, 'transaction_date', this.value)"
+                               style="font-size: 0.8rem;">
+                    </td>
+                    <td style="padding: 0.3rem;">
                         <select class="form-control form-control-sm" onchange="updateEditAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
                             <option value="">Seleccionar cuenta</option>
                             {% for cash in cash_accounts %}
-                            <option value="{{ cash.id }}" ${advance.cash_account_id == {{ cash.id }} ? 'selected' : ''}>{{ cash.name }}</option>
+                            <option value="{{ cash.id }}" data-cash-id="{{ cash.id }}">{{ cash.name }}</option>
                             {% endfor %}
                         </select>
                     </td>
@@ -3260,6 +3285,11 @@
                 </tr>
             `;
             $('#edit_advance_payments_body').append(row);
+            
+            // Seleccionar la cuenta correcta si existe
+            if (advance.cash_account_id) {
+                $(`#edit-advance-row-${advance.id} select[onchange*="cash_account_id"]`).val(advance.cash_account_id);
+            }
         }
 
         function updateEditAdvanceField(advanceId, field, value) {
@@ -4231,13 +4261,28 @@
                 editAdvanceCounter = 0;
                 $('#edit_advance_payments_body').empty();
 
-                // Si hay adelanto, crear un adelanto por defecto
-                if (orderData.cash_advance > 0) {
+                // Cargar adelantos múltiples desde el backend
+                if (orderData.advance_payments && orderData.advance_payments.length > 0) {
+                    orderData.advance_payments.forEach(advance => {
+                        const advanceId = ++editAdvanceCounter;
+                        const advancePayment = {
+                            id: advanceId,
+                            way_to_pay: advance.way_to_pay || 'E',
+                            amount: advance.amount || 0,
+                            transaction_date: advance.transaction_date || new Date().toISOString().split('T')[0],
+                            cash_account_id: advance.cash_account_id || ''
+                        };
+                        editAdvancePayments.push(advancePayment);
+                        addEditAdvancePaymentRow(advancePayment);
+                    });
+                } else if (orderData.cash_advance > 0) {
+                    // Fallback: si no hay adelantos múltiples pero hay cash_advance, crear uno por defecto
                     const advanceId = ++editAdvanceCounter;
                     const advancePayment = {
                         id: advanceId,
                         way_to_pay: 'E', // Efectivo por defecto
                         amount: orderData.cash_advance,
+                        transaction_date: new Date().toISOString().split('T')[0],
                         cash_account_id: ''
                     };
                     editAdvancePayments.push(advancePayment);
