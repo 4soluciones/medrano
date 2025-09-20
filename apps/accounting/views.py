@@ -2120,7 +2120,8 @@ def sales_report_by_user(request):
         # Obtener todos los usuarios que tienen acceso al sistema
         users_set = CustomUser.objects.filter(
             has_access_system=True,
-            is_active=True
+            is_active=True,
+            is_staff=False
         ).order_by('first_name', 'last_name')
         
         # Fecha actual para el filtro
