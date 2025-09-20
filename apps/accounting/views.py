@@ -2589,15 +2589,164 @@ def export_sales_report_by_user_excel(request):
             # Totales de ingresos
             row += 1
             ws.cell(row=row, column=8, value="YAPE:").font = Font(bold=True)
-            ws.cell(row=row, column=9, value=decimal.Decimal(advances_yape)).font = Font(bold=True)
+            ws.cell(row=row, column=9, value=Decimal(advances_yape)).font = Font(bold=True)
             row += 1
             ws.cell(row=row, column=8, value="EFECTIVO:").font = Font(bold=True)
-            ws.cell(row=row, column=9, value=decimal.Decimal(advances_efectivo)).font = Font(bold=True)
+            ws.cell(row=row, column=9, value=Decimal(advances_efectivo)).font = Font(bold=True)
             row += 1
             ws.cell(row=row, column=8, value="TOTAL INGRESOS:").font = Font(bold=True, color="FFFFFF")
             ws.cell(row=row, column=8).fill = header_fill_primary
-            ws.cell(row=row, column=9, value=decimal.Decimal(total_advances)).font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=row, column=9, value=Decimal(total_advances)).font = Font(bold=True, color="FFFFFF")
             ws.cell(row=row, column=9).fill = header_fill_primary
+            
+            # Sección de SALDOS (solo si hay datos)
+            if payments_cashflows.exists():
+                row += 3  # Espacio entre secciones
+                
+                # Título de saldos
+                ws.cell(row=row, column=1, value="SALDOS")
+                ws.cell(row=row, column=1).font = header_font
+                ws.cell(row=row, column=1).fill = header_fill_success
+                ws.merge_cells(f'A{row}:F{row}')
+                ws.cell(row=row, column=1).alignment = Alignment(horizontal='center')
+                
+                # Encabezados de saldos
+                row += 1
+                payments_headers = ['N° COMPROBANTE', 'FECHA', 'DESCRIPCIÓN', 'USUARIO', 'TIPO PAGO', 'S/TOTAL']
+                for col, header in enumerate(payments_headers, 1):
+                    cell = ws.cell(row=row, column=col, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill_success
+                    cell.border = border
+                    cell.alignment = Alignment(horizontal='center')
+                
+                # Datos de saldos
+                row += 1
+                for cashflow in payments_cashflows:
+                    ws.cell(row=row, column=1, value=f"{cashflow.order.subsidiary.serial}-{cashflow.order.correlative:03d}").border = border
+                    ws.cell(row=row, column=2, value=cashflow.order.register_date.strftime('%d-%m-%Y')).border = border
+                    ws.cell(row=row, column=3, value=cashflow.description or "PAGO TOTAL").border = border
+                    ws.cell(row=row, column=4, value=cashflow.user.first_name or cashflow.user.username or '-').border = border
+                    
+                    # Tipo de pago
+                    payment_type = ""
+                    if cashflow.way_to_pay == 'E':
+                        payment_type = "EFECTIVO"
+                    elif cashflow.way_to_pay == 'Y':
+                        payment_type = "YAPE"
+                    elif cashflow.way_to_pay == 'D':
+                        payment_type = "DEPÓSITO"
+                    ws.cell(row=row, column=5, value=payment_type).border = border
+                    ws.cell(row=row, column=6, value=Decimal(cashflow.total)).border = border
+                    row += 1
+                
+                # Totales de saldos
+                payments_efectivo_section = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+                payments_yape_section = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+                
+                row += 1
+                ws.cell(row=row, column=5, value="YAPE:").font = Font(bold=True)
+                ws.cell(row=row, column=6, value=Decimal(payments_yape_section)).font = Font(bold=True)
+                row += 1
+                ws.cell(row=row, column=5, value="EFECTIVO:").font = Font(bold=True)
+                ws.cell(row=row, column=6, value=Decimal(payments_efectivo_section)).font = Font(bold=True)
+                row += 1
+                ws.cell(row=row, column=5, value="TOTAL CANCELACIONES:").font = Font(bold=True, color="FFFFFF")
+                ws.cell(row=row, column=5).fill = header_fill_success
+                ws.cell(row=row, column=6, value=Decimal(total_payments)).font = Font(bold=True, color="FFFFFF")
+                ws.cell(row=row, column=6).fill = header_fill_success
+            
+            # Sección de EGRESOS (solo si hay datos)
+            if expenses_cashflows.exists():
+                row += 3  # Espacio entre secciones
+                
+                # Título de egresos
+                ws.cell(row=row, column=1, value="EGRESOS")
+                ws.cell(row=row, column=1).font = header_font
+                ws.cell(row=row, column=1).fill = header_fill_danger
+                ws.merge_cells(f'A{row}:E{row}')
+                ws.cell(row=row, column=1).alignment = Alignment(horizontal='center')
+                
+                # Encabezados de egresos
+                row += 1
+                expenses_headers = ['NRO', 'DESCRIPCIÓN', 'TIPO EGRESO', 'USUARIO', 'MONTO']
+                for col, header in enumerate(expenses_headers, 1):
+                    cell = ws.cell(row=row, column=col, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill_danger
+                    cell.border = border
+                    cell.alignment = Alignment(horizontal='center')
+                
+                # Datos de egresos
+                row += 1
+                for i, cashflow in enumerate(expenses_cashflows, 1):
+                    ws.cell(row=row, column=1, value=i).border = border
+                    ws.cell(row=row, column=2, value=cashflow.description or '-').border = border
+                    
+                    # Tipo de egreso
+                    expense_type = ""
+                    if cashflow.type_expense == 'V':
+                        expense_type = "VARIABLE"
+                    elif cashflow.type_expense == 'F':
+                        expense_type = "FIJO"
+                    elif cashflow.type_expense == 'P':
+                        expense_type = "PERSONAL"
+                    elif cashflow.type_expense == 'O':
+                        expense_type = "OTRO"
+                    ws.cell(row=row, column=3, value=expense_type).border = border
+                    ws.cell(row=row, column=4, value=cashflow.user.first_name or cashflow.user.username or '-').border = border
+                    ws.cell(row=row, column=5, value=Decimal(cashflow.total)).border = border
+                    row += 1
+                
+                # Total de egresos
+                row += 1
+                ws.cell(row=row, column=4, value="TOTAL EGRESOS:").font = Font(bold=True, color="FFFFFF")
+                ws.cell(row=row, column=4).fill = header_fill_danger
+                ws.cell(row=row, column=5, value=Decimal(total_expenses_amount)).font = Font(bold=True, color="FFFFFF")
+                ws.cell(row=row, column=5).fill = header_fill_danger
+            
+            # Sección de RESUMENES
+            row += 3  # Espacio entre secciones
+            
+            # Título de resúmenes
+            ws.cell(row=row, column=1, value="RESUMENES")
+            ws.cell(row=row, column=1).font = header_font
+            ws.cell(row=row, column=1).fill = PatternFill(start_color="6f42c1", end_color="6f42c1", fill_type="solid")  # Púrpura
+            ws.merge_cells(f'A{row}:B{row}')
+            ws.cell(row=row, column=1).alignment = Alignment(horizontal='center')
+            
+            # Calcular totales para resúmenes
+            payments_efectivo_total = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
+            payments_yape_total = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
+            total_general = advances_efectivo + advances_yape + advances_deposito + payments_efectivo_total + payments_yape_total
+            
+            # Datos de resúmenes
+            summary_data = [
+                ['CONCEPTO', 'MONTO'],
+                ['INGRESOS DEL DÍA:', Decimal(total_advances)],
+                ['SALDOS:', Decimal(total_payments)],
+                ['SUBTOTAL INGRESOS:', Decimal(total_advances + total_payments)],
+                ['TOTAL EGRESOS:', Decimal(total_expenses_amount)],
+                ['TOTAL EFECTIVO:', Decimal(advances_efectivo + payments_efectivo_total)],
+                ['TOTAL YAPE:', Decimal(advances_yape + payments_yape_total)],
+                ['TOTAL FINAL:', Decimal(total_general - total_expenses_amount)]
+            ]
+            
+            row += 1
+            for i, (concepto, monto) in enumerate(summary_data):
+                if i == 0:  # Encabezado
+                    ws.cell(row=row, column=1, value=concepto).font = header_font
+                    ws.cell(row=row, column=1).fill = PatternFill(start_color="6f42c1", end_color="6f42c1", fill_type="solid")
+                    ws.cell(row=row, column=2, value=monto).font = header_font
+                    ws.cell(row=row, column=2).fill = PatternFill(start_color="6f42c1", end_color="6f42c1", fill_type="solid")
+                    ws.cell(row=row, column=1).alignment = Alignment(horizontal='center')
+                    ws.cell(row=row, column=2).alignment = Alignment(horizontal='center')
+                else:
+                    ws.cell(row=row, column=1, value=concepto).font = Font(bold=True)
+                    ws.cell(row=row, column=2, value=monto).font = Font(bold=True)
+                    ws.cell(row=row, column=1).border = border
+                    ws.cell(row=row, column=2).border = border
+                row += 1
             
             # Ajustar ancho de columnas
             for col in range(1, 10):

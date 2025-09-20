@@ -713,18 +713,35 @@ def generate_ticket_pdf(order_id):
         ])
 
         # Solo mostrar adelanto y faltante para órdenes de servicio (tipo 'O')
-        if order.type == 'O' and hasattr(order, 'cash_advance') and order.cash_advance and order.cash_advance > 0:
-            totales_data.append([
-                Paragraph("ADELANTO:", styles['Helvetica_Bold_Right_8']),
-                Paragraph(f"S/ {order.cash_advance:.2f}", styles['Helvetica_Right_8'])
-            ])
-            # Calcular total faltante
-            total_faltante = order.total - order.cash_advance
-            if total_faltante > 0:
+        if order.type == 'O':
+            # Consultar todos los cashflows de la orden desde CashFlow
+            from ..accounting.models import CashFlow
+            order_cashflows = CashFlow.objects.filter(
+                order=order,
+                type='E'  # Solo entradas (tanto adelantos como pagos totales)
+            )
+            
+            # Calcular el total de adelantos
+            order_advances = order_cashflows.filter(order_type_entry='A')
+            total_advances = sum(float(cf.total) for cf in order_advances)
+            
+            # Calcular el total de todos los cashflows (adelantos + pagos totales)
+            total_all_cashflows = sum(float(cf.total) for cf in order_cashflows)
+            
+            # Solo mostrar si hay adelantos y la suma de todos los cashflows no es igual al total de la orden
+            if total_advances > 0 and abs(total_all_cashflows - float(order.total)) > 0.01:
                 totales_data.append([
-                    Paragraph("PAGO FALTANTE:", styles['Helvetica_Bold_Right_8']),
-                    Paragraph(f"S/ {total_faltante:.2f}", styles['Helvetica_Bold_Right_8'])
+                    Paragraph("ADELANTO:", styles['Helvetica_Bold_Right_8']),
+                    Paragraph(f"S/ {total_advances:.2f}", styles['Helvetica_Right_8'])
                 ])
+                
+                # Calcular total faltante
+                total_faltante = float(order.total) - total_advances
+                if total_faltante > 0.01:  # Tolerancia de 1 céntimo
+                    totales_data.append([
+                        Paragraph("PAGO FALTANTE:", styles['Helvetica_Bold_Right_8']),
+                        Paragraph(f"S/ {total_faltante:.2f}", styles['Helvetica_Bold_Right_8'])
+                    ])
 
         # Crear tabla de totales
         totales_table = Table(totales_data, colWidths=[_wt * 0.70, _wt * 0.30])
@@ -812,7 +829,7 @@ def download_ticket_pdf(request, order_id):
                 order_type = 'Order'
             else:
                 order_type = 'Cotizacion'
-            response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
+            # response['Content-Disposition'] = f'attachment; filename="{order_type}_{order.serial}-{str(order.correlative).zfill(3)}.pdf"'
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)
