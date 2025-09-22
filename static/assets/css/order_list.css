@@ -1001,12 +1001,12 @@ input[type="date"] {
 }
 
 /* Estilos para botones redondeados */
-.btn {
-    border-radius: 25px !important;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-}
+/*.btn {*/
+/*    border-radius: 25px !important;*/
+/*    font-weight: 500;*/
+/*    transition: all 0.3s ease;*/
+/*    border: 2px solid transparent;*/
+/*}*/
 
 .btn:hover {
     transform: translateY(-2px);
