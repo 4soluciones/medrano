@@ -49,6 +49,10 @@
 
     <!-- fullCalendar -->
     <link rel="stylesheet" href="{% static 'plugins/fullcalendar/main.css' %}">
+    
+    <!-- CSS personalizado por página -->
+    {% block extra_css %}{% endblock extra_css %}
+    
     <style>
         /* ====== SIDEBAR GENERAL ====== */
         .main-sidebar {
@@ -1029,14 +1033,14 @@
                                         <a href="{% url 'apps.accounting:sales_report' %}"
                                            class="nav-link text-cyan font-weight-light">
                                             <i class="nav-icon fas fa-chart-bar"></i>
-                                            <p>Reporte de Ventas y Gastos</p>
+                                            <p>Reporte Ventas por Sucursal</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">
                                         <a href="{% url 'apps.accounting:sales_report_by_user' %}"
                                            class="nav-link text-cyan font-weight-light">
                                             <i class="nav-icon fa-solid fa-clipboard-list"></i>
-                                            <p>Reporte por Usuario</p>
+                                            <p>Reporte Ventas por Usuario</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">

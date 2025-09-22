@@ -1297,7 +1297,7 @@ def get_order_for_edit(request):
                     order_data['details'].append(detail_data)
                 
                 # Preparar adelantos múltiples desde CashFlow
-                for cashflow in order_obj.cashflow_set.filter(type='E'):  # Solo entradas (adelantos)
+                for cashflow in order_obj.cashflow_set.filter(type='E', order_type_entry='A'):  # Solo entradas (adelantos)
                     advance_data = {
                         'id': cashflow.id,
                         'way_to_pay': cashflow.way_to_pay,
@@ -2289,11 +2289,12 @@ def complete_order_with_payment(request):
                     amount = Decimal(str(payment.get('amount', 0)))
                     way_to_pay = payment.get('way_to_pay')
                     cash_account_id = payment.get('cash_account_id')
+                    payment_date_specific = payment.get('payment_date')
                     
-                    if not all([amount, way_to_pay, cash_account_id]):
+                    if not all([amount, way_to_pay, cash_account_id, payment_date_specific]):
                         return JsonResponse({
                             'success': False,
-                            'message': 'Cada pago debe tener monto, forma de pago y cuenta de destino'
+                            'message': 'Cada pago debe tener monto, forma de pago, fecha y cuenta de destino'
                         }, status=HTTPStatus.BAD_REQUEST)
                     
                     if amount <= 0:
@@ -2311,9 +2312,9 @@ def complete_order_with_payment(request):
                             'message': f'Cuenta de caja no encontrada: {cash_account_id}'
                         }, status=HTTPStatus.NOT_FOUND)
                     
-                    # Crear entrada en cashflow
+                    # Crear entrada en cashflow usando la fecha específica del pago
                     cashflow_entry = CashFlow.objects.create(
-                        transaction_date=payment_date,
+                        transaction_date=payment_date_specific,
                         # created_at=datetime.now(),
                         description=f"PAGO COMPLETADO DE LA ORDEN {order.serial}-{order.correlative:03d} - {order.client.full_name} ({way_to_pay})",
                         serial=order.subsidiary.serial,

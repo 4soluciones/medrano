@@ -1171,6 +1171,9 @@ def sales_report(request):
             total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
             total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
+            # Calcular total de apertura de caja (tipo 'A')
+            total_apertura = cashflows.filter(type='A').aggregate(total=Sum('total'))['total'] or 0
+            
             # Calcular totales por tipo de pago para adelantos (ingresos del día)
             advances_efectivo = 0
             advances_yape = 0
@@ -1193,7 +1196,7 @@ def sales_report(request):
             total_efectivo = advances_efectivo + payments_efectivo
             total_yape = advances_yape + payments_yape
             total_deposito = advances_deposito + payments_deposito
-            total_general = total_efectivo + total_yape + total_deposito
+            total_general = total_efectivo + total_yape + total_deposito + total_apertura
 
             context = {
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
@@ -1204,6 +1207,7 @@ def sales_report(request):
                 'total_advances': total_advances,  # Total ingresos del día
                 'total_payments': total_payments,  # Total cancelaciones
                 'total_expenses_amount': total_expenses_amount,
+                'total_apertura': total_apertura,  # Total apertura de caja
                 'advances_efectivo': advances_efectivo,
                 'advances_yape': advances_yape,
                 'advances_deposito': advances_deposito,
@@ -2267,6 +2271,9 @@ def sales_report_by_user(request):
             total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
             total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
+            # Calcular total de apertura de caja (tipo 'A')
+            total_apertura = cashflows.filter(type='A').aggregate(total=Sum('total'))['total'] or 0
+            
             # Calcular totales por tipo de pago para adelantos (ingresos del día)
             advances_efectivo = 0
             advances_yape = 0
@@ -2289,7 +2296,7 @@ def sales_report_by_user(request):
             total_efectivo = advances_efectivo + payments_efectivo
             total_yape = advances_yape + payments_yape
             total_deposito = advances_deposito + payments_deposito
-            total_general = total_efectivo + total_yape + total_deposito
+            total_general = total_efectivo + total_yape + total_deposito + total_apertura
 
             context = {
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
@@ -2300,6 +2307,7 @@ def sales_report_by_user(request):
                 'total_advances': total_advances,  # Total ingresos del día
                 'total_payments': total_payments,  # Total cancelaciones
                 'total_expenses_amount': total_expenses_amount,
+                'total_apertura': total_apertura,  # Total apertura de caja
                 'advances_efectivo': advances_efectivo,
                 'advances_yape': advances_yape,
                 'advances_deposito': advances_deposito,
