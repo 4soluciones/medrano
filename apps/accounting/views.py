@@ -339,21 +339,22 @@ def cashflow_list(request):
         try:
             # Filtrar gastos según parámetros
             cash_id = request.POST.get('cash_account')
-            date_from = request.POST.get('date_from')
-            date_to = request.POST.get('date_to')
+            report_date = request.POST.get('report_date')
             
-            cashflows = CashFlow.objects.all()
+            cashflows = CashFlow.objects.filter(type__in=['S', 'A'])
         
             if cash_id and cash_id != '0':
                 cashflows = cashflows.filter(cash_id=cash_id)
 
-            # Filtros de fecha
-            if date_from:
-                cashflows = cashflows.filter(transaction_date__gte=date_from)
-            if date_to:
-                cashflows = cashflows.filter(transaction_date__lte=date_to)
+            # Filtro de fecha única
+            if report_date:
+                cashflows = cashflows.filter(transaction_date=report_date)
 
-            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by('id')
+            # Ordenar: aperturas primero, luego por id
+            cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by(
+                'type',  # Aperturas (A) aparecerán primero
+                'id'
+            )
 
             # Calcular totales
             # Entradas: tipo 'E' (Entrada) + tipo 'A' (Apertura)
@@ -366,20 +367,19 @@ def cashflow_list(request):
             # Totales por tipo de gasto
             expense_totals = {}
             for expense_code, expense_name in CashFlow.TYPE_EXPENSE:
-                total = cashflows.filter(type='S', type_expense=expense_code).aggregate(
+                total = cashflows.filter(type__in=['S', 'A'], type_expense=expense_code).aggregate(
                     total=Sum('total')
                 )['total'] or 0
                 expense_totals[expense_code] = total
 
             tpl = loader.get_template('accounting/cashflow_list_grid.html')
             context = {
-                'cashflows': cashflows.filter(type='S'),
+                'cashflows': cashflows,
                 'total_income': total_income,
                 'total_expenses': total_expenses,
                 'net_balance': net_balance,
                 'expense_totals': expense_totals,
-                'date_from': date_from,
-                'date_to': date_to,
+                # 'date_now': date_now,
             }
 
             return JsonResponse({
@@ -631,6 +631,7 @@ def get_cash_accounts_by_subsidiary(request):
                         'id': account.id,
                         'name': account.name,
                         'currency': account.get_currency_type_display(),
+                        'account_type': account.account_type,
                         # 'balance': float(account.initial)
                     })
                 

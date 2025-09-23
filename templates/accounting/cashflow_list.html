@@ -67,16 +67,9 @@
                                 <div class="row g-2">
                                     <div class="col-md-2">
                                         <div class="form-group mb-1">
-                                            <label for="date-from" class="form-label-sm">Fecha Desde</label>
+                                            <label for="report_date" class="form-label-sm">Fecha</label>
                                             <input type="date" class="form-control form-control-sm" value="{{ date_now }}"
-                                                   id="date-from" name="date_from">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group mb-1">
-                                            <label for="date-to" class="form-label-sm">Fecha Hasta</label>
-                                            <input type="date" class="form-control form-control-sm" value="{{ date_now }}"
-                                                   id="date-to" name="date_to">
+                                                   id="report_date" name="report_date">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -665,12 +658,9 @@ $(document).ready(function() {
         loadAllCashAccounts();
     }
 
-    // Establecer fecha actual en los filtros si están vacíos
-    if (!$('#date-from').val()) {
-        $('#date-from').val(new Date().toISOString().split('T')[0]);
-    }
-    if (!$('#date-to').val()) {
-        $('#date-to').val(new Date().toISOString().split('T')[0]);
+    // Establecer fecha actual en el filtro si está vacío
+    if (!$('#report_date').val()) {
+        $('#report_date').val(new Date().toISOString().split('T')[0]);
     }
 
     // Manejar envío del formulario de búsqueda
@@ -682,9 +672,8 @@ $(document).ready(function() {
     // Limpiar filtros
     $('#clear-filters').on('click', function() {
         $('#search-form')[0].reset();
-        // Establecer fechas del día actual después de limpiar
-        $('#date-from').val(new Date().toISOString().split('T')[0]);
-        $('#date-to').val(new Date().toISOString().split('T')[0]);
+        // Establecer fecha del día actual después de limpiar
+        $('#report_date').val(new Date().toISOString().split('T')[0]);
         loadCashflows();
     });
 
@@ -817,19 +806,20 @@ function filterCashAccounts() {
                     // Agregar opciones de cuentas
                     response.accounts.forEach(function(account) {
                         cashSelect.append(
-                            `<option value="${account.id}">${account.name}</option>`
+                            `<option value="${account.id}" data-account-type="${account.account_type || ''}">${account.name}</option>`
                         );
                     });
                     
-                    // Seleccionar la primera cuenta de tipo 'E' si existe
-                    {% if first_cash_account %}
-                    cashSelect.val('{{ first_cash_account.id }}');
-                    {% else %}
-                    // Si no hay cuenta específica, seleccionar la primera disponible
-                    if (response.accounts.length > 0) {
-                        cashSelect.val(response.accounts[0].id);
+                    // Buscar y seleccionar la primera cuenta de tipo 'C' (Caja Chica/Efectivo)
+                    const cashAccount = cashSelect.find('option[data-account-type="C"]').first();
+                    if (cashAccount.length > 0) {
+                        cashSelect.val(cashAccount.val());
+                    } else {
+                        // Si no hay cuenta de tipo 'C', seleccionar la primera disponible
+                        if (response.accounts.length > 0) {
+                            cashSelect.val(response.accounts[0].id);
+                        }
                     }
-                    {% endif %}
                 } else {
                     console.error('Error al cargar las cuentas:', response.message);
                 }
@@ -842,7 +832,7 @@ function filterCashAccounts() {
         // Mostrar todas las cuentas si no hay sucursal seleccionada
         cashSelect.find('option:not(:first)').remove();
         {% for cash in cash_accounts %}
-        cashSelect.append('<option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
+        cashSelect.append('<option value="{{ cash.id }}" data-account-type="{{ cash.account_type }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
         {% endfor %}
     }
 }
