@@ -1002,13 +1002,15 @@
                                     </p>
                                 </a>
                                 <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{% url 'apps.accounting:cash_list' %}"
-                                           class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-university"></i>
-                                            <p>Cuentas / Cajas</p>
-                                        </a>
-                                    </li>
+                                     {% if user.has_access_to_all %}
+                                         <li class="nav-item">
+                                             <a href="{% url 'apps.accounting:cash_list' %}"
+                                                class="nav-link text-cyan font-weight-light">
+                                                 <i class="nav-icon fas fa-university"></i>
+                                                 <p>Cuentas / Cajas</p>
+                                             </a>
+                                         </li>
+                                     {% endif %}
                                     <li class="nav-item">
                                         <a href="{% url 'apps.accounting:cashflow_list' %}"
                                            class="nav-link text-cyan font-weight-light">
@@ -1043,26 +1045,28 @@
                                             <p>Reporte Ventas por Usuario</p>
                                         </a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a href="{% url 'apps.accounting:monthly_report' %}"
-                                           class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-calendar-alt"></i>
-                                            <p>Reporte Mensual</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{% url 'apps.accounting:weekly_report' %}"
-                                           class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-calendar-week"></i>
-                                            <p>Reporte Semanal</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="" class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fas fa-chart-line"></i>
-                                            <p>Reporte Facturas y Boletas</p>
-                                        </a>
-                                    </li>
+                                    {% if user.has_access_to_all %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'apps.accounting:monthly_report' %}"
+                                               class="nav-link text-cyan font-weight-light">
+                                                <i class="nav-icon fas fa-calendar-alt"></i>
+                                                <p>Reporte Mensual</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{% url 'apps.accounting:weekly_report' %}"
+                                               class="nav-link text-cyan font-weight-light">
+                                                <i class="nav-icon fas fa-calendar-week"></i>
+                                                <p>Reporte Semanal</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="" class="nav-link text-cyan font-weight-light">
+                                                <i class="nav-icon fas fa-chart-line"></i>
+                                                <p>Reporte Facturas y Boletas</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
                                 </ul>
                             </li>
                         {% endif %}
@@ -1142,7 +1146,7 @@
                                         {% endif %}
                                         {% if user.has_access_to_all or user.has_access_to_finances %}
                                             <div class="col-lg-3 col-md-6 mb-3">
-                                                <a href="{% url 'apps.accounting:cash_list' %}"
+                                                <a href="{% url 'apps.accounting:cashflow_list' %}"
                                                    class="text-decoration-none">
                                                     <div class="quick-access-card bg-gradient-success text-white text-center p-4 rounded-lg shadow-lg h-100">
                                                         <div class="quick-access-icon mb-3">
@@ -1203,7 +1207,7 @@
                     </div>
 
                     <!-- Estadísticas y Gráficos -->
-                    {% if user.has_access_to_all or user.has_access_to_report %}
+                    {% if user.has_access_to_all %}
                         <div class="row mb-4">
                             <!-- Tarjetas de Estadísticas -->
                             <div class="col-lg-3 col-md-6 mb-3">
@@ -1353,7 +1357,7 @@
                     {% endif %}
 
                     <!-- Gráficos -->
-                    {% if user.has_access_to_all or user.has_access_to_report %}
+                    {% if user.has_access_to_all %}
                         <div class="row mb-4">
                             <!-- Gráfico de Órdenes Mensuales -->
                             <div class="col-lg-6 mb-3">
