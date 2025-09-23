@@ -3122,7 +3122,8 @@
             }
 
             const advanceId = ++advanceCounter;
-            const today = new Date().toISOString().split('T')[0]; // Fecha actual
+            const today = new Date().toLocaleDateString('en-CA');
+            //const today = new Date().toISOString().split('T')[0]; // Fecha actual
             const advancePayment = {
                 id: advanceId,
                 way_to_pay: 'E', // Efectivo por defecto
