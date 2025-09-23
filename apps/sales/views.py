@@ -885,6 +885,7 @@ def order_list(request):
             user_id = request.POST.get('user')
             order_type = request.POST.get('order_type')
             status = request.POST.get('status')
+            delivery_status = request.POST.get('delivery_status')
             date_from = request.POST.get('date_from')
             date_to = request.POST.get('date_to')
             client_id_filter = request.POST.get('client_id_filter')
@@ -907,7 +908,9 @@ def order_list(request):
                 if order_type and order_type != '0':
                     orders = orders.filter(type=order_type)
                 if status and status != '0':
-                    orders = orders.filter(status=status)
+                    orders = orders.filter(status=status, type='O')
+                if delivery_status and delivery_status != '0':
+                    orders = orders.filter(delivery_status=delivery_status, type='O')
                 if date_from and date_to:
                     orders = orders.filter(register_date__range=(date_from, date_to))
 
