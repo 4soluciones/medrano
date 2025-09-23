@@ -151,7 +151,7 @@
         <div class="modal-content roboto-condensed-regular">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-plus-circle mr-2"></i>Nuevo Gasto/Transacción
+                    <i class="fas fa-plus-circle mr-2"></i>Nuevo Gasto
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
@@ -200,9 +200,13 @@
                                 <select class="form-control" id="cash_id" name="cash_id" required>
                                     <option value="">Seleccione cuenta</option>
                                     {% for cash in cash_accounts %}
-                                        <option value="{{ cash.id }}" data-subsidiary="{{ cash.subsidiary.id }}">
-                                            {{ cash.name }} - {{ cash.get_currency_type_display }}
-                                        </option>
+                                        {% if cash.subsidiary.id == user_subsidiary.id and cash.account_type == 'C'%}
+                                            <option selected value="{{ cash.id }}" data-subsidiary="{{ cash.subsidiary.id }}">{{ cash.name }}</option>
+                                        {% else %}
+                                            <option value="{{ cash.id }}" data-subsidiary="{{ cash.subsidiary.id }}">
+                                                {{ cash.name }}
+                                            </option>
+                                        {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
