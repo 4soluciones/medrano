@@ -3150,7 +3150,7 @@
         }
 
         function addAdvancePaymentRow(advance) {
-            const today = new Date().toISOString().split('T')[0]; // Fecha actual en formato YYYY-MM-DD
+            const today = new Date().toLocaleDateString('en-CA'); // Fecha actual en formato YYYY-MM-DD
             const row = `
                 <tr id="advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
@@ -3248,7 +3248,7 @@
             }
 
             const advanceId = ++editAdvanceCounter;
-            const today = new Date().toISOString().split('T')[0]; // Fecha actual
+            const today = new Date().toLocaleDateString('en-CA'); // Fecha actual
             const advancePayment = {
                 id: advanceId,
                 way_to_pay: 'E', // Efectivo por defecto
@@ -3263,7 +3263,7 @@
         }
 
         function addEditAdvancePaymentRow(advance) {
-            const today = new Date().toISOString().split('T')[0]; // Fecha actual en formato YYYY-MM-DD
+            const today = new Date().toLocaleDateString('en-CA'); // Fecha actual en formato YYYY-MM-DD
             const row = `
                 <tr id="edit-advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
