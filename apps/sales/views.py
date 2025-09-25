@@ -1347,7 +1347,13 @@ def order_update(request):
                 }, status=HTTPStatus.BAD_REQUEST)
             
             order_obj = Order.objects.get(id=int(order_id))
-            
+
+            advance_payments_data = request.POST.get('advance_payments', '[]')
+            advance_payments = json.loads(advance_payments_data) if advance_payments_data else []
+
+            total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
+            cash_advance_decimal = decimal.Decimal(str(total_advance))
+
             # Actualizar campos básicos
             order_obj.type = request.POST.get('order_type', order_obj.type)
             order_obj.client_id = request.POST.get('client_id')
@@ -1446,13 +1452,25 @@ def order_update(request):
                             except Cash.DoesNotExist:
                                 # Si no se encuentra la cuenta, usar la primera disponible como fallback
                                 advance_cash_account = Cash.objects.first()
-                            
+
+                            is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
+
+                            if is_full_payment:
+                                description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                                order_type_entry = 'T'
+                                order_obj.status = 'C'
+                            else:
+                                description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                                order_type_entry = 'A'
+                                order_obj.status = 'P'
+                            order_obj.save()
+
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
                                 cashflow_entry = CashFlow.objects.create(
                                     transaction_date=advance_transaction_date,
                                     # created_at=datetime.now(),
-                                    description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
+                                    description=description,
                                     serial=order_obj.serial,
                                     n_receipt=order_obj.correlative,
                                     document_type_attached='O',  # Otro
@@ -1465,7 +1483,8 @@ def order_update(request):
                                     user=request.user,
                                     type_expense='O',  # Otros
                                     way_to_pay=way_to_pay_advance,  # Forma de pago específica
-                                    subsidiary=order_obj.subsidiary
+                                    subsidiary=order_obj.subsidiary,
+                                    order_type_entry=order_type_entry
                                 )
                     
                     # Verificar si el total de adelantos cubre el total de la orden
