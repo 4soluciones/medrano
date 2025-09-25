@@ -2743,13 +2743,20 @@ def get_order_for_conversion(request):
                     'total': float(detail.multiply()),
                     'observation': detail.observation or ''
                 })
-            
+
+            correlative = get_correlative_order_by_subsidiary(order_obj.subsidiary, 'O')
+            serial = order_obj.subsidiary.serial
+
             # Preparar los datos de la orden
             order_data = {
                 'id': order_obj.id,
                 'code': f"{order_obj.serial}-{order_obj.correlative:03d}",
-                'serial': order_obj.serial,
-                'correlative': order_obj.correlative,
+                # 'serial': order_obj.serial,
+                # 'correlative': order_obj.correlative,
+                'serial': serial,
+                'user_id': order_obj.user.id,
+                'user_name': order_obj.user.first_name,
+                'correlative': correlative,
                 'client_name': str(order_obj.client) if order_obj.client else '',
                 'client_id': order_obj.client.id if order_obj.client else None,
                 'register_date': order_obj.register_date.strftime('%Y-%m-%d') if order_obj.register_date else '',
@@ -2797,7 +2804,7 @@ def convert_order_to_service(request):
             
             order_id = request.POST.get('order_id')
             subsidiary_id = request.POST.get('subsidiary_id')
-            register_date = request.POST.get('register_date')
+            register_date = str(request.POST.get('register_date'))
             delivery_date = request.POST.get('delivery_date')
             observation = request.POST.get('observation', '')
             details_json = request.POST.get('details', '[]')
@@ -2830,16 +2837,24 @@ def convert_order_to_service(request):
             
             # Obtener el correlativo para la nueva orden de servicio
             correlative = get_correlative_order_by_subsidiary(subsidiary_obj, 'O')
-            
+
+            if delivery_date is not None and delivery_date != '':
+                order_obj.delivery_date = delivery_date
+            else:
+                order_obj.delivery_date = None
+
+
+
             # Actualizar la orden existente
             order_obj.type = 'O'  # Cambiar a Orden de Servicio
-            order_obj.serial = subsidiary_obj.serial
+            order_obj.serial = f'0{subsidiary_obj.serial}'
             order_obj.correlative = correlative
             order_obj.subsidiary = subsidiary_obj
             order_obj.register_date = register_date
-            order_obj.delivery_date = delivery_date
+            # order_obj.delivery_date = delivery_date if delivery_date else None,
             # Calcular el total de adelantos
             total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
+            cash_advance_decimal = decimal.Decimal(str(total_advance))
             order_obj.cash_advance = Decimal(str(total_advance))
             order_obj.observation = observation
             order_obj.status = 'P'  # Poner como pendiente
@@ -2882,7 +2897,16 @@ def convert_order_to_service(request):
                 try:
                     from apps.accounting.models import Cash, CashFlow
                     from datetime import datetime
-                    
+
+                    is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
+
+                    if is_full_payment:
+                        description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{int(order_obj.correlative):03d} {order_obj.client.full_name}"
+                        order_type_entry = 'T'
+                    else:
+                        description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{int(order_obj.correlative):03d} {order_obj.client.full_name}"
+                        order_type_entry = 'A'
+
                     # Registrar cada adelanto en CashFlow
                     for advance in advance_payments:
                         advance_amount = Decimal(str(advance.get('amount', 0)))
@@ -2900,10 +2924,10 @@ def convert_order_to_service(request):
                             
                             if advance_cash_account:
                                 # Crear entrada en CashFlow para cada adelanto
-                                cashflow_entry = CashFlow.objects.create(
+                                CashFlow.objects.create(
                                     transaction_date=advance_transaction_date,
                                     # created_at=datetime.now(),
-                                    description=f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}",
+                                    description=description,
                                     serial=order_obj.serial,
                                     n_receipt=order_obj.correlative,
                                     document_type_attached='O',  # Otro
@@ -2916,6 +2940,7 @@ def convert_order_to_service(request):
                                     user=request.user,
                                     type_expense='O',  # Otros
                                     way_to_pay=way_to_pay_advance,  # Forma de pago específica
+                                    order_type_entry=order_type_entry,
                                     subsidiary=order_obj.subsidiary
                                 )
                     
@@ -2930,7 +2955,9 @@ def convert_order_to_service(request):
                     print(f"Error al registrar adelantos en CashFlow: {str(e)}")
             
             # Generar el código de la nueva orden
-            new_code = f"{order_obj.serial}-{order_obj.correlative:03d}"
+            new_code = f"O-{order_obj.serial}-{int(order_obj.correlative):04d}"
+            order_obj.code = new_code
+            order_obj.save()
             
             return JsonResponse({
                 'success': True,
@@ -2959,7 +2986,7 @@ def convert_order_to_service(request):
                 'success': False,
                 'message': 'Error al convertir la orden: ' + str(e)
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
-    
+
     return JsonResponse({
         'success': False,
         'message': 'Método no permitido'
