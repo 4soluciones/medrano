@@ -771,7 +771,7 @@
                                         <i class="fas fa-user-tie mr-1"></i>Vendedor <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control" id="edit_user_id" name="user_id" readonly
-                                           value="{{ request.user.first_name }} {{ request.user.last_name }}"
+                                           value=""
                                            style="background-color: #f8f9fa;">
                                     <input type="hidden" id="edit_user_id_hidden" name="user_id" value="{{ request.user.id }}">
                                 </div>
@@ -4223,8 +4223,9 @@
             // Establecer valores en los campos
             $('#edit_order_type').val(orderData.type);
             $('#edit_client_id').val(orderData.client_id);
-            // El usuario siempre será el usuario actual (readonly)
-            $('#edit_user_id_hidden').val('{{ request.user.id }}');
+            //$('#edit_user_id_hidden').val('{{ request.user.id }}');
+            $('#edit_user_id_hidden').val(orderData.user_id);
+            $('#edit_user_id').val(orderData.user_name);
             // La sucursal no se puede cambiar en edición (disabled)
             $('#edit_subsidiary_id').val(orderData.subsidiary_id);
             $('#edit_subsidiary_id_hidden').val(orderData.subsidiary_id);
