@@ -1302,7 +1302,7 @@ def get_order_for_edit(request):
                     order_data['details'].append(detail_data)
                 
                 # Preparar adelantos múltiples desde CashFlow
-                for cashflow in order_obj.cashflow_set.filter(type='E', order_type_entry='A'):  # Solo entradas (adelantos)
+                for cashflow in order_obj.cashflow_set.filter(type='E'):  # Solo entradas (adelantos)
                     advance_data = {
                         'id': cashflow.id,
                         'way_to_pay': cashflow.way_to_pay,
@@ -1312,9 +1312,29 @@ def get_order_for_edit(request):
                     }
                     order_data['advance_payments'].append(advance_data)
                 
+                # Obtener cuentas de caja de la sucursal de la orden
+                try:
+                    from apps.accounting.models import Cash
+                    if order_obj.subsidiary:
+                        order_cash_accounts = Cash.objects.filter(subsidiary=order_obj.subsidiary).select_related('subsidiary')
+                    else:
+                        order_cash_accounts = Cash.objects.all().select_related('subsidiary')
+                except ImportError:
+                    order_cash_accounts = []
+                
+                # Preparar datos de cuentas de caja para el frontend
+                cash_accounts_data = []
+                for cash in order_cash_accounts:
+                    cash_accounts_data.append({
+                        'id': cash.id,
+                        'name': cash.name,
+                        'subsidiary_id': cash.subsidiary.id if cash.subsidiary else None
+                    })
+                
                 return JsonResponse({
                     'success': True,
-                    'order': order_data
+                    'order': order_data,
+                    'cash_accounts': cash_accounts_data
                 }, status=HTTPStatus.OK)
                 
             except Order.DoesNotExist:

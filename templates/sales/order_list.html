@@ -508,7 +508,7 @@
                             </div>
                         </div>
 
-                        <!-- Tabla de adelantos compacta -->
+                        <!-- Tabla de adelantos responsive -->
                         <div class="row mt-2" id="advance_payments_section" style="display: none;">
                             <div class="col-12">
                                 <div class="card card-sm">
@@ -518,7 +518,8 @@
                                         </h6>
                                     </div>
                                     <div class="card-body py-2">
-                                        <div class="table-responsive">
+                                        <!-- Vista de escritorio - tabla completa -->
+                                        <div class="table-responsive d-none d-md-block">
                                             <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
                                                 <thead class="table-light">
                                                 <tr>
@@ -540,6 +541,23 @@
                                                 </tr>
                                                 </tfoot>
                                             </table>
+                                        </div>
+
+                                        <!-- Vista móvil - tarjetas -->
+                                        <div class="d-block d-md-none" id="advance_payments_mobile">
+                                            <!-- Los adelantos se mostrarán como tarjetas en móvil -->
+                                        </div>
+
+                                        <!-- Total para móvil -->
+                                        <div class="d-block d-md-none mt-3">
+                                            <div class="alert alert-info py-2 mb-0" style="font-size: 0.9rem;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="font-weight-bold">
+                                                        <i class="fas fa-calculator mr-1"></i>Total Adelantos:
+                                                    </span>
+                                                    <span class="font-weight-bold" id="total_advances_mobile">S/ 0.00</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -954,7 +972,7 @@
                             </div>
                         </div>
 
-                        <!-- Tabla de adelantos compacta -->
+                        <!-- Tabla de adelantos responsive -->
                         <div class="row mt-2" id="edit_advance_payments_section" style="display: none;">
                             <div class="col-12">
                                 <div class="card card-sm">
@@ -964,7 +982,8 @@
                                         </h6>
                                     </div>
                                     <div class="card-body py-2">
-                                        <div class="table-responsive">
+                                        <!-- Vista de escritorio - tabla completa -->
+                                        <div class="table-responsive d-none d-md-block">
                                             <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
                                                 <thead class="table-light">
                                                 <tr>
@@ -986,6 +1005,23 @@
                                                 </tr>
                                                 </tfoot>
                                             </table>
+                                        </div>
+
+                                        <!-- Vista móvil - tarjetas -->
+                                        <div class="d-block d-md-none" id="edit_advance_payments_mobile">
+                                            <!-- Los adelantos se mostrarán como tarjetas en móvil -->
+                                        </div>
+
+                                        <!-- Total para móvil -->
+                                        <div class="d-block d-md-none mt-3">
+                                            <div class="alert alert-info py-2 mb-0" style="font-size: 0.9rem;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="font-weight-bold">
+                                                        <i class="fas fa-calculator mr-1"></i>Total Adelantos:
+                                                    </span>
+                                                    <span class="font-weight-bold" id="edit_total_advances_mobile">S/ 0.00</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2743,6 +2779,7 @@
             advancePayments = [];
             advanceCounter = 0;
             $('#advance_payments_body').empty();
+            $('#advance_payments_mobile').empty();
             updateAdvance();
 
             // Ocultar sección de adelantos por defecto (se mostrará si es orden de servicio)
@@ -2797,6 +2834,7 @@
                 advancePayments = [];
                 advanceCounter = 0;
                 $('#advance_payments_body').empty();
+            $('#advance_payments_mobile').empty();
                 updateAdvance();
             } else {
                 // Si es orden de servicio, habilitar campo y mostrar adelantos
@@ -3134,8 +3172,9 @@
             const totalAdvances = advancePayments.reduce((sum, advance) => sum + advance.amount, 0);
             const remaining = total - totalAdvances;
 
-            // Actualizar total de adelantos
+            // Actualizar total de adelantos (escritorio y móvil)
             $('#total_advances').text(`S/ ${totalAdvances.toFixed(2)}`);
+            $('#total_advances_mobile').text(`S/ ${totalAdvances.toFixed(2)}`);
 
             // Actualizar faltante
             $('#remaining_amount').text(`S/ ${remaining.toFixed(2)}`);
@@ -3183,6 +3222,8 @@
 
         function addAdvancePaymentRow(advance) {
             const today = new Date().toLocaleDateString('en-CA'); // Fecha actual en formato YYYY-MM-DD
+            
+            // Fila para vista de escritorio
             const row = `
                 <tr id="advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
@@ -3222,9 +3263,68 @@
             `;
             $('#advance_payments_body').append(row);
             
+            // Tarjeta para vista móvil
+            const mobileCard = `
+                <div class="card mb-2" id="advance-mobile-${advance.id}">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0" style="font-size: 0.85rem; color: #495057;">
+                                <i class="fas fa-money-bill-wave mr-1"></i>Adelanto #${advance.id}
+                            </h6>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeAdvancePayment(${advance.id})" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Forma de Pago:</label>
+                                <select class="form-control form-control-sm" onchange="updateAdvanceField(${advance.id}, 'way_to_pay', this.value)" style="font-size: 0.8rem;">
+                                    <option value="E" ${advance.way_to_pay === 'E' ? 'selected' : ''}>Efectivo</option>
+                                    <option value="Y" ${advance.way_to_pay === 'Y' ? 'selected' : ''}>Yape</option>
+                                    <option value="D" ${advance.way_to_pay === 'D' ? 'selected' : ''}>Depósito/Transferencia</option>
+                                </select>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Monto:</label>
+                                <input type="number" class="form-control form-control-sm text-right"
+                                       value="${advance.amount || ''}"
+                                       min="0" step="0.01"
+                                       onkeyup="updateAdvanceField(${advance.id}, 'amount', this.value)"
+                                       placeholder="0.00" style="font-size: 0.8rem;">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Fecha:</label>
+                                <input type="date" class="form-control form-control-sm"
+                                       value="${advance.transaction_date || today}"
+                                       onchange="updateAdvanceField(${advance.id}, 'transaction_date', this.value)"
+                                       style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Cuenta:</label>
+                                <select class="form-control form-control-sm" onchange="updateAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
+                                    <option value="">Seleccionar cuenta</option>
+                                    {% for cash in cash_accounts %}
+                                    <option value="{{ cash.id }}" data-cash-id="{{ cash.id }}">{{ cash.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#advance_payments_mobile').append(mobileCard);
+            
             // Seleccionar la cuenta correcta si existe
             if (advance.cash_account_id) {
-                $(`#advance-row-${advance.id} select[onchange*="cash_account_id"]`).val(advance.cash_account_id);
+                $(`#advance-row-${advance.id} select[onchange*="cash_account_id"]`)
+                    .val(String(advance.cash_account_id))
+                    .trigger("change");
+                
+                $(`#advance-mobile-${advance.id} select[onchange*="cash_account_id"]`)
+                    .val(String(advance.cash_account_id))
+                    .trigger("change");
             }
         }
 
@@ -3239,6 +3339,7 @@
         function removeAdvancePayment(advanceId) {
             advancePayments = advancePayments.filter(a => a.id !== advanceId);
             $(`#advance-row-${advanceId}`).remove();
+            $(`#advance-mobile-${advanceId}`).remove();
             updateAdvance();
         }
 
@@ -3294,8 +3395,23 @@
             updateEditAdvance();
         }
 
+        function generateCashAccountOptions(selectedCashAccountId) {
+            if (!window.editOrderCashAccounts || window.editOrderCashAccounts.length === 0) {
+                return '<option value="">No hay cuentas disponibles</option>';
+            }
+            
+            let options = '';
+            window.editOrderCashAccounts.forEach(cash => {
+                const selected = cash.id == selectedCashAccountId ? 'selected' : '';
+                options += `<option value="${cash.id}" data-cash-id="${cash.id}" ${selected}>${cash.name}</option>`;
+            });
+            return options;
+        }
+
         function addEditAdvancePaymentRow(advance) {
             const today = new Date().toLocaleDateString('en-CA'); // Fecha actual en formato YYYY-MM-DD
+            
+            // Fila para vista de escritorio
             const row = `
                 <tr id="edit-advance-row-${advance.id}">
                     <td style="padding: 0.3rem;">
@@ -3321,9 +3437,7 @@
                     <td style="padding: 0.3rem;">
                         <select class="form-control form-control-sm" onchange="updateEditAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
                             <option value="">Seleccionar cuenta</option>
-                            {% for cash in cash_accounts %}
-                            <option value="{{ cash.id }}" data-cash-id="{{ cash.id }}">{{ cash.name }}</option>
-                            {% endfor %}
+                            ${generateCashAccountOptions(advance.cash_account_id)}
                         </select>
                     </td>
                     <td class="text-center" style="padding: 0.3rem;">
@@ -3335,9 +3449,66 @@
             `;
             $('#edit_advance_payments_body').append(row);
             
+            // Tarjeta para vista móvil
+            const mobileCard = `
+                <div class="card mb-2" id="edit-advance-mobile-${advance.id}">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0" style="font-size: 0.85rem; color: #495057;">
+                                <i class="fas fa-money-bill-wave mr-1"></i>Adelanto #${advance.id}
+                            </h6>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAdvancePayment(${advance.id})" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Forma de Pago:</label>
+                                <select class="form-control form-control-sm" onchange="updateEditAdvanceField(${advance.id}, 'way_to_pay', this.value)" style="font-size: 0.8rem;">
+                                    <option value="E" ${advance.way_to_pay === 'E' ? 'selected' : ''}>Efectivo</option>
+                                    <option value="Y" ${advance.way_to_pay === 'Y' ? 'selected' : ''}>Yape</option>
+                                    <option value="D" ${advance.way_to_pay === 'D' ? 'selected' : ''}>Depósito/Transferencia</option>
+                                </select>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Monto:</label>
+                                <input type="number" class="form-control form-control-sm text-right"
+                                       value="${advance.amount || ''}"
+                                       min="0" step="0.01"
+                                       onkeyup="updateEditAdvanceField(${advance.id}, 'amount', this.value)"
+                                       placeholder="0.00" style="font-size: 0.8rem;">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Fecha:</label>
+                                <input type="date" class="form-control form-control-sm"
+                                       value="${advance.transaction_date || today}"
+                                       onchange="updateEditAdvanceField(${advance.id}, 'transaction_date', this.value)"
+                                       style="font-size: 0.8rem;">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Cuenta:</label>
+                                <select class="form-control form-control-sm" onchange="updateEditAdvanceField(${advance.id}, 'cash_account_id', this.value)" style="font-size: 0.8rem;">
+                                    <option value="">Seleccionar cuenta</option>
+                                    ${generateCashAccountOptions(advance.cash_account_id)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#edit_advance_payments_mobile').append(mobileCard);
+            
             // Seleccionar la cuenta correcta si existe
             if (advance.cash_account_id) {
-                $(`#edit-advance-row-${advance.id} select[onchange*="cash_account_id"]`).val(advance.cash_account_id);
+                $(`#edit-advance-row-${advance.id} select[onchange*="cash_account_id"]`)
+                    .val(String(advance.cash_account_id))
+                    .trigger("change");
+
+                $(`#edit-advance-mobile-${advance.id} select[onchange*="cash_account_id"]`)
+                    .val(String(advance.cash_account_id))
+                    .trigger("change");
             }
         }
 
@@ -3352,6 +3523,7 @@
         function removeEditAdvancePayment(advanceId) {
             editAdvancePayments = editAdvancePayments.filter(a => a.id !== advanceId);
             $(`#edit-advance-row-${advanceId}`).remove();
+            $(`#edit-advance-mobile-${advanceId}`).remove();
             updateEditAdvance();
         }
 
@@ -4228,7 +4400,7 @@
                         $('#edit_order_id_hidden').val(orderId);
 
                         // Cargar datos en el formulario
-                        populateEditFormWithData(response.order);
+                        populateEditFormWithData(response.order, response.cash_accounts);
 
                         // Mostrar modal
                         $('#editOrderModal').modal('show');
@@ -4248,7 +4420,10 @@
             });
         }
 
-        function populateEditFormWithData(orderData) {
+        function populateEditFormWithData(orderData, cashAccounts) {
+            // Almacenar las cuentas de caja de la orden para usar en los adelantos
+            window.editOrderCashAccounts = cashAccounts || [];
+            
             // Limpiar formulario
             $('#edit-order-form')[0].reset();
 
@@ -4302,6 +4477,7 @@
                 editAdvancePayments = [];
                 editAdvanceCounter = 0;
                 $('#edit_advance_payments_body').empty();
+                $('#edit_advance_payments_mobile').empty();
             } else {
                 // Si es orden de servicio, mostrar adelantos
                 editAdvanceSection.show();
@@ -4310,7 +4486,9 @@
                 editAdvancePayments = [];
                 editAdvanceCounter = 0;
                 $('#edit_advance_payments_body').empty();
+                $('#edit_advance_payments_mobile').empty();
 
+                console.log(orderData.advance_payments)
                 // Cargar adelantos múltiples desde el backend
                 if (orderData.advance_payments && orderData.advance_payments.length > 0) {
                     orderData.advance_payments.forEach(advance => {
@@ -4474,8 +4652,9 @@
             const totalAdvances = editAdvancePayments.reduce((sum, advance) => sum + advance.amount, 0);
             // El faltante se calcula desde el total (IGV incluido)
             const remaining = total - totalAdvances;
-            // Actualizar total de adelantos
+            // Actualizar total de adelantos (escritorio y móvil)
             $('#edit_total_advances').text(`S/ ${totalAdvances.toFixed(2)}`);
+            $('#edit_total_advances_mobile').text(`S/ ${totalAdvances.toFixed(2)}`);
 
             // Actualizar faltante
             $('#edit_remaining_amount').text(`S/ ${remaining.toFixed(2)}`);
