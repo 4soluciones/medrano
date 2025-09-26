@@ -38,9 +38,9 @@
                                 <th class="text-center" style="width: 25%">DESCRIPCIÓN DEL PRODUCTO</th>
                                 <th class="text-center" style="width: 5%">USUARIO</th>
                                 <th class="text-center" style="width: 11%">TIPO PAGO</th>
-                                <th class="text-right" style="width: 10%">A CUENTA S/</th>
-                                <th class="text-right" style="width: 10%">SALDO S/</th>
-                                <th class="text-right" style="width: 10%">TOTAL S/</th>
+                                <th class="text-right" style="width: 10%">A CUENTA</th>
+                                <th class="text-right" style="width: 10%">SALDO</th>
+                                <th class="text-right" style="width: 10%; padding: 0.3rem 0.4rem !important;">TOTAL</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -86,7 +86,7 @@
                                                     <td class="text-right" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.saldo|replace_round }}
                                                     </td>
-                                                    <td class="text-right" rowspan="{{ data.cashflow_count }}">
+                                                    <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.order.total|replace_round }}
                                                     </td>
                                                 {% endif %}
@@ -145,7 +145,7 @@
                                                     <td class="text-right" rowspan="{{ data.cashflow_count }}">
                                                         <span class="saldo-completo">PAGADO</span>
                                                     </td>
-                                                    <td class="text-right" style="padding-right: 1.5rem !important;" rowspan="{{ data.cashflow_count }}">
+                                                    <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.order.total|replace_round }}
                                                     </td>
                                                 {% endif %}
@@ -165,17 +165,17 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="8" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right"><strong>S/ {{ advances_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ advances_yape|replace_round }}</strong></td>
 
                             </tr>
                             <tr>
                                 <td colspan="8" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right"><strong>S/ {{ advances_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ advances_efectivo|replace_round }}</strong></td>
 
                             </tr>
                             <tr class="bg-primary text-white">
                                 <td colspan="8" class="text-right"><strong>TOTAL INGRESOS:</strong></td>
-                                <td class="text-right"><strong>S/ {{ total_advances|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ total_advances|replace_round }}</strong></td>
 
                             </tr>
                             </tfoot>
@@ -209,7 +209,7 @@
                                 <th class="text-center" style="width: 30%">DESCRIPCIÓN</th>
                                 <th class="text-center" style="width: 15%">USUARIO</th>
                                 <th class="text-center" style="width: 15%">TIPO PAGO</th>
-                                <th class="text-right" style="width: 10%">S/TOTAL</th>
+                                <th class="text-right" style="width: 10%; padding: 0.3rem 0.4rem !important;">S/TOTAL</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -229,7 +229,7 @@
                                                 <span class="badge badge-warning small">DEPÓSITO</span>
                                             {% endif %}
                                         </td>
-                                        <td class="text-right">S/ {{ cashflow.total|replace_round }}</td>
+                                        <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
@@ -244,15 +244,15 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="5" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right"><strong>S/ {{ payments_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_yape|replace_round }}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right"><strong>S/ {{ payments_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_efectivo|replace_round }}</strong></td>
                             </tr>
                             <tr class="bg-success text-white">
                                 <td colspan="5" class="text-right"><strong>TOTAL CANCELACIONES:</strong></td>
-                                <td class="text-right"><strong>S/ {{ total_payments|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_payments|replace_round }}</strong></td>
                             </tr>
                             </tfoot>
                         </table>
@@ -284,7 +284,7 @@
                                 <th class="text-center" style="width: 40%">DESCRIPCIÓN</th>
                                 <th class="text-center" style="width: 20%">TIPO EGRESO</th>
                                 <th class="text-center" style="width: 20%">USUARIO</th>
-                                <th class="text-right" style="width: 15%">MONTO</th>
+                                <th class="text-right" style="width: 15%;padding: 0.3rem 0.4rem !important;">MONTO</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -305,7 +305,7 @@
                                             {% endif %}
                                         </td>
                                         <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
-                                        <td class="text-right">S/ {{ cashflow.total|replace_round }}</td>
+                                        <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
@@ -320,7 +320,7 @@
                             <tfoot class="bg-danger text-white">
                             <tr>
                                 <td colspan="4" class="text-right"><strong>TOTAL EGRESOS:</strong></td>
-                                <td class="text-right"><strong>S/ {{ total_expenses_amount|replace_round }}</strong>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_expenses_amount|replace_round }}</strong>
                                 </td>
                             </tr>
                             </tfoot>

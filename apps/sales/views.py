@@ -1493,6 +1493,8 @@ def order_update(request):
                     if order_obj.cash_advance >= order_obj.total and order_obj.total > 0:
                         order_obj.status = 'C'  # COMPLETADO
                         order_obj.cash_pay = order_obj.total  # El pago total es igual al total
+                        order_obj.completed_by = request.user
+                        order_obj.completed_at = datetime.now()
                         order_obj.save()
                         
                 except Exception as e:
@@ -1528,7 +1530,7 @@ def order_detail_modal(request):
                     'client', 'user', 'subsidiary'
                 ).prefetch_related(
                     'orderdetail_set__product',
-                    'cashflow_set'
+                    'cashflow_set__cash'
                 ).get(id=int(order_id))
                 
                 t = loader.get_template('sales/order_detail_modal.html')

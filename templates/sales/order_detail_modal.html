@@ -1,3 +1,4 @@
+{% load operations %}
 {% if order %}
 <div class="container-fluid roboto-condensed-regular">
     <!-- Información General -->
@@ -127,31 +128,23 @@
                                             <strong>{{ detail.product_name|default:"Producto Manual" }}</strong>
                                         {% endif %}
                                     </td>
-                                    <td class="text-center">{{ detail.quantity }}</td>
-                                    <td class="text-right">S/ {{ detail.price_unit|safe }}</td>
-                                    <td class="text-right font-weight-bold">S/ {{ detail.multiply|safe }}</td>
+                                    <td class="text-center">{{ detail.quantity|floatformat:0 }}</td>
+                                    <td class="text-right">S/ {{ detail.price_unit|replace_round }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ detail.multiply|replace_round }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                             <tfoot class="table-info">
-{#                                <tr>#}
-{#                                    <td colspan="4" class="text-right font-weight-bold">Subtotal:</td>#}
-{#                                    <td class="text-right font-weight-bold">S/ {{ order.subtotal|floatformat:2 }}</td>#}
-{#                                </tr>#}
-{#                                <tr>#}
-{#                                    <td colspan="4" class="text-right font-weight-bold">IGV (18%):</td>#}
-{#                                    <td class="text-right font-weight-bold">S/ {{ order.igv|floatformat:2 }}</td>#}
-{#                                </tr>#}
                                 <tr class="table-warning">
                                     <td colspan="4" class="text-right font-weight-bold">Total:</td>
-                                    <td class="text-right font-weight-bold">S/ {{ order.total|safe }}</td>
+                                    <td class="text-right font-weight-bold">S/ {{ order.total|replace_round }}</td>
                                 </tr>
                                 <tr class="table-success">
                                     <td colspan="4" class="text-right font-weight-bold">Adelanto:</td>
                                     <td class="text-right font-weight-bold">
                                         {% load sales_tags %}
                                         {% get_total_advances order as total_advances %}
-                                        S/ {{ total_advances|floatformat:2 }}
+                                        S/ {{ total_advances|replace_round }}
                                     </td>
                                 </tr>
                                 <tr class="table-danger">
@@ -159,9 +152,9 @@
                                     <td class="text-right font-weight-bold">
                                         {% get_balance order total_advances as balance %}
                                         {% if balance > 0 %}
-                                            S/ {{ balance|floatformat:2 }}
+                                            S/ {{ balance|replace_round }}
                                         {% elif balance < 0 %}
-                                            S/ {{ balance|floatformat:2 }} (Excedente)
+                                            S/ {{ balance|replace_round }} (Excedente)
                                         {% else %}
                                             S/ 0.00 (Pagado)
                                         {% endif %}
@@ -197,9 +190,20 @@
                         <div class="col-md-3">
                             <strong>Forma de Pago:</strong><br>
                             {% if order.cashflow_set.exists %}
-                                {% for cashflow in order.cashflow_set.all %}
-                                    <span class="badge badge-info mr-1">{{ cashflow.get_way_to_pay_display }}</span>
-                                {% endfor %}
+                                <div class="mt-1">
+                                    {% for cashflow in order.cashflow_set.all|dictsort:"order_type_entry" %}
+                                        <div class="mb-1">
+                                            <span class="badge badge-info mr-1">{{ cashflow.get_way_to_pay_display }}</span>
+                                            <span class="badge badge-{% if cashflow.order_type_entry == 'A' %}warning{% else %}success{% endif %} mr-1">
+                                                {{ cashflow.get_order_type_entry_display }}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">
+                                                S/ {{ cashflow.total|replace_round }} - {{ cashflow.cash.name|default:"Sin cuenta" }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             {% else %}
                                 <span class="text-muted">{{ order.get_way_to_pay_display }}</span>
                             {% endif %}
@@ -210,10 +214,13 @@
                         </div>
                     </div>
                     {% if order.observation %}
-                    <div class="row mt-2">
+                    <div class="row mt-3">
                         <div class="col-12">
                             <strong>Observaciones:</strong><br>
-                            <span class="text-muted">{{ order.observation }}</span>
+                            <div class="alert alert-light border-left-primary p-3 mt-2">
+                                <i class="fas fa-sticky-note mr-2 text-primary"></i>
+                                <span class="text-dark">{{ order.observation }}</span>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -280,6 +287,26 @@
 
 .table-danger {
     background-color: #f8d7da !important;
+}
+
+.border-left-primary {
+    border-left: 4px solid #007bff !important;
+}
+
+.alert-light {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-success {
+    background-color: #28a745 !important;
+    color: #fff !important;
 }
 </style>
 {% else %}
