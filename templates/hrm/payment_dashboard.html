@@ -103,10 +103,19 @@
                                                     {% endif %}
                                                 </td>
                                                 <td class="text-center">
-                                                    <a href="{% url 'apps.hrm:payment_period_detail' payment.id %}" 
-                                                       class="btn btn-outline-primary btn-sm rounded-pill">
-                                                        <i class="fas fa-eye mr-1"></i>Ver
-                                                    </a>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'apps.hrm:payment_period_detail' payment.id %}" 
+                                                           class="btn btn-outline-primary btn-sm rounded-pill">
+                                                            <i class="fas fa-eye mr-1"></i>Ver
+                                                        </a>
+                                                        {% if not payment.is_paid %}
+                                                            <button type="button" 
+                                                                    onclick="showModalUpdate('{{ payment.id }}')" 
+                                                                    class="btn btn-outline-warning btn-sm rounded-pill">
+                                                                <i class="fas fa-edit mr-1"></i>Editar
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         {% endfor %}
@@ -225,6 +234,11 @@
 
     <!-- Modal para crear plantilla de pago -->
     <div class="modal fade" id="modal-payment-template-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <!-- Modal para editar período de pago -->
+    <div class="modal fade" id="modal-payment-period-update" data-backdrop="static" data-keyboard="false" tabindex="-1"
          role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
     </div>
 
@@ -367,6 +381,26 @@
                 error: function (xhr, status, error) {
                     console.error('Ajax error:', error);
                     toastr.error('Error en la petición', '¡Mensaje!');
+                }
+            });
+        }
+
+        window.showModalUpdate = function(periodId) {
+            console.log('showModalUpdate called with periodId:', periodId);
+            
+            $.ajax({
+                url: "{% url 'apps.hrm:modal_payment_period_update' %}",
+                data: { period_id: periodId },
+                dataType: 'json',
+                type: 'GET',
+                success: function (response) {
+                    console.log('Modal update response:', response);
+                    $('#modal-payment-period-update').html(response.form);
+                    $('#modal-payment-period-update').modal('show');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Ajax error:', error);
+                    toastr.error('Error al cargar el modal de edición', '¡Error!');
                 }
             });
         }

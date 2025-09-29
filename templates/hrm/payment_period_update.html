@@ -1,0 +1,333 @@
+<div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content border-0 shadow roboto-condensed-regular">
+        <div class="modal-header bg-gradient-primary text-white border-0">
+            <h5 class="modal-title">
+                <i class="fas fa-edit mr-2"></i>Editar Período de Pago
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
+        <form id="form-payment-period-update" method="POST">
+            {% csrf_token %}
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Selección de Empleado -->
+                    <div class="col-md-6 mb-3">
+                        <label for="edit-employee" class="form-label">
+                            <i class="fas fa-user mr-2"></i>Empleado <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-control select2" id="edit-employee" name="employee" required>
+                            <option value="">Seleccionar empleado</option>
+                            {% for template in employees %}
+                                <option value="{{ template.employee.id }}"
+                                        data-daily-rate="{{ template.daily_rate }}"
+                                        {% if payment_period.employee.id == template.employee.id %}selected{% endif %}>
+                                    {{ template.employee.first_name }} {{ template.employee.last_name }}
+                                    (S/ {{ template.daily_rate|safe }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Tarifa Diaria -->
+                    <div class="col-md-6 mb-3">
+                        <label for="edit-daily-rate" class="form-label">
+                            <i class="fas fa-money-bill mr-2"></i>Tarifa Diaria (S/) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="edit-daily-rate" name="daily_rate"
+                               step="0.01" min="0" required readonly>
+                        <small class="form-text text-muted">Se obtiene automáticamente de la plantilla del
+                            empleado</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Fecha de Inicio -->
+                    <div class="col-md-6 mb-3">
+                        <label for="edit-start-date" class="form-label">
+                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Inicio <span
+                                class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="edit-start-date" name="start_date"
+                               value="{{ payment_period.start_date|date:'Y-m-d' }}" required>
+                        <small class="form-text text-muted">Selecciona la fecha de inicio del período</small>
+                    </div>
+
+                    <!-- Fecha de Fin -->
+                    <div class="col-md-6 mb-3">
+                        <label for="edit-end-date" class="form-label">
+                            <i class="fas fa-calendar-day mr-2"></i>Fecha de Fin <span
+                                class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="edit-end-date" name="end_date"
+                               value="{{ payment_period.end_date|date:'Y-m-d' }}" required>
+                        <small class="form-text text-muted">Selecciona la fecha de fin del período</small>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="edit-notes" class="form-label">
+                            <i class="fas fa-sticky-note mr-2"></i>Observaciones
+                        </label>
+                        <textarea class="form-control" id="edit-notes" name="notes" rows="3"
+                                  placeholder="Observaciones adicionales sobre el período de pago...">{{ payment_period.notes }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Vista Previa del Período -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-gradient-primary">
+                                <h6 class="mb-0 text-white">
+                                    <i class="fas fa-eye mr-2"></i>Vista Previa del Período
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="edit-period-preview">
+                                    <p class="text-muted text-center">Selecciona un empleado y fechas para ver la vista
+                                        previa</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary rounded-pill" id="btn-update-period">
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .modal-content {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .form-control, .select2-container--default .select2-selection--single {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn {
+        border-radius: 25px !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .card {
+        border-radius: 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        line-height: 38px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        padding-left: 15px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        // Inicializar Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // Cargar datos iniciales
+        loadInitialData();
+
+        // Actualizar tarifa diaria cuando se selecciona empleado
+        $('#edit-employee').on('change', function () {
+            let selectedOption = $(this).find('option:selected');
+            let dailyRate = parseFloat(selectedOption.attr('data-daily-rate'));
+            
+            if (dailyRate) {
+                $('#edit-daily-rate').val(dailyRate);
+                updatePeriodPreview();
+            } else {
+                $('#edit-daily-rate').val('');
+                $('#edit-period-preview').html('<p class="text-muted text-center">Selecciona un empleado y fechas para ver la vista previa</p>');
+            }
+        });
+
+        // Actualizar vista previa cuando cambien las fechas
+        $('#edit-start-date, #edit-end-date').on('change', function () {
+            updatePeriodPreview();
+        });
+
+        // Función para cargar datos iniciales
+        function loadInitialData() {
+            let selectedEmployee = $('#edit-employee option:selected');
+            let dailyRate = parseFloat(selectedEmployee.attr('data-daily-rate'));
+            
+            if (dailyRate) {
+                $('#edit-daily-rate').val(dailyRate);
+                updatePeriodPreview();
+            }
+        }
+
+        // Función para actualizar vista previa
+        function updatePeriodPreview() {
+            let employee = $('#edit-employee option:selected').text();
+            let startDate = parseLocalDate($('#edit-start-date').val());
+            let endDate = parseLocalDate($('#edit-end-date').val());
+            let dailyRate = $('#edit-daily-rate').val();
+
+            if (employee && startDate && endDate && dailyRate) {
+                let start = new Date(startDate);
+                let end = new Date(endDate);
+                
+                // Validar que la fecha de fin sea posterior a la de inicio
+                if (end < start) {
+                    $('#edit-period-preview').html('<p class="text-danger text-center"><i class="fas fa-exclamation-triangle mr-2"></i>La fecha de fin debe ser posterior a la fecha de inicio</p>');
+                    return;
+                }
+                
+                let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                let totalAmount = days * parseFloat(dailyRate);
+
+                // 🔹 Formatear fechas a dd-mm-yyyy
+                let formatDate = (date) => {
+                    let d = date.getDate().toString().padStart(2, '0');
+                    let m = (date.getMonth() + 1).toString().padStart(2, '0');
+                    let y = date.getFullYear();
+                    return `${d}-${m}-${y}`;
+                };
+
+                // Obtener nombres de días
+                let dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                let startDayName = dayNames[start.getDay()];
+                let endDayName = dayNames[end.getDay()];
+
+                let previewHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Empleado:</strong> ${employee}</p>
+                        <p><strong>Período:</strong> ${formatDate(start)} a ${formatDate(end)}</p>
+                        <p><strong>Días:</strong> ${days} días (${startDayName} a ${endDayName})</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tarifa diaria:</strong> S/ ${dailyRate}</p>
+                        <p><strong>Total estimado:</strong> S/ ${totalAmount.toFixed(2)}</p>
+                        <p><strong>Estado:</strong> <span class="badge badge-warning">Pendiente</span></p>
+                    </div>
+                </div>
+            `;
+
+                $('#edit-period-preview').html(previewHtml);
+            }
+        }
+
+        function parseLocalDate(value) {
+            let parts = value.split("-"); // ["2025","08","25"]
+            return new Date(parts[0], parts[1] - 1, parts[2]); // año, mes-1, día
+        }
+
+        // Validación del formulario
+        $('#form-payment-period-update').on('submit', function (e) {
+            e.preventDefault();
+
+            let startDate = parseLocalDate($('#edit-start-date').val());
+            let endDate = parseLocalDate($('#edit-end-date').val());
+            
+            // Validar que la fecha de fin sea posterior a la de inicio
+            if (endDate < startDate) {
+                toastr.error('La fecha de fin debe ser posterior a la fecha de inicio', 'Error de Validación');
+                return;
+            }
+
+            // Validar que el período tenga al menos 1 día
+            let days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            if (days < 1) {
+                toastr.error('El período debe tener al menos 1 día', 'Error de Validación');
+                return;
+            }
+            
+            // Enviar formulario
+            submitForm();
+        });
+
+        function submitForm() {
+            let formData = new FormData($('#form-payment-period-update')[0]);
+            formData.append('period_id', '{{ payment_period.id }}');
+
+            $.ajax({
+                url: "{% url 'apps.hrm:update_payment_period' %}",
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                beforeSend: function () {
+                    $('#btn-update-period').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...');
+                },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#modal-payment-period-update').modal('hide');
+
+                        // Recargar la página para mostrar los cambios
+                        setTimeout(function () {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function (xhr) {
+                    let message = 'Error al actualizar el período de pago';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    toastr.error(message, 'Error');
+                },
+                complete: function () {
+                    $('#btn-update-period').prop('disabled', false).html('<i class="fas fa-save mr-2"></i>Guardar Cambios');
+                }
+            });
+        }
+    });
+</script>

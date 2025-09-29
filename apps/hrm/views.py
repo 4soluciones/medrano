@@ -965,6 +965,169 @@ def create_payment_template(request):
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
+def modal_payment_period_update(request):
+    """Modal para editar período de pago"""
+    if request.method == 'GET':
+        period_id = request.GET.get('period_id', '')
+        
+        if not period_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'ID del período es obligatorio'
+            }, status=HTTPStatus.BAD_REQUEST)
+        
+        try:
+            payment_period = PaymentPeriod.objects.select_related('employee').get(id=period_id)
+            
+            # Verificar que el período esté pendiente (no pagado)
+            if payment_period.is_paid:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede editar un período que ya ha sido pagado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener empleados con plantillas activas (igual que en crear)
+            employees = PaymentTemplate.objects.filter(
+                is_active=True
+            ).select_related('employee').order_by('employee__first_name')
+            
+            t = loader.get_template('hrm/payment_period_update.html')
+            c = {
+                'payment_period': payment_period,
+                'employees': employees,
+            }
+            return JsonResponse({
+                'form': t.render(c, request),
+            })
+            
+        except PaymentPeriod.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Período de pago no encontrado'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al cargar el período: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+def update_payment_period(request):
+    """Actualizar período de pago"""
+    if request.method == 'POST':
+        try:
+            period_id = request.POST.get('period_id', '')
+            employee_id = request.POST.get('employee', '')
+            start_date_str = request.POST.get('start_date', '')
+            end_date_str = request.POST.get('end_date', '')
+            daily_rate = request.POST.get('daily_rate', '')
+            is_paid = request.POST.get('is_paid', 'false')
+            notes = request.POST.get('notes', '')
+            
+            # Validaciones
+            if not period_id or not employee_id or not start_date_str or not end_date_str or not daily_rate:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Todos los campos son obligatorios'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener período de pago
+            payment_period = PaymentPeriod.objects.get(id=period_id)
+            
+            # Verificar que el período esté pendiente (no pagado)
+            if payment_period.is_paid:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede editar un período que ya ha sido pagado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Guardar fechas originales para comparación
+            original_start_date = payment_period.start_date
+            original_end_date = payment_period.end_date
+            
+            # Convertir fechas
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            
+            # Verificar que la fecha de fin sea posterior a la de inicio
+            if end_date < start_date:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La fecha de fin debe ser posterior a la fecha de inicio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Verificar que no exista otro período para el mismo empleado y fechas (excluyendo el actual)
+            existing_period = PaymentPeriod.objects.filter(
+                employee_id=employee_id,
+                start_date=start_date,
+                end_date=end_date
+            ).exclude(id=period_id).first()
+            
+            if existing_period:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe otro período de pago para estas fechas'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Verificar si cambió la tarifa diaria o las fechas ANTES de actualizar
+            daily_rate_decimal = decimal.Decimal(daily_rate)
+            first_daily_payment = payment_period.daily_payments.first()
+            dates_changed = (original_start_date != start_date or original_end_date != end_date)
+            rate_changed = (first_daily_payment and first_daily_payment.daily_rate != daily_rate_decimal)
+            
+            # Actualizar período de pago
+            payment_period.employee_id = employee_id
+            payment_period.start_date = start_date
+            payment_period.end_date = end_date
+            payment_period.is_paid = (is_paid == 'true')
+            payment_period.notes = notes
+            payment_period.save()
+            
+            # Si cambió la tarifa diaria o las fechas, recalcular pagos diarios
+            if rate_changed or dates_changed:
+                
+                # Eliminar pagos diarios existentes
+                payment_period.daily_payments.all().delete()
+                
+                # Crear nuevos pagos diarios
+                current_date = start_date
+                while current_date <= end_date:
+                    day_names = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
+                    day_name = day_names[current_date.weekday()]
+                    
+                    daily_payment = DailyPayment(
+                        payment_period=payment_period,
+                        date=current_date,
+                        day_of_week=day_name,
+                        status='COMPLETO',
+                        daily_rate=daily_rate_decimal
+                    )
+                    daily_payment.save()
+                    
+                    current_date += timedelta(days=1)
+            
+            # Recalcular total del período
+            payment_period.calculate_total()
+            payment_period.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Período de pago actualizado exitosamente'
+            }, status=HTTPStatus.OK)
+            
+        except PaymentPeriod.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Período de pago no encontrado'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al actualizar el período de pago: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
 def get_payment_reports(request):
     """Reportes de pagos"""
     if request.method == 'GET':
@@ -992,12 +1155,22 @@ def get_payment_reports(request):
         paid_amount = payments_query.filter(is_paid=True).aggregate(total=Sum('total_amount'))['total'] or 0.00
         pending_amount = payments_query.filter(is_paid=False).aggregate(total=Sum('total_amount'))['total'] or 0.00
         
+        # Calcular porcentajes
+        if total_amount > 0:
+            paid_percentage = round((paid_amount / total_amount) * 100, 1)
+            pending_percentage = round((pending_amount / total_amount) * 100, 1)
+        else:
+            paid_percentage = 0
+            pending_percentage = 0
+        
         context = {
             'user_log': user_obj,
             'total_payments': total_payments,
             'total_amount': total_amount,
             'paid_amount': paid_amount,
             'pending_amount': pending_amount,
+            'paid_percentage': paid_percentage,
+            'pending_percentage': pending_percentage,
             'employees': CustomUser.objects.filter(is_superuser=False).order_by('first_name'),
         }
         return render(request, 'hrm/payment_reports.html', context)
