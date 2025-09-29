@@ -1152,13 +1152,13 @@ def get_payment_reports(request):
         # Estadísticas
         total_payments = payments_query.count()
         total_amount = payments_query.aggregate(total=Sum('total_amount'))['total'] or 0.00
-        paid_amount = payments_query.filter(is_paid=True).aggregate(total=Sum('total_amount'))['total'] or 0.00
-        pending_amount = payments_query.filter(is_paid=False).aggregate(total=Sum('total_amount'))['total'] or 0.00
+        paid_amount = decimal.Decimal(payments_query.filter(is_paid=True).aggregate(total=Sum('total_amount'))['total'] or 0.00)
+        pending_amount = decimal.Decimal(payments_query.filter(is_paid=False).aggregate(total=Sum('total_amount'))['total'] or 0.00)
         
         # Calcular porcentajes
         if total_amount > 0:
-            paid_percentage = round((paid_amount / total_amount) * 100, 1)
-            pending_percentage = round((pending_amount / total_amount) * 100, 1)
+            paid_percentage = round((paid_amount / total_amount) * decimal.Decimal(100), 1)
+            pending_percentage = round((pending_amount / total_amount) * decimal.Decimal(100), 1)
         else:
             paid_percentage = 0
             pending_percentage = 0
