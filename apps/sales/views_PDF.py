@@ -742,6 +742,15 @@ def generate_ticket_pdf(order_id):
                         Paragraph("PAGO FALTANTE:", styles['Helvetica_Bold_Right_8']),
                         Paragraph(f"S/ {total_faltante:.2f}", styles['Helvetica_Bold_Right_8'])
                     ])
+            elif total_advances == 0 and total_all_cashflows == 0:
+                totales_data.append([
+                    Paragraph("ADELANTO:", styles['Helvetica_Bold_Right_8']),
+                    Paragraph(f"S/ {total_advances:.2f}", styles['Helvetica_Right_8'])
+                ])
+                totales_data.append([
+                    Paragraph("PAGO FALTANTE:", styles['Helvetica_Bold_Right_8']),
+                    Paragraph(f"S/ {order.total:.2f}", styles['Helvetica_Bold_Right_8'])
+                ])
 
         # Crear tabla de totales
         totales_table = Table(totales_data, colWidths=[_wt * 0.70, _wt * 0.30])
