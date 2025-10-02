@@ -1376,6 +1376,9 @@ def order_update(request):
             total_advance = sum(advance.get('amount', 0) for advance in advance_payments)
             cash_advance_decimal = decimal.Decimal(str(total_advance))
 
+            user_obj = CustomUser.objects.get(id=int(request.POST.get('user_id')))
+
+
             # Actualizar campos básicos
             order_obj.type = request.POST.get('order_type', order_obj.type)
             order_obj.client_id = request.POST.get('client_id')
@@ -1502,7 +1505,7 @@ def order_update(request):
                                     igv=decimal.Decimal('0.00'),
                                     cash=advance_cash_account,
                                     order=order_obj,
-                                    user=request.user,
+                                    user=user_obj,
                                     type_expense='O',  # Otros
                                     way_to_pay=way_to_pay_advance,  # Forma de pago específica
                                     subsidiary=order_obj.subsidiary,

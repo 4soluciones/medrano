@@ -2255,9 +2255,8 @@ def sales_report_by_user(request):
             # EXCLUIR órdenes que fueron creadas el mismo día del reporte (esas van en ingresos del día)
             payments_cashflows = order_cashflows.filter(
                 type='E',  # Solo entradas
-                order_type_entry='T'  # Solo pagos totales (cancelaciones)
-            ).exclude(
-                order__register_date__gte=report_date  # Excluir órdenes del mismo día o posteriores
+                order_type_entry='T',  # Solo pagos totales (cancelaciones)
+                order__register_date__lte=report_date  # Incluir anteriores e igual a report_date
             )
             
             # Preparar datos de cashflows sin order_id (egresos)
