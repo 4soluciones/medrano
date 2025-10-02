@@ -15,8 +15,10 @@ urlpatterns = [
     path('cashflow/', login_required(cashflow_list), name='cashflow_list'),
     path('cashflow/create/', login_required(cashflow_create), name='cashflow_create'),
     path('cashflow/save/', login_required(cashflow_save), name='cashflow_save'),
+    path('cashflow/get/', login_required(cashflow_get), name='cashflow_get'),
     path('cashflow/<int:cashflow_id>/edit/', login_required(cashflow_edit), name='cashflow_edit'),
     path('cashflow/update/', login_required(cashflow_update), name='cashflow_update'),
+    path('cashflow/delete/', login_required(cashflow_delete), name='cashflow_delete'),
     
     # URLs auxiliares
     path('get-cash-accounts/', login_required(get_cash_accounts_by_subsidiary), name='get_cash_accounts_by_subsidiary'),

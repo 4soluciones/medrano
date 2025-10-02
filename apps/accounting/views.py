@@ -290,6 +290,111 @@ def cash_update(request):
     return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 
+@csrf_exempt
+def cashflow_get(request):
+    """Vista para obtener datos de un gasto específico - Solo para administradores"""
+    if request.method == 'POST':
+        try:
+            # Verificar permisos de administrador
+            if not (hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No tiene permisos para editar gastos. Solo los administradores pueden realizar esta acción.'
+                }, status=HTTPStatus.FORBIDDEN)
+            
+            cashflow_id = request.POST.get('cashflow_id')
+            if not cashflow_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'ID de gasto no proporcionado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            cashflow_obj = CashFlow.objects.select_related('cash', 'user').get(id=int(cashflow_id))
+            
+            # Preparar datos para el formulario
+            cashflow_data = {
+                'id': cashflow_obj.id,
+                'transaction_date': cashflow_obj.transaction_date.strftime('%Y-%m-%d'),
+                'type': cashflow_obj.type,
+                'cash_id': cashflow_obj.cash.id,
+                'type_expense': cashflow_obj.type_expense,
+                'user_id': cashflow_obj.user.id,
+                'document_type_attached': cashflow_obj.document_type_attached,
+                'description': cashflow_obj.description,
+                'serial': cashflow_obj.serial,
+                'n_receipt': cashflow_obj.n_receipt,
+                'operation_code': cashflow_obj.operation_code,
+                'subtotal': float(cashflow_obj.subtotal),
+                'igv': float(cashflow_obj.igv),
+                'total': float(cashflow_obj.total),
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'cashflow': cashflow_data
+            }, status=HTTPStatus.OK)
+            
+        except CashFlow.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Gasto no encontrado'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al obtener los datos del gasto: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+@csrf_exempt
+def cashflow_delete(request):
+    """Vista para eliminar gasto existente - Solo para administradores"""
+    if request.method == 'POST':
+        try:
+            # Verificar permisos de administrador
+            if not (hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No tiene permisos para eliminar gastos. Solo los administradores pueden realizar esta acción.'
+                }, status=HTTPStatus.FORBIDDEN)
+            
+            cashflow_id = request.POST.get('cashflow_id')
+            if not cashflow_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'ID de gasto no proporcionado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            cashflow_obj = CashFlow.objects.get(id=int(cashflow_id))
+            
+            # Obtener información del gasto para el mensaje
+            description = cashflow_obj.description
+            amount = cashflow_obj.total
+            
+            # Eliminar el gasto
+            cashflow_obj.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Gasto eliminado exitosamente: {description} - S/ {amount}'
+            }, status=HTTPStatus.OK)
+            
+        except CashFlow.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Gasto no encontrado'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al eliminar el gasto: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
 # =============================================================================
 # VISTAS PARA GESTIÓN DE GASTOS (CASHFLOW)
 # =============================================================================
