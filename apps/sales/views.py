@@ -974,8 +974,26 @@ def order_list(request):
 
             # Calcular totales del período
             total_sales = orders.aggregate(total=Sum('total'))['total'] or 0
-            total_cash_advance = orders.aggregate(total=Sum('cash_advance'))['total'] or 0
-            total_cash_pay = orders.aggregate(total=Sum('cash_pay'))['total'] or 0
+            
+            # Obtener IDs de órdenes del período filtrado
+            order_ids = list(orders.values_list('id', flat=True))
+            
+            # Calcular totales desde CashFlow
+            from apps.accounting.models import CashFlow
+            
+            # Sumar adelantos (order_type_entry='A')
+            total_cash_advance = CashFlow.objects.filter(
+                order_id__in=order_ids,
+                type='E',  # Entrada
+                order_type_entry='A'  # Adelanto
+            ).aggregate(total=Sum('total'))['total'] or 0
+            
+            # Sumar pagos totales (order_type_entry='T')
+            total_cash_pay = CashFlow.objects.filter(
+                order_id__in=order_ids,
+                type='E',  # Entrada
+                order_type_entry='T'  # Pago Total
+            ).aggregate(total=Sum('total'))['total'] or 0
             
             # El balance total se calcula basándose en los pagos reales
             if total_cash_pay > 0:
@@ -985,10 +1003,6 @@ def order_list(request):
 
             # Obtener estadísticas de tipos de pago desde CashFlow
             try:
-                from apps.accounting.models import CashFlow
-                
-                # Obtener IDs de órdenes del período filtrado
-                order_ids = list(orders.values_list('id', flat=True))
                 
                 # Estadísticas de adelantos por tipo de pago
                 advance_payments_by_type = CashFlow.objects.filter(
