@@ -983,6 +983,64 @@ def order_list(request):
             else:
                 total_balance = total_sales - total_cash_advance
 
+            # Obtener estadísticas de tipos de pago desde CashFlow
+            try:
+                from apps.accounting.models import CashFlow
+                
+                # Obtener IDs de órdenes del período filtrado
+                order_ids = list(orders.values_list('id', flat=True))
+                
+                # Estadísticas de adelantos por tipo de pago
+                advance_payments_by_type = CashFlow.objects.filter(
+                    order_id__in=order_ids,
+                    type='E',  # Entrada
+                    order_type_entry='A'  # Adelanto
+                ).values('way_to_pay').annotate(
+                    total_amount=Sum('total'),
+                    count=Count('id')
+                ).order_by('way_to_pay')
+                
+                # Estadísticas de pagos completos por tipo de pago
+                full_payments_by_type = CashFlow.objects.filter(
+                    order_id__in=order_ids,
+                    type='E',  # Entrada
+                    order_type_entry='T'  # Pago Total
+                ).values('way_to_pay').annotate(
+                    total_amount=Sum('total'),
+                    count=Count('id')
+                ).order_by('way_to_pay')
+                
+                # Mapeo de tipos de pago
+                payment_type_names = {
+                    'E': 'Efectivo',
+                    'Y': 'Yape',
+                    'D': 'Depósito/Transferencia'
+                }
+                
+                # Procesar datos de adelantos
+                advance_payments_data = {}
+                for item in advance_payments_by_type:
+                    way_to_pay = item['way_to_pay']
+                    advance_payments_data[way_to_pay] = {
+                        'name': payment_type_names.get(way_to_pay, 'Desconocido'),
+                        'amount': float(item['total_amount'] or 0),
+                        'count': item['count']
+                    }
+                
+                # Procesar datos de pagos completos
+                full_payments_data = {}
+                for item in full_payments_by_type:
+                    way_to_pay = item['way_to_pay']
+                    full_payments_data[way_to_pay] = {
+                        'name': payment_type_names.get(way_to_pay, 'Desconocido'),
+                        'amount': float(item['total_amount'] or 0),
+                        'count': item['count']
+                    }
+                
+            except ImportError:
+                advance_payments_data = {}
+                full_payments_data = {}
+
             tpl = loader.get_template('sales/order_list_grid.html')
             context = {
                 'order_dict': order_dict,
@@ -990,6 +1048,8 @@ def order_list(request):
                 'total_cash_advance': total_cash_advance,
                 'total_cash_pay': total_cash_pay,
                 'total_balance': total_balance,
+                'advance_payments_data': advance_payments_data,
+                'full_payments_data': full_payments_data,
                 'date_from': date_from,
                 'date_to': date_to
             }

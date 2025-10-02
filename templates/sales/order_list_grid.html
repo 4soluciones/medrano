@@ -1,3 +1,4 @@
+{% load operations %}
 {% load sales_tags %}
 {% if order_dict %}
     <div class="table-responsive">
@@ -218,7 +219,7 @@
     </div>
 
     <!-- Totales del Período -->
-    {% if orders %}
+    {% if order_dict %}
         <div class="card mt-5">
             <div class="row ">
                 <div class="col-12">
@@ -231,7 +232,16 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <!-- Columna A Cuenta -->
+                                <!-- Columna Total Ventas -->
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted mb-2">Total Ventas</h6>
+                                    <h4 class="text-primary font-weight-bold">
+                                        S/ {{ total_sales|default:0|floatformat:2 }}
+                                    </h4>
+                                    <small class="text-muted">Ventas totales del período</small>
+                                </div>
+
+                                <!-- Columna Total Adelantos -->
                                 <div class="col-md-3 text-center">
                                     <h6 class="text-muted mb-2">Total Adelantos</h6>
                                     <h4 class="text-info font-weight-bold">
@@ -240,7 +250,7 @@
                                     <small class="text-muted">Adelantos recibidos</small>
                                 </div>
 
-                                <!-- Columna Pagos Reales -->
+                                <!-- Columna Total Pagos -->
                                 <div class="col-md-3 text-center">
                                     <h6 class="text-muted mb-2">Total Pagos</h6>
                                     <h4 class="text-success font-weight-bold">
@@ -249,31 +259,90 @@
                                     <small class="text-muted">Pagos realizados</small>
                                 </div>
 
-                                <!-- Columna Saldo -->
+                                <!-- Columna Saldo Pendiente -->
                                 <div class="col-md-3 text-center">
-                                    <h6 class="text-muted mb-2">Total Saldo Pendiente</h6>
+                                    <h6 class="text-muted mb-2">Saldo Pendiente</h6>
                                     <h4 class="text-danger font-weight-bold">
                                         S/ {{ total_balance|default:0|floatformat:2 }}
                                     </h4>
                                     <small class="text-muted">Pendiente de cobro</small>
                                 </div>
-
-                                <!-- Columna Total -->
-                                <div class="col-md-3 text-center">
-                                    <h6 class="text-muted mb-2">Total Ventas</h6>
-                                    <h4 class="text-primary font-weight-bold">
-                                        S/ {{ total_sales|default:0|floatformat:2 }}
-                                    </h4>
-                                    <small class="text-muted">Ventas totales</small>
+                            </div>
+                            
+                            <!-- Sección de Tipos de Pago -->
+                            <div class="row mt-4">
+                                <!-- Adelantos por Tipo de Pago -->
+                                <div class="col-md-6">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-dark py-2">
+                                            <h6 class="card-title mb-0 text-dark">
+                                                <i class="fas fa-money-bill-wave mr-2"></i>
+                                                Adelantos
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-3">
+                                            {% if advance_payments_data %}
+                                                {% for way_to_pay, data in advance_payments_data.items %}
+                                                <div class="d-flex justify-content-between align-items-center m-3">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if way_to_pay == 'E' %}
+                                                            <i class="fas fa-money-bill-wave text-success mr-2"></i>
+                                                        {% elif way_to_pay == 'Y' %}
+                                                            <i class="fas fa-mobile-alt text-primary mr-2"></i>
+                                                        {% elif way_to_pay == 'D' %}
+                                                            <i class="fas fa-university text-info mr-2"></i>
+                                                        {% endif %}
+                                                        <span class="font-weight-medium">{{ data.name }}</span>
+{#                                                        <span class="badge badge-secondary ml-2">{{ data.count }}</span>#}
+                                                    </div>
+                                                    <span class="text-success font-weight-bold">S/ {{ data.amount|replace_round }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="text-center text-muted">
+                                                    <i class="fas fa-info-circle mr-2"></i>
+                                                    No hay adelantos registrados
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <!-- Columna Cantidad de Órdenes -->
-                                <div class="col-md-3 text-center">
-                                    <h6 class="text-muted mb-2">Cantidad de Órdenes</h6>
-                                    <h4 class="text-info font-weight-bold">
-                                        {{ orders|length }}
-                                    </h4>
-                                    <small class="text-muted">Órdenes del período</small>
+                                <!-- Pagos Completos por Tipo de Pago -->
+                                <div class="col-md-6">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-dark py-2">
+                                            <h6 class="card-title mb-0 text-dark">
+                                                <i class="fas fa-check-circle mr-2"></i>
+                                                Pagos Completos
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-3">
+                                            {% if full_payments_data %}
+                                                {% for way_to_pay, data in full_payments_data.items %}
+                                                <div class="d-flex justify-content-between align-items-center m-3">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if way_to_pay == 'E' %}
+                                                            <i class="fas fa-money-bill-wave text-success mr-2"></i>
+                                                        {% elif way_to_pay == 'Y' %}
+                                                            <i class="fas fa-mobile-alt text-primary mr-2"></i>
+                                                        {% elif way_to_pay == 'D' %}
+                                                            <i class="fas fa-university text-info mr-2"></i>
+                                                        {% endif %}
+                                                        <span class="font-weight-medium">{{ data.name }}</span>
+{#                                                        <span class="badge badge-secondary ml-2">{{ data.count }}</span>#}
+                                                    </div>
+                                                    <span class="text-success font-weight-bold">S/ {{ data.amount|replace_round }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="text-center text-muted">
+                                                    <i class="fas fa-info-circle mr-2"></i>
+                                                    No hay pagos completos registrados
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

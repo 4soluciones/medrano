@@ -60,7 +60,7 @@
                             <!-- Mensaje informativo compacto -->
                             <div class="alert alert-info alert-sm mb-2" role="alert">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                <small><strong>Filtre los gastos por sucursal, cuenta, tipo de transacción y fechas para obtener reportes específicos.</strong></small>
+                                <small>Filtre los gastos por sucursal, cuenta, tipo de transacción y fechas para obtener reportes específicos.</small>
                             </div>
 
                             <form id="search-form">
@@ -656,11 +656,16 @@ $(document).ready(function() {
 
     // Cargar cuentas según la sucursal seleccionada
     const selectedSubsidiary = $('#subsidiary-filter').val();
-    if (selectedSubsidiary && selectedSubsidiary !== '0') {
-        filterCashAccounts();
-    } else {
+    {% if is_admin %}
+        // Usuario admin ve todas las cuentas por defecto
         loadAllCashAccounts();
-    }
+    {% else %}
+        if (selectedSubsidiary && selectedSubsidiary !== '0') {
+            filterCashAccounts();
+        } else {
+            loadAllCashAccounts();
+        }
+    {% endif %}
 
     // Establecer fecha actual en el filtro si está vacío
     if (!$('#report_date').val()) {
@@ -994,7 +999,11 @@ function loadAllCashAccounts() {
     
     // Agregar todas las cuentas
     {% for cash in cash_accounts %}
-    cashSelect.append('<option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
+        {% if is_admin %}
+        cashSelect.append('<option value="{{ cash.id }}" data-subsidiary="{{ cash.subsidiary.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }} ({{ cash.subsidiary.name }})</option>');
+        {% else %}
+        cashSelect.append('<option value="{{ cash.id }}">{{ cash.name }} - {{ cash.get_currency_type_display }}</option>');
+        {% endif %}
     {% endfor %}
 }
 

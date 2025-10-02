@@ -312,17 +312,32 @@ def cashflow_list(request):
 
         if hasattr(request.user, 'subsidiary') and request.user.subsidiary:
             user_subsidiary = request.user.subsidiary
-            # Buscar la primera cuenta de tipo 'E' (Entrada) de la sucursal del usuario
-            first_cash_account = Cash.objects.filter(
-                subsidiary=user_subsidiary,
-                account_type='E'
-            ).first()
 
-        cash_accounts = Cash.objects.filter(subsidiary=user_subsidiary)
+        # Verificar si el usuario tiene permisos de administrador
+        is_admin = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
 
-        # Si no hay cuenta de tipo 'E', buscar cualquier cuenta de la sucursal
-        if not first_cash_account and user_subsidiary:
-            first_cash_account = Cash.objects.filter(subsidiary=user_subsidiary).first()
+        # Filtrar cajas según permisos del usuario
+        if is_admin:
+            # Usuario admin puede ver todas las cajas
+            cash_accounts = Cash.objects.all()
+            # Buscar la primera cuenta de tipo 'E' de cualquier sucursal
+            first_cash_account = Cash.objects.filter(account_type='E').first()
+        else:
+            # Usuario normal solo ve cajas de su sucursal
+            cash_accounts = Cash.objects.filter(subsidiary=user_subsidiary)
+            # Buscar la primera cuenta de tipo 'E' de la sucursal del usuario
+            if user_subsidiary:
+                first_cash_account = Cash.objects.filter(
+                    subsidiary=user_subsidiary,
+                    account_type='E'
+                ).first()
+
+        # Si no hay cuenta de tipo 'E', buscar cualquier cuenta según permisos
+        if not first_cash_account:
+            if is_admin:
+                first_cash_account = Cash.objects.first()
+            elif user_subsidiary:
+                first_cash_account = Cash.objects.filter(subsidiary=user_subsidiary).first()
         
         return render(request, 'accounting/cashflow_list.html', {
             'cash_accounts': cash_accounts,
@@ -334,6 +349,7 @@ def cashflow_list(request):
             'date_now': date_now,
             'user_subsidiary': user_subsidiary,
             'first_cash_account': first_cash_account,
+            'is_admin': is_admin,
         })
     elif request.method == 'POST':
         try:
