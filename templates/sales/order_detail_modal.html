@@ -187,28 +187,47 @@
                             <strong>Sucursal:</strong><br>
                             <span class="text-muted">{{ order.subsidiary.name }}</span>
                         </div>
-                        <div class="col-md-3">
-                            <strong>Forma de Pago:</strong><br>
+                        <div class="col-md-4">
+                            <strong>Formas de Pago:</strong><br>
                             {% if order.cashflow_set.exists %}
-                                <div class="mt-1">
+                                <div class="payment-methods-container mt-2">
                                     {% for cashflow in order.cashflow_set.all|dictsort:"order_type_entry" %}
-                                        <div class="mb-1">
-                                            <span class="badge badge-info mr-1">{{ cashflow.get_way_to_pay_display }}</span>
-                                            <span class="badge badge-{% if cashflow.order_type_entry == 'A' %}warning{% else %}success{% endif %} mr-1">
-                                                {{ cashflow.get_order_type_entry_display }}
-                                            </span>
-                                            <br>
-                                            <small class="text-muted">
-                                                S/ {{ cashflow.total|replace_round }} - {{ cashflow.cash.name|default:"Sin cuenta" }}
-                                            </small>
+                                        <div class="payment-method-item">
+                                            <div class="payment-header">
+                                                <span class="payment-type-badge">{{ cashflow.get_way_to_pay_display }}</span>
+                                                <span class="payment-status-badge payment-status-{% if cashflow.order_type_entry == 'A' %}advance{% else %}payment{% endif %}">
+                                                    {% if cashflow.order_type_entry == 'A' %}
+                                                        <i class="fas fa-arrow-up mr-1"></i>Adelanto
+                                                    {% else %}
+                                                        <i class="fas fa-check mr-1"></i>Pago Total
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="payment-details">
+                                                <div class="payment-amount">
+                                                    <strong>S/ {{ cashflow.total|replace_round }}</strong>
+                                                </div>
+                                                <div class="payment-info">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-university mr-1"></i>{{ cashflow.cash.name|default:"Sin cuenta" }}
+                                                    </small>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-user mr-1"></i>{{ cashflow.user.first_name }}
+                                                    </small>
+                                                </div>
+                                            </div>
                                         </div>
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <span class="text-muted">{{ order.get_way_to_pay_display }}</span>
+                                <div class="no-payment-method">
+                                    <span class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>{{ order.get_way_to_pay_display }}
+                                    </span>
+                                </div>
                             {% endif %}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <strong>Comprobante:</strong><br>
                             <span class="text-muted">{{ order.get_voucher_type_display }}</span>
                         </div>
@@ -307,6 +326,124 @@
 .badge-success {
     background-color: #28a745 !important;
     color: #fff !important;
+}
+
+/* Estilos profesionales para formas de pago */
+.payment-methods-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.payment-method-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.payment-method-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.payment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.payment-type-badge {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+}
+
+.payment-status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.payment-status-advance {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.payment-status-payment {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.payment-details {
+    margin-top: 8px;
+}
+
+.payment-amount {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.payment-amount i {
+    color: #28a745;
+    font-size: 0.9rem;
+}
+
+.payment-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.payment-info i {
+    color: #6c757d;
+    width: 12px;
+    text-align: center;
+}
+
+.no-payment-method {
+    background: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+}
+
+.no-payment-method i {
+    color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .payment-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .payment-method-item {
+        padding: 10px;
+    }
 }
 </style>
 {% else %}

@@ -1248,10 +1248,11 @@ def sales_report(request):
             # Crear estructura de datos más clara para el template
             advances_grouped = {}
             for order in orders_of_day:
-                # Obtener todos los cashflows relacionados con esta orden del día del reporte
+                # Obtener solo los cashflows de ADELANTOS relacionados con esta orden del día del reporte
                 order_cashflows_day = cashflows.filter(
                     order=order,
                     type='E',  # Solo entradas
+                    order_type_entry='A',  # Solo adelantos (no cancelaciones)
                     transaction_date=report_date  # Solo del día del reporte
                 ).order_by('id')
                 
@@ -2264,7 +2265,7 @@ def sales_report_by_user(request):
             
             # Obtener parámetros del filtro
             report_date = request.POST.get('report_date')
-            user_id = request.POST.get('user')
+            user_id = int(request.POST.get('user'))
             user_obj = None
 
             if not report_date:
@@ -2340,101 +2341,213 @@ def sales_report_by_user(request):
                 status__in=['P', 'C']  # Pendientes y completadas
             ).order_by('id')
             
+            # Si hay filtro por usuario, incluir órdenes que:
+            # 1. Fueron creadas por el usuario, O
+            # 2. Tienen cashflows del día realizados por el usuario
             if user_id and user_id != '0':
-                orders_of_day = orders_of_day.filter(user_id=user_id)
+                # Obtener IDs de órdenes que tienen cashflows del usuario del día
+                orders_with_user_cashflows = order_cashflows.filter(
+                    user_id=user_id
+                ).values_list('order_id', flat=True).distinct()
+                
+                # Filtrar órdenes: creadas por el usuario O con cashflows del usuario
+                orders_of_day = orders_of_day.filter(
+                    Q(user_id=user_id) | Q(id__in=orders_with_user_cashflows)
+                )
             
             orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
             
-            # Crear estructura de datos más clara para el template
-            advances_grouped = {}
+            # ========================================
+            # DICT 1: ADELANTOS DEL USUARIO
+            # ========================================
+            adelantos_usuario = {}
+            
             for order in orders_of_day:
-                # Obtener todos los cashflows relacionados con esta orden del día del reporte
-                order_cashflows_day = cashflows.filter(
+                order_advances = cashflows.filter(
                     order=order,
                     type='E',  # Solo entradas
-                    transaction_date=report_date  # Solo del día del reporte
+                    order_type_entry='A',  # Solo adelantos
+                    transaction_date=report_date,  # Solo del día del reporte
+                    user_id=user_id  # Solo hechos por el usuario
                 ).order_by('id')
                 
-                if order_cashflows_day.exists():
-                    total_paid = sum(float(cf.total) for cf in order_cashflows_day)
-                    saldo = float(order.total) - total_paid
-                    
-                    # Determinar si la orden se pagó en su totalidad (con tolerancia de 1 céntimo)
+                if order_advances.exists():
+                    total_advances = sum(float(cf.total) for cf in order_advances)
+                    saldo = float(order.total) - total_advances
                     is_paid_in_full = abs(saldo) < 0.01
                     
-                    # Crear estructura con información de la orden y sus cashflows
-                    advances_grouped[order.id] = {
+                    adelantos_usuario[f"advance_{order.id}"] = {
+                        'tipo': 'adelanto',
                         'order': order,
-                        'cashflows': list(order_cashflows_day),  # Lista de cashflows individuales
-                        'total_advances': total_paid,
+                        'cashflows': list(order_advances),
+                        'total_amount': total_advances,
                         'saldo': saldo,
                         'is_paid_in_full': is_paid_in_full,
-                        'cashflow_count': order_cashflows_day.count()  # Cantidad de cashflows
+                        'cashflow_count': order_advances.count()
                     }
             
-            # Preparar datos de saldos (solo cashflows de cancelación - order_type_entry='T')
-            # EXCLUIR órdenes que fueron creadas el mismo día del reporte (esas van en ingresos del día)
-            payments_cashflows = order_cashflows.filter(
-                type='E',  # Solo entradas
-                order_type_entry='T',  # Solo pagos totales (cancelaciones)
-                order__register_date__lte=report_date  # Incluir anteriores e igual a report_date
-            )
+            # ========================================
+            # DICT 2: PAGOS TOTALES DE ÓRDENES DEL USUARIO
+            # ========================================
+            pagos_totales_usuario = {}
             
-            # Preparar datos de cashflows sin order_id (egresos)
+            for order in orders_of_day:
+                # Solo procesar órdenes creadas por el usuario
+                if order.user_id == int(user_id):
+                    order_payments = cashflows.filter(
+                        order=order,
+                        type='E',  # Solo entradas
+                        order_type_entry='T',  # Solo pagos totales
+                        transaction_date=report_date,  # Solo del día del reporte
+                        user_id=user_id  # Solo hechos por el usuario
+                    ).order_by('id')
+                    
+                    if order_payments.exists():
+                        total_payments = sum(float(cf.total) for cf in order_payments)
+                        
+                        pagos_totales_usuario[f"payment_{order.id}"] = {
+                            'tipo': 'pago_total_usuario',
+                            'order': order,
+                            'cashflows': list(order_payments),
+                            'total_amount': total_payments,
+                            'cashflow_count': order_payments.count()
+                        }
+            
+            # ========================================
+            # DICT 3: PAGOS TOTALES DE ÓRDENES NO DEL USUARIO
+            # ========================================
+            pagos_totales_otros = {}
+            
+            other_orders_payments = cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='T',  # Solo pagos totales
+                transaction_date=report_date,  # Solo del día del reporte
+                user_id=user_id,  # Hechos por el usuario
+            ).exclude(
+                order__user_id=user_id  # Excluir órdenes creadas por el usuario
+            ).order_by('order_id', 'id')
+            
+            for cashflow in other_orders_payments:
+                pagos_totales_otros[f"cancellation_{cashflow.id}"] = {
+                    'tipo': 'pago_total_otros',
+                    'order': cashflow.order,
+                    'cashflows': [cashflow],
+                    'total_amount': float(cashflow.total),
+                    'cashflow_count': 1
+                }
+            
+            # ========================================
+            # COMBINAR LOS TRES DICT EN INGRESOS DEL DÍA
+            # ========================================
+            ingresos_del_dia = {}
+            
+            # 1. Agregar adelantos
+            ingresos_del_dia.update(adelantos_usuario)
+            
+            # 2. Agregar separador
+            ingresos_del_dia['separador'] = {'tipo': 'separador'}
+            
+            # 3. Agregar pagos totales del usuario
+            ingresos_del_dia.update(pagos_totales_usuario)
+            
+            # 4. Agregar pagos totales de otros
+            ingresos_del_dia.update(pagos_totales_otros)
+            
+            # ========================================
+            # DICT 2: PAGOS DE FECHAS ANTERIORES
+            # ========================================
+            pagos_fechas_anteriores = {}
+            
+            # Pagos totales de fechas anteriores hechas por el usuario
+            previous_payments = order_cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='T',  # Solo pagos totales
+                user_id=user_id,  # Hechos por el usuario
+                transaction_date__lt=report_date  # Fechas anteriores
+            ).order_by('order_id', 'id')
+            
+            for cashflow in previous_payments:
+                pagos_fechas_anteriores[f"previous_{cashflow.id}"] = {
+                    'order': cashflow.order,
+                    'cashflows': [cashflow],
+                    'total_amount': float(cashflow.total),
+                    'transaction_date': cashflow.transaction_date,
+                    'cashflow_count': 1
+                }
+            
+            # ========================================
+            # EGRESOS (mantener como estaba)
+            # ========================================
             expenses_cashflows = cashflows.filter(
                 order__isnull=True,
                 type='S'  # Solo salidas (gastos)
             )
 
-            # Calcular totales para resúmenes
-            # Total de ingresos del día (suma de todos los cashflows de las órdenes del día)
-            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
-            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
-            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            # ========================================
+            # CÁLCULO DE TOTALES
+            # ========================================
             
-            # Calcular total de apertura de caja (tipo 'A')
+            # Total de apertura de caja (tipo 'A')
             total_apertura = cashflows.filter(type='A').aggregate(total=Sum('total'))['total'] or 0
             
-            # Calcular totales por tipo de pago para adelantos (ingresos del día)
-            advances_efectivo = 0
-            advances_yape = 0
-            advances_deposito = 0
+            # Totales de ingresos del día
+            total_ingresos_dia = 0
+            ingresos_efectivo = 0
+            ingresos_yape = 0
+            ingresos_deposito = 0
             
-            for data in advances_grouped.values():
+            for key, data in ingresos_del_dia.items():
+                if data['tipo'] != 'separador':
+                    total_ingresos_dia += data['total_amount']
+                    for cashflow in data['cashflows']:
+                        if cashflow.way_to_pay == 'E':
+                            ingresos_efectivo += decimal.Decimal(cashflow.total)
+                        elif cashflow.way_to_pay == 'Y':
+                            ingresos_yape += decimal.Decimal(cashflow.total)
+                        elif cashflow.way_to_pay == 'D':
+                            ingresos_deposito += decimal.Decimal(cashflow.total)
+            
+            # Totales de pagos de fechas anteriores
+            total_pagos_anteriores = 0
+            pagos_anteriores_efectivo = 0
+            pagos_anteriores_yape = 0
+            pagos_anteriores_deposito = 0
+            
+            for key, data in pagos_fechas_anteriores.items():
+                total_pagos_anteriores += data['total_amount']
                 for cashflow in data['cashflows']:
                     if cashflow.way_to_pay == 'E':
-                        advances_efectivo += decimal.Decimal(cashflow.total)
+                        pagos_anteriores_efectivo += decimal.Decimal(cashflow.total)
                     elif cashflow.way_to_pay == 'Y':
-                        advances_yape += decimal.Decimal(cashflow.total)
+                        pagos_anteriores_yape += decimal.Decimal(cashflow.total)
                     elif cashflow.way_to_pay == 'D':
-                        advances_deposito += decimal.Decimal(cashflow.total)
+                        pagos_anteriores_deposito += decimal.Decimal(cashflow.total)
             
-            payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
-            payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
-            payments_deposito = payments_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            # Totales de egresos
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
             # Totales generales
-            total_efectivo = advances_efectivo + payments_efectivo
-            total_yape = advances_yape + payments_yape
-            total_deposito = advances_deposito + payments_deposito
+            total_efectivo = ingresos_efectivo + pagos_anteriores_efectivo
+            total_yape = ingresos_yape + pagos_anteriores_yape
+            total_deposito = ingresos_deposito + pagos_anteriores_deposito
             total_general = total_efectivo + total_yape + total_deposito + total_apertura
 
             context = {
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
-                'advances_grouped': advances_grouped,
+                'ingresos_del_dia': ingresos_del_dia,  # Nuevo dict con ingresos del día
+                'pagos_fechas_anteriores': pagos_fechas_anteriores,  # Nuevo dict con pagos anteriores
                 'orders_of_day': orders_of_day,  # Todas las órdenes del día
-                'payments_cashflows': payments_cashflows.order_by('order_id'),  # Solo cancelaciones
                 'expenses_cashflows': expenses_cashflows.order_by('id'),
-                'total_advances': total_advances,  # Total ingresos del día
-                'total_payments': total_payments,  # Total cancelaciones
+                'total_ingresos_dia': total_ingresos_dia,  # Total ingresos del día
+                'total_pagos_anteriores': total_pagos_anteriores,  # Total pagos anteriores
                 'total_expenses_amount': total_expenses_amount,
                 'total_apertura': total_apertura,  # Total apertura de caja
-                'advances_efectivo': advances_efectivo,
-                'advances_yape': advances_yape,
-                'advances_deposito': advances_deposito,
-                'payments_efectivo': payments_efectivo,
-                'payments_yape': payments_yape,
-                'payments_deposito': payments_deposito,
+                'ingresos_efectivo': ingresos_efectivo,
+                'ingresos_yape': ingresos_yape,
+                'ingresos_deposito': ingresos_deposito,
+                'pagos_anteriores_efectivo': pagos_anteriores_efectivo,
+                'pagos_anteriores_yape': pagos_anteriores_yape,
+                'pagos_anteriores_deposito': pagos_anteriores_deposito,
                 'total_efectivo': total_efectivo,
                 'total_yape': total_yape,
                 'total_deposito': total_deposito,
@@ -2520,7 +2633,15 @@ def export_sales_report_by_user_excel(request):
             ).order_by('id')
             
             if user_id and user_id != '0':
-                orders_of_day = orders_of_day.filter(user_id=user_id)
+                # Obtener IDs de órdenes que tienen cashflows del usuario del día
+                orders_with_user_cashflows = order_cashflows.filter(
+                    user_id=user_id
+                ).values_list('order_id', flat=True).distinct()
+                
+                # Filtrar órdenes: creadas por el usuario O con cashflows del usuario
+                orders_of_day = orders_of_day.filter(
+                    Q(user_id=user_id) | Q(id__in=orders_with_user_cashflows)
+                )
             
             orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
             
@@ -2958,7 +3079,15 @@ def export_sales_report_by_user_pdf(request):
             ).order_by('id')
             
             if user_id and user_id != '0':
-                orders_of_day = orders_of_day.filter(user_id=user_id)
+                # Obtener IDs de órdenes que tienen cashflows del usuario del día
+                orders_with_user_cashflows = order_cashflows.filter(
+                    user_id=user_id
+                ).values_list('order_id', flat=True).distinct()
+                
+                # Filtrar órdenes: creadas por el usuario O con cashflows del usuario
+                orders_of_day = orders_of_day.filter(
+                    Q(user_id=user_id) | Q(id__in=orders_with_user_cashflows)
+                )
             
             orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
             

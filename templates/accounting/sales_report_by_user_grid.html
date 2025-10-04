@@ -44,10 +44,9 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% if advances_grouped %}
-                                {% comment %}Primero mostrar adelantos (órdenes no pagadas en su totalidad){% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if not data.is_paid_in_full %}
+                            {% if ingresos_del_dia %}
+                                {% for key, data in ingresos_del_dia.items %}
+                                    {% if data.tipo == 'adelanto' %}
                                         {% for cashflow in data.cashflows %}
                                             <tr>
                                                 {% if forloop.first %}
@@ -92,23 +91,13 @@
                                                 {% endif %}
                                             </tr>
                                         {% endfor %}
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% comment %}Separador visual{% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if data.is_paid_in_full and forloop.first %}
+                                    {% elif data.tipo == 'separador' %}
                                         <tr>
                                             <td colspan="9" class="payment-separator" style="padding: 0;"></td>
                                         </tr>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% comment %}Luego mostrar pagos completos{% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if data.is_paid_in_full %}
+                                    {% elif data.tipo == 'pago_total_usuario' %}
                                         {% for cashflow in data.cashflows %}
-                                            <tr class="payment-full-row">
+                                            <tr class="payment-full-row pago-total-usuario">
                                                 {% if forloop.first %}
                                                     <td class="text-center" rowspan="{{ data.cashflow_count }}">
                                                         {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
@@ -143,9 +132,54 @@
                                                 </td>
                                                 {% if forloop.first %}
                                                     <td class="text-right"  rowspan="{{ data.cashflow_count }}">
-                                                        <span class="saldo-completo">PAGADO</span>
+                                                        <span class="saldo-completo">PAGO TOTAL</span>
                                                     </td>
-                                                    <td class="text-right" style="padding: 0.3rem 0.4rem !important; rowspan="{{ data.cashflow_count }}">
+                                                    <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
+                                                        S/ {{ data.order.total|replace_round }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    {% elif data.tipo == 'pago_total_otros' %}
+                                        {% for cashflow in data.cashflows %}
+                                            <tr class="payment-full-row pago-total-otros">
+                                                {% if forloop.first %}
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order.client.full_name|default:"-" }}
+                                                    </td>
+                                                    <td class="text-center" rowspan="{{ data.cashflow_count }}">
+                                                        {{ data.order|sum_order_quantities|floatformat:0 }}
+                                                    </td>
+                                                    <td rowspan="{{ data.cashflow_count }}">
+                                                        {% for detail in data.order.orderdetail_set.all %}
+                                                            {{ detail.product_name|default:"Producto Manual" }}
+                                                            {% if not forloop.last %}<br>{% endif %}
+                                                        {% empty %}
+                                                            {{ data.order.observation|default:"ORDEN DE SERVICIO" }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endif %}
+                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
+                                                    {% if cashflow.way_to_pay == 'E' %}
+                                                        <span class="badge badge-payment-full small">EFECTIVO</span>
+                                                    {% elif cashflow.way_to_pay == 'Y' %}
+                                                        <span class="badge badge-payment-full small">YAPE</span>
+                                                    {% elif cashflow.way_to_pay == 'D' %}
+                                                        <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;">
+                                                    S/ {{ cashflow.total|replace_round }}
+                                                </td>
+                                                {% if forloop.first %}
+                                                    <td class="text-right"  rowspan="{{ data.cashflow_count }}">
+                                                        <span class="saldo-completo">CANCELACIÓN</span>
+                                                    </td>
+                                                    <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.order.total|replace_round }}
                                                     </td>
                                                 {% endif %}
@@ -165,17 +199,17 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="8" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ advances_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ ingresos_yape|replace_round }}</strong></td>
 
                             </tr>
                             <tr>
                                 <td colspan="8" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ advances_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ ingresos_efectivo|replace_round }}</strong></td>
 
                             </tr>
                             <tr class="bg-primary text-white">
                                 <td colspan="8" class="text-right"><strong>TOTAL INGRESOS:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_advances|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_ingresos_dia|replace_round }}</strong></td>
 
                             </tr>
                             </tfoot>
@@ -213,30 +247,32 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% if payments_cashflows %}
-                                {% for cashflow in payments_cashflows %}
-                                    <tr>
-                                        <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
-                                        <td class="text-center">{{ cashflow.order.register_date|date:'d-m-Y' }}</td>
-                                        <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
-                                        <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
-                                        <td class="text-center">
-                                            {% if cashflow.way_to_pay == 'E' %}
-                                                <span class="badge badge-success small">EFECTIVO</span>
-                                            {% elif cashflow.way_to_pay == 'Y' %}
-                                                <span class="badge badge-info small">YAPE</span>
-                                            {% elif cashflow.way_to_pay == 'D' %}
-                                                <span class="badge badge-warning small">DEPÓSITO</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
-                                    </tr>
+                            {% if pagos_fechas_anteriores %}
+                                {% for key, data in pagos_fechas_anteriores.items %}
+                                    {% for cashflow in data.cashflows %}
+                                        <tr>
+                                            <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
+                                            <td class="text-center">{{ data.transaction_date|date:'d-m-Y' }}</td>
+                                            <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
+                                            <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                            <td class="text-center">
+                                                {% if cashflow.way_to_pay == 'E' %}
+                                                    <span class="badge badge-success small">EFECTIVO</span>
+                                                {% elif cashflow.way_to_pay == 'Y' %}
+                                                    <span class="badge badge-info small">YAPE</span>
+                                                {% elif cashflow.way_to_pay == 'D' %}
+                                                    <span class="badge badge-warning small">DEPÓSITO</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
+                                        </tr>
+                                    {% endfor %}
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">
+                                    <td colspan="6" class="text-center text-muted py-3">
                                         <i class="fas fa-info-circle mr-2"></i>
-                                        No hay cancelaciones para esta fecha
+                                        No hay pagos de fechas anteriores para este usuario
                                     </td>
                                 </tr>
                             {% endif %}
@@ -244,15 +280,15 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="5" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ pagos_anteriores_yape|replace_round }}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ pagos_anteriores_efectivo|replace_round }}</strong></td>
                             </tr>
                             <tr class="bg-success text-white">
-                                <td colspan="5" class="text-right"><strong>TOTAL CANCELACIONES:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_payments|replace_round }}</strong></td>
+                                <td colspan="5" class="text-right"><strong>TOTAL PAGOS ANTERIORES:</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_pagos_anteriores|replace_round }}</strong></td>
                             </tr>
                             </tfoot>
                         </table>
@@ -356,18 +392,18 @@
                                     </tr>
                                     <tr>
                                         <td><strong>INGRESOS DEL DÍA:</strong></td>
-                                        <td class="text-right"><strong>S/ {{ total_advances|replace_round }}</strong>
+                                        <td class="text-right"><strong>S/ {{ total_ingresos_dia|replace_round }}</strong>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><strong>SALDOS:</strong></td>
-                                        <td class="text-right"><strong>S/ {{ total_payments|replace_round }}</strong>
+                                        <td><strong>PAGOS ANTERIORES:</strong></td>
+                                        <td class="text-right"><strong>S/ {{ total_pagos_anteriores|replace_round }}</strong>
                                         </td>
                                     </tr>
                                     <tr class="bg-light">
                                         <td><strong>SUBTOTAL INGRESOS:</strong></td>
                                         <td class="text-right">
-                                            <strong>S/ {{ total_apertura|add:total_advances|add:total_payments|replace_round }}</strong>
+                                            <strong>S/ {{ total_apertura|add:total_ingresos_dia|add:total_pagos_anteriores|replace_round }}</strong>
                                         </td>
                                     </tr>
                                 </table>
@@ -726,6 +762,18 @@
         position: relative;
     }
     
+    /* Pago total del usuario - fondo verde claro */
+    .pago-total-usuario {
+        background-color: #e8f5e8 !important; /* Verde muy claro */
+        border-left: 4px solid #4caf50 !important; /* Borde verde */
+    }
+    
+    /* Pago total de otros usuarios - fondo naranja claro */
+    .pago-total-otros {
+        background-color: #fff3e0 !important; /* Naranja muy claro */
+        border-left: 4px solid #ff9800 !important; /* Borde naranja */
+    }
+    
     .payment-full-row td {
         padding: 0.3rem 0.4rem !important;
     }
@@ -764,6 +812,19 @@
         font-weight: 700 !important;
         padding: 2px 6px !important;
         border-radius: 3px !important;
+    }
+    
+    /* Estilos específicos para diferentes tipos de saldo */
+    .pago-total-usuario .saldo-completo {
+        background-color: #c8e6c9 !important;
+        color: #1b5e20 !important;
+        border: 1px solid #4caf50 !important;
+    }
+    
+    .pago-total-otros .saldo-completo {
+        background-color: #ffe0b2 !important;
+        color: #e65100 !important;
+        border: 1px solid #ff9800 !important;
     }
     
     /* Animación sutil para pagos completos */
