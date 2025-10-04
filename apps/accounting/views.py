@@ -2459,11 +2459,13 @@ def sales_report_by_user(request):
             pagos_fechas_anteriores = {}
             
             # Pagos totales de fechas anteriores hechas por el usuario
-            previous_payments = order_cashflows.filter(
+
+            previous_payments = cashflows.filter(
                 type='E',  # Solo entradas
                 order_type_entry='T',  # Solo pagos totales
                 user_id=user_id,  # Hechos por el usuario
-                transaction_date__lt=report_date  # Fechas anteriores
+                transaction_date=report_date,  # Pagados en la fecha del reporte
+                order__register_date__lt=report_date  # De órdenes de fechas anteriores
             ).order_by('order_id', 'id')
             
             for cashflow in previous_payments:
