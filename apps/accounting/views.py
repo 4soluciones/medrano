@@ -2473,7 +2473,7 @@ def sales_report_by_user(request):
                     'order': cashflow.order,
                     'cashflows': [cashflow],
                     'total_amount': float(cashflow.total),
-                    'transaction_date': cashflow.transaction_date,
+                    'transaction_date': cashflow.order.register_date,
                     'cashflow_count': 1
                 }
             
