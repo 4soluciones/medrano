@@ -1,0 +1,115 @@
+{% load static %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Gestión de Categorías:</strong> Aquí puedes editar o eliminar las categorías existentes.
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-layer-group mr-2"></i>Lista de Categorías
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>{{ category.id }}</td>
+                                        <td>
+                                            <form id="categoryUpdateForm{{ category.id }}" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="category_id" value="{{ category.id }}">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control form-control-sm" 
+                                                           name="category_name" value="{{ category.name }}" 
+                                                           id="categoryName{{ category.id }}">
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-success btn-sm" 
+                                                                onclick="updateCategory({{ category.id }})" 
+                                                                title="Guardar cambios">
+                                                            <i class="fas fa-save"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if category.is_enabled %}badge-success{% else %}badge-danger{% endif %}">
+                                                {% if category.is_enabled %}Habilitado{% else %}Deshabilitado{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        onclick="deleteCategory({{ category.id }})" 
+                                                        title="Eliminar categoría">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay categorías registradas</h5>
+                            <p class="text-muted">Crea tu primera categoría para comenzar</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.input-group .form-control {
+    border-radius: 0.5rem 0 0 0.5rem !important;
+}
+
+.input-group-append .btn {
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-group .btn {
+    border-radius: 0.5rem !important;
+    margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+</style>

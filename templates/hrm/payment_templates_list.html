@@ -106,6 +106,11 @@
                                                                 class="btn btn-outline-warning btn-sm rounded-pill">
                                                             <i class="fas fa-edit mr-1"></i>Editar
                                                         </button>
+                                                        <button type="button" 
+                                                                onclick="deleteTemplate({{ template.id }}, '{{ template.employee.first_name }} {{ template.employee.last_name }}')" 
+                                                                class="btn btn-outline-danger btn-sm rounded-pill">
+                                                            <i class="fas fa-trash mr-1"></i>Eliminar
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -176,9 +181,55 @@
         </div>
     </div>
 
+    <!-- Token CSRF para AJAX -->
+    {% csrf_token %}
+
     <!-- Modal para crear plantilla de pago -->
     <div class="modal fade" id="modal-payment-template-create" data-backdrop="static" data-keyboard="false" tabindex="-1"
          role="dialog" aria-labelledby="ModalHelpTitle" aria-hidden="true">
+    </div>
+
+    <!-- Modal de confirmación para eliminar plantilla -->
+    <div class="modal fade" id="modal-delete-template" data-backdrop="static" data-keyboard="false" tabindex="-1"
+         role="dialog" aria-labelledby="ModalDeleteTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient-danger text-white border-0">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                        <h5 class="text-danger">¿Estás seguro de que deseas eliminar esta plantilla?</h5>
+                    </div>
+                    <div class="alert alert-warning border-0">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle text-warning mr-2"></i>
+                            <div>
+                                <small class="mb-0">
+                                    <strong>Empleado:</strong> <span id="employee-name-delete"></span><br>
+                                    <strong>Esta acción no se puede deshacer.</strong><br>
+                                    La plantilla será marcada como inactiva y ya no se podrá usar para crear nuevos períodos de pago.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger rounded-pill" id="btn-confirm-delete">
+                        <i class="fas fa-trash mr-2"></i>Eliminar Plantilla
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -196,6 +247,10 @@
         
         .bg-gradient-warning {
             background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        
+        .bg-gradient-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         }
 
         .card {
@@ -271,5 +326,55 @@
             // Implementar edición de plantilla
             toastr.info('Función de editar próximamente', 'Información');
         }
+
+        let templateToDelete = null;
+
+        function deleteTemplate(templateId, employeeName) {
+            templateToDelete = templateId;
+            $('#employee-name-delete').text(employeeName);
+            $('#modal-delete-template').modal('show');
+        }
+
+        // Manejar confirmación de eliminación
+        $('#btn-confirm-delete').on('click', function() {
+            if (!templateToDelete) {
+                toastr.error('Error: No se identificó la plantilla a eliminar', 'Error');
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'apps.hrm:delete_payment_template' %}",
+                type: 'POST',
+                data: {
+                    'template_id': templateToDelete,
+                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                beforeSend: function() {
+                    $('#btn-confirm-delete').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Eliminando...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Éxito!');
+                        $('#modal-delete-template').modal('hide');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    let message = 'Error al eliminar la plantilla';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    toastr.error(message, 'Error');
+                },
+                complete: function() {
+                    $('#btn-confirm-delete').prop('disabled', false).html('<i class="fas fa-trash mr-2"></i>Eliminar Plantilla');
+                    templateToDelete = null;
+                }
+            });
+        });
     </script>
 {% endblock extrajs %}

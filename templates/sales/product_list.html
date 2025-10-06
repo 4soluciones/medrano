@@ -483,9 +483,17 @@
                                             onclick="openCategoryModal()">
                                         <i class="fas fa-layer-group mr-1"></i>Nueva Categoría
                                     </button>
+                                    <button type="button" class="btn btn-outline-info ml-1"
+                                            onclick="openEditCategoryModal()">
+                                        <i class="fas fa-edit mr-1"></i>Editar Categorías
+                                    </button>
                                     <button type="button" class="btn btn-warning ml-2"
                                             onclick="openUnitModal()">
                                         <i class="fas fa-ruler mr-1"></i>Nueva Unidad
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning ml-1"
+                                            onclick="openEditUnitModal()">
+                                        <i class="fas fa-edit mr-1"></i>Editar Unidades
                                     </button>
                                 </div>
                                 <div class="card-tools">
@@ -746,6 +754,44 @@
     </div>
 </div>
 
+<!-- Modal para editar categorías -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editCategoryModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Editar Categorías
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="editCategoryModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar unidades -->
+<div class="modal fade" id="editUnitModal" tabindex="-1" role="dialog" aria-labelledby="editUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editUnitModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Editar Unidades
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="editUnitModalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para ver producto -->
 <div class="modal fade" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -983,6 +1029,22 @@ function openUnitModal() {
     });
 }
 
+// Función para abrir modal de editar categorías
+function openEditCategoryModal() {
+    $.get("{% url 'apps.sales:modal_category_list' %}", function(data) {
+        $('#editCategoryModalBody').html(data.form);
+        $('#editCategoryModal').modal('show');
+    });
+}
+
+// Función para abrir modal de editar unidades
+function openEditUnitModal() {
+    $.get("{% url 'apps.sales:modal_unit_list' %}", function(data) {
+        $('#editUnitModalBody').html(data.form);
+        $('#editUnitModal').modal('show');
+    });
+}
+
 // Función para editar producto
 function editProduct(productId) {
     openProductModal(productId);
@@ -1154,6 +1216,115 @@ function saveUnit() {
             toastr.error('Error al procesar la solicitud');
         }
     });
+}
+
+// Función para actualizar categoría
+function updateCategory(categoryId) {
+    var formData = new FormData($('#categoryUpdateForm' + categoryId)[0]);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:update_category' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                setTimeout(function() {
+                    openEditCategoryModal(); // Recargar la lista
+                }, 1000);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+
+// Función para actualizar unidad
+function updateUnit(unitId) {
+    var formData = new FormData($('#unitUpdateForm' + unitId)[0]);
+    // Agregar la descripción al FormData
+    var description = $('#unitDescription' + unitId).val();
+    formData.append('unit_description', description);
+    
+    $.ajax({
+        url: "{% url 'apps.sales:update_unit' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                toastr.success(data.message);
+                setTimeout(function() {
+                    openEditUnitModal(); // Recargar la lista
+                }, 1000);
+            } else {
+                toastr.error(data.message);
+            }
+        },
+        error: function() {
+            toastr.error('Error al procesar la solicitud');
+        }
+    });
+}
+
+// Función para eliminar categoría
+function deleteCategory(categoryId) {
+    if (confirm('¿Está seguro que desea eliminar esta categoría?')) {
+        $.ajax({
+            url: "{% url 'apps.sales:delete_category' %}",
+            type: 'POST',
+            data: {
+                'category_id': categoryId,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    toastr.success(data.message);
+                    setTimeout(function() {
+                        openEditCategoryModal(); // Recargar la lista
+                    }, 1000);
+                } else {
+                    toastr.error(data.message);
+                }
+            },
+            error: function() {
+                toastr.error('Error al procesar la solicitud');
+            }
+        });
+    }
+}
+
+// Función para eliminar unidad
+function deleteUnit(unitId) {
+    if (confirm('¿Está seguro que desea eliminar esta unidad?')) {
+        $.ajax({
+            url: "{% url 'apps.sales:delete_unit' %}",
+            type: 'POST',
+            data: {
+                'unit_id': unitId,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    toastr.success(data.message);
+                    setTimeout(function() {
+                        openEditUnitModal(); // Recargar la lista
+                    }, 1000);
+                } else {
+                    toastr.error(data.message);
+                }
+            },
+            error: function() {
+                toastr.error('Error al procesar la solicitud');
+            }
+        });
+    }
 }
 </script>
 {% endblock extrajs %}

@@ -718,11 +718,14 @@ def create_payment_period(request):
                 day_names = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
                 day_name = day_names[current_date.weekday()]
                 
+                # Los domingos se marcan automáticamente como día libre
+                status = 'DIA_LIBRE' if current_date.weekday() == 6 else 'COMPLETO'
+                
                 daily_payment = DailyPayment(
                     payment_period=payment_period,
                     date=current_date,
                     day_of_week=day_name,
-                    status='COMPLETO',
+                    status=status,
                     daily_rate=daily_rate_decimal
                 )
                 daily_payment.save()
@@ -905,11 +908,10 @@ def get_payment_templates_list(request):
 def modal_payment_template_create(request):
     """Modal para crear plantilla de pago"""
     if request.method == 'GET':
+        # Mostrar todos los empleados activos (no superusuarios)
         employees = CustomUser.objects.filter(
             is_superuser=False,
             is_active=True
-        ).exclude(
-            payment_templates__is_active=True
         ).order_by('first_name')
         
         t = loader.get_template('hrm/payment_template_create.html')
@@ -963,6 +965,57 @@ def create_payment_template(request):
                 'success': False,
                 'message': f'Error al crear la plantilla: {str(e)}'
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+def delete_payment_template(request):
+    """Eliminar plantilla de pago (marcar como inactiva)"""
+    if request.method == 'POST':
+        try:
+            template_id = request.POST.get('template_id', '')
+            
+            if not template_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'ID de plantilla es obligatorio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la plantilla
+            template = PaymentTemplate.objects.get(id=template_id)
+            
+            # Verificar si tiene períodos de pago asociados
+            has_payment_periods = PaymentPeriod.objects.filter(employee=template.employee).exists()
+            
+            if has_payment_periods:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede eliminar la plantilla porque el empleado ya tiene períodos de pago registrados'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Marcar como inactiva en lugar de eliminar
+            template.is_active = False
+            template.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Plantilla de pago de {template.employee.first_name} {template.employee.last_name} eliminada exitosamente'
+            }, status=HTTPStatus.OK)
+            
+        except PaymentTemplate.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Plantilla de pago no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al eliminar la plantilla: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método no permitido'
+    }, status=HTTPStatus.METHOD_NOT_ALLOWED)
 
 
 def modal_payment_period_update(request):
@@ -1096,11 +1149,14 @@ def update_payment_period(request):
                     day_names = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
                     day_name = day_names[current_date.weekday()]
                     
+                    # Los domingos se marcan automáticamente como día libre
+                    status = 'DIA_LIBRE' if current_date.weekday() == 6 else 'COMPLETO'
+                    
                     daily_payment = DailyPayment(
                         payment_period=payment_period,
                         date=current_date,
                         day_of_week=day_name,
-                        status='COMPLETO',
+                        status=status,
                         daily_rate=daily_rate_decimal
                     )
                     daily_payment.save()

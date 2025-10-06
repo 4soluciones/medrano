@@ -163,6 +163,29 @@
             </div>
         </div>
 
+        <!-- Nueva Fila para la Métrica de Diferencia -->
+        <div class="row mb-4" id="profit-section" style="display: none;">
+            <div class="col-lg-4 col-md-6 mb-3 mx-auto">
+                <div class="card bg-gradient-primary text-white shadow-lg">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="mb-0" id="monthly-profit">S/ 0.00</h3>
+                                <p class="mb-0">Diferencia (Ingresos - Gastos)</p>
+                                <small class="opacity-75">
+                                    <i class="fas fa-chart-line mr-1"></i>
+                                    Resultado financiero
+                                </small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-balance-scale fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Gráficos Principales -->
         <div class="row mb-4" id="charts-section" style="display: none;">
             <!-- Gráfico de Órdenes Completadas por Sucursal -->
@@ -311,6 +334,12 @@
                                     <td class="text-right font-weight-bold" id="summary-expenses-total">S/ 0.00</td>
                                     <td class="text-center"><span class="badge badge-danger">Gasto</span></td>
                                 </tr>
+                                <tr class="table-primary">
+                                    <td><i class="fas fa-balance-scale text-primary mr-2"></i>Diferencia (Ingresos - Gastos)</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right font-weight-bold" id="summary-profit-total">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-primary">Resultado</span></td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -366,7 +395,7 @@
             function generateReport() {
                 // Mostrar loading
                 $('#loading-section').show();
-                $('#stats-section, #charts-section, #secondary-charts-section, #summary-section').hide();
+                $('#stats-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').hide();
 
                 const formData = {
                     'report_month': $('#report_month').val(),
@@ -389,7 +418,7 @@
 
                             // Mostrar secciones
                             $('#loading-section').hide();
-                            $('#stats-section, #charts-section, #secondary-charts-section, #summary-section').show();
+                            $('#stats-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').show();
                         } else {
                             showError('Error: ' + response.message);
                             $('#loading-section').hide();
@@ -409,6 +438,7 @@
                 $('#pending-orders-total').text('S/ ' + parseFloat(stats.pending_orders_total).toFixed(2));
                 $('#monthly-income').text('S/ ' + parseFloat(stats.monthly_income_total).toFixed(2));
                 $('#monthly-expenses').text('S/ ' + parseFloat(stats.monthly_expenses_total).toFixed(2));
+                $('#monthly-profit').text('S/ ' + parseFloat(stats.monthly_profit_total).toFixed(2));
             }
 
             function updateCharts(chartData) {
@@ -692,6 +722,7 @@
                 $('#summary-delivery-count').text(stats.pending_delivery_count);
                 $('#summary-income-total').text('S/ ' + parseFloat(stats.monthly_income_total).toFixed(2));
                 $('#summary-expenses-total').text('S/ ' + parseFloat(stats.monthly_expenses_total).toFixed(2));
+                $('#summary-profit-total').text('S/ ' + parseFloat(stats.monthly_profit_total).toFixed(2));
             }
 
             function updateHeader(monthName, subsidiaryName) {

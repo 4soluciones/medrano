@@ -925,6 +925,38 @@ def order_list(request):
                 balance = order.total - order.cash_advance
                 if order.cash_advance + order.cash_pay == order.total:
                     balance = decimal.Decimal(0.00)
+                
+                # Obtener adelantos por tipo de pago para esta orden específica
+                advance_payments_by_type = []
+                if order.type == 'O':  # Solo para órdenes, no cotizaciones
+                    try:
+                        from apps.accounting.models import CashFlow
+                        advance_payments = CashFlow.objects.filter(
+                            order_id=order.id,
+                            type='E',  # Entrada
+                            order_type_entry='A'  # Adelanto
+                        ).values('way_to_pay').annotate(
+                            total_amount=Sum('total'),
+                            count=Count('id')
+                        ).order_by('way_to_pay')
+                        
+                        # Mapeo de tipos de pago
+                        payment_type_names = {
+                            'E': 'Efectivo',
+                            'Y': 'Yape',
+                            'D': 'Depósito/Transferencia'
+                        }
+                        
+                        for payment in advance_payments:
+                            advance_payments_by_type.append({
+                                'way_to_pay': payment['way_to_pay'],
+                                'name': payment_type_names.get(payment['way_to_pay'], 'Desconocido'),
+                                'amount': float(payment['total_amount'] or 0),
+                                'count': payment['count']
+                            })
+                    except ImportError:
+                        advance_payments_by_type = []
+                
                 order_data = {
                     'id': order.id,
                     'order': order,
@@ -948,6 +980,7 @@ def order_list(request):
                     'cash_pay': str(round(order.cash_pay, 2)),
                     'total': str(round(order.total, 2)),
                     'cash_advance': str(round(order.cash_advance, 2)),
+                    'advance_payments': advance_payments_by_type,  # Nuevos datos de adelantos por tipo
                     # Información de completado
                     'completed_by': order.completed_by.first_name if order.completed_by else None,
                     'completed_at': order.completed_at,
@@ -972,23 +1005,23 @@ def order_list(request):
                     order_data.get('details').append(detail_data)
                 order_dict.append(order_data)
 
-            # Calcular totales del período
-            total_sales = orders.aggregate(total=Sum('total'))['total'] or 0
+            # Calcular totales del período - solo para órdenes tipo 'O' (excluir cotizaciones)
+            total_sales = orders.filter(type='O').aggregate(total=Sum('total'))['total'] or 0
             
-            # Obtener IDs de órdenes del período filtrado
-            order_ids = list(orders.values_list('id', flat=True))
+            # Obtener IDs de órdenes del período filtrado (solo tipo 'O' - órdenes, excluir cotizaciones)
+            order_ids = list(orders.filter(type='O').values_list('id', flat=True))
             
             # Calcular totales desde CashFlow
             from apps.accounting.models import CashFlow
             
-            # Sumar adelantos (order_type_entry='A')
+            # Sumar adelantos (order_type_entry='A') - solo para órdenes tipo 'O'
             total_cash_advance = CashFlow.objects.filter(
                 order_id__in=order_ids,
                 type='E',  # Entrada
                 order_type_entry='A'  # Adelanto
             ).aggregate(total=Sum('total'))['total'] or 0
             
-            # Sumar pagos totales (order_type_entry='T')
+            # Sumar pagos totales (order_type_entry='T') - solo para órdenes tipo 'O'
             total_cash_pay = CashFlow.objects.filter(
                 order_id__in=order_ids,
                 type='E',  # Entrada
@@ -1004,7 +1037,7 @@ def order_list(request):
             # Obtener estadísticas de tipos de pago desde CashFlow
             try:
                 
-                # Estadísticas de adelantos por tipo de pago
+                # Estadísticas de adelantos por tipo de pago - solo para órdenes tipo 'O'
                 advance_payments_by_type = CashFlow.objects.filter(
                     order_id__in=order_ids,
                     type='E',  # Entrada
@@ -1014,7 +1047,7 @@ def order_list(request):
                     count=Count('id')
                 ).order_by('way_to_pay')
                 
-                # Estadísticas de pagos completos por tipo de pago
+                # Estadísticas de pagos completos por tipo de pago - solo para órdenes tipo 'O'
                 full_payments_by_type = CashFlow.objects.filter(
                     order_id__in=order_ids,
                     type='E',  # Entrada
@@ -3092,7 +3125,221 @@ def convert_order_to_service(request):
     }, status=HTTPStatus.METHOD_NOT_ALLOWED)
 
 
+def modal_category_list(request):
+    """Modal para listar y editar categorías"""
+    if request.method == 'GET':
+        categories = ProductCategory.objects.all().order_by('name')
+        
+        t = loader.get_template('sales/category_list.html')
+        c = {
+            'categories': categories,
+        }
+        return JsonResponse({
+            'form': t.render(c, request),
+        })
 
 
+@csrf_exempt
+def update_category(request):
+    """Actualizar una categoría existente"""
+    if request.method == 'POST':
+        try:
+            category_id = request.POST.get('category_id', '').strip()
+            name = request.POST.get('category_name', '').strip()
+            
+            if not category_id or not name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El ID y nombre de la categoría son obligatorios'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            try:
+                category_obj = ProductCategory.objects.get(id=int(category_id))
+            except ProductCategory.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La categoría no existe'
+                }, status=HTTPStatus.NOT_FOUND)
+            
+            # Verificar si ya existe otra categoría con el mismo nombre
+            if ProductCategory.objects.filter(name__iexact=name).exclude(id=category_id).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe otra categoría con el nombre: ' + name
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Actualizar la categoría
+            category_obj.name = name.upper()
+            category_obj.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Categoría actualizada con éxito',
+                'category_id': category_obj.id,
+                'category_name': category_obj.name
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al actualizar la categoría: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+@csrf_exempt
+def delete_category(request):
+    """Eliminar una categoría"""
+    if request.method == 'POST':
+        try:
+            category_id = request.POST.get('category_id', '').strip()
+            
+            if not category_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El ID de la categoría es obligatorio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            try:
+                category_obj = ProductCategory.objects.get(id=int(category_id))
+            except ProductCategory.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La categoría no existe'
+                }, status=HTTPStatus.NOT_FOUND)
+            
+            # Verificar si la categoría está siendo usada por algún producto
+            if Product.objects.filter(product_category=category_obj).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede eliminar la categoría porque está siendo usada por productos'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Eliminar la categoría
+            category_obj.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Categoría eliminada con éxito'
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al eliminar la categoría: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+def modal_unit_list(request):
+    """Modal para listar y editar unidades"""
+    if request.method == 'GET':
+        units = Unit.objects.all().order_by('name')
+        
+        t = loader.get_template('sales/unit_list.html')
+        c = {
+            'units': units,
+        }
+        return JsonResponse({
+            'form': t.render(c, request),
+        })
+
+
+@csrf_exempt
+def update_unit(request):
+    """Actualizar una unidad existente"""
+    if request.method == 'POST':
+        try:
+            unit_id = request.POST.get('unit_id', '').strip()
+            name = request.POST.get('unit_name', '').strip()
+            description = request.POST.get('unit_description', '').strip()
+            
+            if not unit_id or not name:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El ID y nombre de la unidad son obligatorios'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            try:
+                unit_obj = Unit.objects.get(id=int(unit_id))
+            except Unit.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La unidad no existe'
+                }, status=HTTPStatus.NOT_FOUND)
+            
+            # Verificar si ya existe otra unidad con el mismo nombre
+            if Unit.objects.filter(name__iexact=name).exclude(id=unit_id).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe otra unidad con el nombre: ' + name
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Actualizar la unidad
+            unit_obj.name = name.upper()
+            unit_obj.description = description
+            unit_obj.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Unidad actualizada con éxito',
+                'unit_id': unit_obj.id,
+                'unit_name': unit_obj.name
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al actualizar la unidad: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
+@csrf_exempt
+def delete_unit(request):
+    """Eliminar una unidad"""
+    if request.method == 'POST':
+        try:
+            unit_id = request.POST.get('unit_id', '').strip()
+            
+            if not unit_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El ID de la unidad es obligatorio'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            try:
+                unit_obj = Unit.objects.get(id=int(unit_id))
+            except Unit.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La unidad no existe'
+                }, status=HTTPStatus.NOT_FOUND)
+            
+            # Verificar si la unidad está siendo usada por algún producto
+            if ProductDetail.objects.filter(unit=unit_obj).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede eliminar la unidad porque está siendo usada por productos'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Eliminar la unidad
+            unit_obj.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Unidad eliminada con éxito'
+            }, status=HTTPStatus.OK)
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al eliminar la unidad: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
 
 

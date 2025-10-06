@@ -26,8 +26,14 @@ urlpatterns = [
     path('update_product/', login_required(update_product), name='update_product'),
     path('modal_category_create/', login_required(modal_category_create), name='modal_category_create'),
     path('save_category/', login_required(save_category), name='save_category'),
+    path('modal_category_list/', login_required(modal_category_list), name='modal_category_list'),
+    path('update_category/', login_required(update_category), name='update_category'),
+    path('delete_category/', login_required(delete_category), name='delete_category'),
     path('modal_unit_create/', login_required(modal_unit_create), name='modal_unit_create'),
     path('save_unit/', login_required(save_unit), name='save_unit'),
+    path('modal_unit_list/', login_required(modal_unit_list), name='modal_unit_list'),
+    path('update_unit/', login_required(update_unit), name='update_unit'),
+    path('delete_unit/', login_required(delete_unit), name='delete_unit'),
     path('get_product_data/', login_required(get_product_data), name='get_product_data'),
 
     # =============================================================================

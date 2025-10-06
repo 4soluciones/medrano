@@ -32,6 +32,7 @@ urlpatterns = [
     path('payments/templates/', login_required(get_payment_templates_list), name='payment_templates_list'),
     path('payments/templates/create/', login_required(modal_payment_template_create), name='modal_payment_template_create'),
     path('payments/templates/save/', login_required(create_payment_template), name='create_payment_template'),
+    path('payments/templates/delete/', login_required(delete_payment_template), name='delete_payment_template'),
     
     path('payments/reports/', login_required(get_payment_reports), name='payment_reports'),
 ]

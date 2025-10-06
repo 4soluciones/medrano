@@ -83,9 +83,41 @@
 
                     <td class="text-right">
                         {% if order.type_order == 'O' %}
-                            <span class="text-info">
-                                S/ {{ order.cash_advance }}
-                            </span>
+                            {% if order.advance_payments %}
+                                <div class="d-flex flex-column align-items-end">
+                                    <!-- Total de adelantos -->
+                                    <div class="mb-1">
+                                        <span class="text-info font-weight-bold" style="font-size: 13px;">
+                                            S/ {{ order.cash_advance }}
+                                        </span>
+                                    </div>
+                                    <!-- Desglose por tipos de pago -->
+                                    <div class="d-flex flex-column align-items-end">
+                                        {% for payment in order.advance_payments %}
+                                            <div class="d-flex align-items-center mb-0">
+                                                {% if payment.way_to_pay == 'E' %}
+                                                    <img src="/media/cash_icon.png" alt="Efectivo" style="width: 20px; height: 20px; margin-right: 4px;">
+                                                {% elif payment.way_to_pay == 'Y' %}
+                                                    <img src="/media/icono_yape.png" alt="Yape" style="width: 36px; height: 22px; margin-right: 0px; ">
+                                                {% elif payment.way_to_pay == 'D' %}
+                                                    <span class="badge badge-outline-info mr-1" style="font-size: 9px; padding: 1px 3px;">
+                                                        Dep
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-outline-info mr-1" style="font-size: 9px; padding: 1px 3px;">
+                                                        {{ payment.name|slice:":3" }}
+                                                    </span>
+                                                {% endif %}
+                                                <small class="text-muted" style="font-size: 10px;">
+                                                    S/ {{ payment.amount|replace_round }}
+                                                </small>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-muted" style="font-size: 11px;">Sin adelantos</span>
+                            {% endif %}
                         {% else %}
                             -
                         {% endif %}

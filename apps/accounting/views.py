@@ -828,40 +828,44 @@ def monthly_report(request):
                 orders_filter = {}
                 cashflows_filter = {}
             
-            # 1. Órdenes completadas del mes
+            # 1. Órdenes completadas del mes (solo tipo 'O', no cotizaciones)
             completed_orders = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 status='C',
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 2. Órdenes pendientes por sucursal y en general
+            # 2. Órdenes pendientes por sucursal y en general (solo tipo 'O', no cotizaciones)
             pending_orders = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 status='P',
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 3. Productos más solicitados
+            # 3. Productos más solicitados (solo órdenes tipo 'O', no cotizaciones)
             from django.db.models import Sum, Count
             top_products = OrderDetail.objects.filter(
                 order__register_date__gte=start_date,
                 order__register_date__lt=end_date,
                 order__status__in=['P', 'C'],
+                order__type='O',  # Solo órdenes de servicio, no cotizaciones
                 **{'order__' + k: v for k, v in orders_filter.items()}
             ).values('product__name').annotate(
                 total_quantity=Sum('quantity'),
                 total_orders=Count('order')
             ).order_by('-total_quantity')[:10]
             
-            # 4. Órdenes pendientes de entrega
+            # 4. Órdenes pendientes de entrega (solo tipo 'O', no cotizaciones)
             pending_delivery = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 delivery_status='P',
                 status__in=['P', 'C'],
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
@@ -882,14 +886,18 @@ def monthly_report(request):
             ).select_related('cash', 'cash__subsidiary')
             
             # Calcular estadísticas
+            monthly_income_total = monthly_income.aggregate(Sum('total'))['total__sum'] or 0
+            monthly_expenses_total = monthly_expenses.aggregate(Sum('total'))['total__sum'] or 0
+            
             stats = {
                 'completed_orders_count': completed_orders.count(),
                 'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_orders_count': pending_orders.count(),
                 'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_delivery_count': pending_delivery.count(),
-                'monthly_income_total': monthly_income.aggregate(Sum('total'))['total__sum'] or 0,
-                'monthly_expenses_total': monthly_expenses.aggregate(Sum('total'))['total__sum'] or 0,
+                'monthly_income_total': monthly_income_total,
+                'monthly_expenses_total': monthly_expenses_total,
+                'monthly_profit_total': monthly_income_total - monthly_expenses_total,  # Nueva métrica: diferencia ingresos - gastos
             }
             
             # Datos para gráficos
@@ -996,40 +1004,44 @@ def weekly_report(request):
                 orders_filter = {}
                 cashflows_filter = {}
             
-            # 1. Órdenes completadas de la semana
+            # 1. Órdenes completadas de la semana (solo tipo 'O', no cotizaciones)
             completed_orders = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 status='C',
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 2. Órdenes pendientes por sucursal y en general
+            # 2. Órdenes pendientes por sucursal y en general (solo tipo 'O', no cotizaciones)
             pending_orders = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 status='P',
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 3. Productos más solicitados
+            # 3. Productos más solicitados (solo órdenes tipo 'O', no cotizaciones)
             from django.db.models import Sum, Count
             top_products = OrderDetail.objects.filter(
                 order__register_date__gte=start_date,
                 order__register_date__lt=end_date,
                 order__status__in=['P', 'C'],
+                order__type='O',  # Solo órdenes de servicio, no cotizaciones
                 **{'order__' + k: v for k, v in orders_filter.items()}
             ).values('product__name').annotate(
                 total_quantity=Sum('quantity'),
                 total_orders=Count('order')
             ).order_by('-total_quantity')[:10]
             
-            # 4. Órdenes pendientes de entrega
+            # 4. Órdenes pendientes de entrega (solo tipo 'O', no cotizaciones)
             pending_delivery = Order.objects.filter(
                 register_date__gte=start_date,
                 register_date__lt=end_date,
                 delivery_status='P',
                 status__in=['P', 'C'],
+                type='O',  # Solo órdenes de servicio, no cotizaciones
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
@@ -1050,14 +1062,18 @@ def weekly_report(request):
             ).select_related('cash', 'cash__subsidiary')
             
             # Calcular estadísticas
+            weekly_income_total = weekly_income.aggregate(Sum('total'))['total__sum'] or 0
+            weekly_expenses_total = weekly_expenses.aggregate(Sum('total'))['total__sum'] or 0
+            
             stats = {
                 'completed_orders_count': completed_orders.count(),
                 'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_orders_count': pending_orders.count(),
                 'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_delivery_count': pending_delivery.count(),
-                'weekly_income_total': weekly_income.aggregate(Sum('total'))['total__sum'] or 0,
-                'weekly_expenses_total': weekly_expenses.aggregate(Sum('total'))['total__sum'] or 0,
+                'weekly_income_total': weekly_income_total,
+                'weekly_expenses_total': weekly_expenses_total,
+                'weekly_profit_total': weekly_income_total - weekly_expenses_total,  # Nueva métrica: diferencia ingresos - gastos
             }
             
             # Datos para gráficos

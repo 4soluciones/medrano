@@ -155,6 +155,10 @@ class PaymentPeriod(models.Model):
         """Retorna el número de días de medio día"""
         return self.daily_payments.filter(status='MEDIO_DIA').count()
 
+    def get_day_off_count(self):
+        """Retorna el número de días libres"""
+        return self.daily_payments.filter(status='DIA_LIBRE').count()
+
 
 class DailyPayment(models.Model):
     """Pago diario individual"""
@@ -164,6 +168,7 @@ class DailyPayment(models.Model):
         ('PERMISO', 'Permiso'),
         ('FALTA', 'Falta'),
         ('VACACIONES', 'Vacaciones'),
+        ('DIA_LIBRE', 'Día Libre'),
     ]
 
     id = models.AutoField(primary_key=True)
@@ -201,6 +206,8 @@ class DailyPayment(models.Model):
             self.amount = 0.00
         elif self.status == 'VACACIONES':
             self.amount = self.daily_rate  # Puedes ajustar según tu política
+        elif self.status == 'DIA_LIBRE':
+            self.amount = 0.00  # Los días libres no se pagan
         
         super().save(*args, **kwargs)
         

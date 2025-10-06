@@ -107,9 +107,11 @@
                                                             <i class="fas fa-clock mr-1"></i>Permiso
                                                         {% elif daily.status == 'FALTA' %}
                                                             <i class="fas fa-times-circle mr-1"></i>Falta
-                                                        {% elif daily.status == 'VACACIONES' %}
-                                                            <i class="fas fa-umbrella-beach mr-1"></i>Vacaciones
-                                                        {% endif %}
+                                        {% elif daily.status == 'VACACIONES' %}
+                                            <i class="fas fa-umbrella-beach mr-1"></i>Vacaciones
+                                        {% elif daily.status == 'DIA_LIBRE' %}
+                                            <i class="fas fa-calendar-times mr-1"></i>Día Libre
+                                        {% endif %}
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
@@ -242,14 +244,28 @@
                     <div class="card-body text-center">
                         <div class="d-flex align-items-center justify-content-center mb-3">
                             <div class="icon-circle bg-info">
-                                <i class="fas fa-calendar-alt text-white"></i>
+                                <i class="fas fa-calendar-times text-white"></i>
                             </div>
                         </div>
-                        <h4 class="text-info mb-1">{{ daily_payments.count }}</h4>
-                        <p class="text-muted mb-0">Días Registrados</p>
+                        <h4 class="text-info mb-1">{{ payment_period.get_day_off_count }}</h4>
+                        <p class="text-muted mb-0">Días Libres</p>
                     </div>
                 </div>
             </div>
+
+{#            <div class="col-xl-2 col-md-6 mb-4">#}
+{#                <div class="card border-0 shadow-sm h-100">#}
+{#                    <div class="card-body text-center">#}
+{#                        <div class="d-flex align-items-center justify-content-center mb-3">#}
+{#                            <div class="icon-circle bg-secondary">#}
+{#                                <i class="fas fa-calendar-alt text-white"></i>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                        <h4 class="text-secondary mb-1">{{ daily_payments.count }}</h4>#}
+{#                        <p class="text-muted mb-0">Días Registrados</p>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
         </div>
 
         <!-- Observaciones del Período -->
@@ -301,6 +317,7 @@
                                     <option value="PERMISO">Permiso</option>
                                     <option value="FALTA">Falta</option>
                                     <option value="VACACIONES">Vacaciones</option>
+                                    <option value="DIA_LIBRE">Día Libre</option>
                                 </select>
                             </div>
                             
@@ -322,7 +339,8 @@
                                         <strong>Medio Día:</strong> Se paga el 50% de la tarifa<br>
                                         <strong>Permiso:</strong> No se paga (S/ 0.00)<br>
                                         <strong>Falta:</strong> No se paga (S/ 0.00)<br>
-                                        <strong>Vacaciones:</strong> Se paga la tarifa completa
+                                        <strong>Vacaciones:</strong> Se paga la tarifa completa<br>
+                                        <strong>Día Libre:</strong> No se paga (S/ 0.00) - No se contabiliza en resúmenes
                                     </small>
                                 </div>
                             </div>
@@ -577,6 +595,12 @@
             color: #0c5460;
         }
         
+        .status-dia_libre {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+        
         /* Reducir tamaño de iconos */
         .icon-circle {
             width: 50px;
@@ -754,6 +778,7 @@
             else if (status.includes('Permiso')) statusValue = 'PERMISO';
             else if (status.includes('Falta')) statusValue = 'FALTA';
             else if (status.includes('Vacaciones')) statusValue = 'VACACIONES';
+            else if (status.includes('Día Libre')) statusValue = 'DIA_LIBRE';
             
             // Llenar modal
             $('#daily_payment_id').val(dailyId);
@@ -791,7 +816,7 @@
             const endDate = '{{ payment_period.end_date|date:"d/m/Y" }}';
             const employeeName = '{{ payment_period.employee.first_name }} {{ payment_period.employee.last_name }}';
             
-            const description = `PAGO SEMANA DEL ${startDate} AL ${endDate} DE ${employeeName}`;
+            const description = `PAGO SUELDO DEL PERÍODO DEL ${startDate} AL ${endDate} DE ${employeeName}`;
             $('#payment_description').val(description);
         }
 
@@ -896,6 +921,9 @@
             } else if (newStatus === 'VACACIONES') {
                 statusText = '<i class="fas fa-umbrella-beach mr-1"></i>Vacaciones';
                 statusClass = 'status-vacaciones';
+            } else if (newStatus === 'DIA_LIBRE') {
+                statusText = '<i class="fas fa-calendar-times mr-1"></i>Día Libre';
+                statusClass = 'status-dia_libre';
             }
             
             statusBadge.removeClass().addClass(`status-badge ${statusClass}`).html(statusText);
@@ -922,6 +950,7 @@
             let halfDays = $('.status-medio_dia').length;
             let permissionDays = $('.status-permiso').length;
             let absenceDays = $('.status-falta').length;
+            let dayOffDays = $('.status-dia_libre').length;
             let totalAmount = parseFloat($('tfoot h4').text().replace('S/ ', ''));
             
             // Actualizar tarjetas de estadísticas
@@ -929,6 +958,7 @@
             $('.icon-circle.bg-warning + h4').text(permissionDays);
             $('.icon-circle.bg-secondary + h4').text(halfDays);
             $('.icon-circle.bg-danger + h4').text(absenceDays);
+            $('.icon-circle.bg-info + h4').text(dayOffDays);
             $('.icon-circle.bg-success + h4').text(`S/ ${totalAmount.toFixed(2)}`);
             
             // Actualizar el total en el modal si está abierto
