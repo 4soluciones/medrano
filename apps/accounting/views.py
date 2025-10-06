@@ -1174,7 +1174,6 @@ def sales_report(request):
             
             # Filtrar cashflows del día por sucursal
             if subsidiary_id and subsidiary_id != '0':
-                # Filtrar por sucursal del usuario logueado
                 subsidiary_obj = Subsidiary.objects.get(id=int(subsidiary_id))
                 cashflows = CashFlow.objects.filter(
                     transaction_date=report_date,
@@ -1245,101 +1244,170 @@ def sales_report(request):
             
             orders_of_day = orders_of_day.select_related('client', 'subsidiary', 'user').prefetch_related('orderdetail_set')
             
-            # Crear estructura de datos más clara para el template
-            advances_grouped = {}
+            # ========================================
+            # DICT 1: ADVANCES OF THE DAY
+            # ========================================
+            advances_of_day = {}
+            
             for order in orders_of_day:
-                # Obtener solo los cashflows de ADELANTOS relacionados con esta orden del día del reporte
-                order_cashflows_day = cashflows.filter(
+                order_advances = cashflows.filter(
                     order=order,
                     type='E',  # Solo entradas
-                    order_type_entry='A',  # Solo adelantos (no cancelaciones)
-                    transaction_date=report_date  # Solo del día del reporte
+                    order_type_entry='A',  # Solo adelantos
+                    transaction_date=report_date,  # Solo del día del reporte
                 ).order_by('id')
                 
-                if order_cashflows_day.exists():
-                    total_paid = sum(float(cf.total) for cf in order_cashflows_day)
-                    saldo = float(order.total) - total_paid
-                    
-                    # Determinar si la orden se pagó en su totalidad (con tolerancia de 1 céntimo)
+                if order_advances.exists():
+                    total_advances = sum(float(cf.total) for cf in order_advances)
+                    saldo = float(order.total) - total_advances
                     is_paid_in_full = abs(saldo) < 0.01
                     
-                    # Crear estructura con información de la orden y sus cashflows
-                    advances_grouped[order.id] = {
+                    advances_of_day[f"advance_{order.id}"] = {
+                        'type': 'advance',
                         'order': order,
-                        'cashflows': list(order_cashflows_day),  # Lista de cashflows individuales
-                        'total_advances': total_paid,
-                        'saldo': saldo,
+                        'cashflows': list(order_advances),
+                        'total_amount': total_advances,
+                        'balance': saldo,
                         'is_paid_in_full': is_paid_in_full,
-                        'cashflow_count': order_cashflows_day.count()  # Cantidad de cashflows
+                        'cashflow_count': order_advances.count()
                     }
             
-            # Preparar datos de saldos (solo cashflows de cancelación - order_type_entry='T')
-            # EXCLUIR órdenes que fueron creadas el mismo día del reporte (esas van en ingresos del día)
-            payments_cashflows = order_cashflows.filter(
-                type='E',  # Solo entradas
-                order_type_entry='T'  # Solo pagos totales (cancelaciones)
-            ).exclude(
-                order__register_date__gte=report_date  # Excluir órdenes del mismo día o posteriores
-            )
+            # ========================================
+            # DICT 2: FULL PAYMENTS OF THE DAY
+            # ========================================
+            full_payments_of_day = {}
             
-            # Preparar datos de cashflows sin order_id (egresos)
+            for order in orders_of_day:
+                order_payments = cashflows.filter(
+                    order=order,
+                    type='E',  # Solo entradas
+                    order_type_entry='T',  # Solo pagos totales
+                    transaction_date=report_date,  # Solo del día del reporte
+                ).order_by('id')
+                
+                if order_payments.exists():
+                    total_payments = sum(float(cf.total) for cf in order_payments)
+                    
+                    full_payments_of_day[f"payment_{order.id}"] = {
+                        'type': 'full_payment',
+                        'order': order,
+                        'cashflows': list(order_payments),
+                        'total_amount': total_payments,
+                        'cashflow_count': order_payments.count()
+                    }
+            
+            # ========================================
+            # COMBINE THE TWO DICTS IN DAY INCOME
+            # ========================================
+            day_income = {}
+            
+            # 1. Add advances
+            day_income.update(advances_of_day)
+            
+            # 2. Add separator
+            day_income['separator'] = {'type': 'separator'}
+            
+            # 3. Add full payments
+            day_income.update(full_payments_of_day)
+            
+            # ========================================
+            # DICT 3: PREVIOUS DATE PAYMENTS
+            # ========================================
+            previous_payments = {}
+            
+            # Full payments from previous dates made on the report date
+            previous_payments_cashflows = cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='T',  # Solo pagos totales
+                transaction_date=report_date,  # Pagados en la fecha del reporte
+                order__register_date__lt=report_date  # De órdenes de fechas anteriores
+            ).order_by('order_id', 'id')
+            
+            for cashflow in previous_payments_cashflows:
+                previous_payments[f"previous_{cashflow.id}"] = {
+                    'order': cashflow.order,
+                    'cashflows': [cashflow],
+                    'total_amount': float(cashflow.total),
+                    'transaction_date': cashflow.order.register_date,
+                    'cashflow_count': 1
+                }
+            
+            # ========================================
+            # EXPENSES (mantener como estaba)
+            # ========================================
             expenses_cashflows = cashflows.filter(
                 order__isnull=True,
                 type='S'  # Solo salidas (gastos)
             )
 
-            # Calcular totales para resúmenes
-            # Total de ingresos del día (suma de todos los cashflows de las órdenes del día)
-            total_advances = sum(data['total_advances'] for data in advances_grouped.values())
-            total_payments = payments_cashflows.aggregate(total=Sum('total'))['total'] or 0
-            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
+            # ========================================
+            # CALCULATE TOTALS
+            # ========================================
             
-            # Calcular total de apertura de caja (tipo 'A')
+            # Total de apertura de caja (tipo 'A')
             total_apertura = cashflows.filter(type='A').aggregate(total=Sum('total'))['total'] or 0
             
-            # Calcular totales por tipo de pago para adelantos (ingresos del día)
-            advances_efectivo = 0
-            advances_yape = 0
-            advances_deposito = 0
+            # Totales de ingresos del día
+            total_day_income = 0
+            day_income_cash = 0
+            day_income_yape = 0
+            day_income_deposit = 0
             
-            for data in advances_grouped.values():
+            for key, data in day_income.items():
+                if data['type'] != 'separator':
+                    total_day_income += data['total_amount']
+                    for cashflow in data['cashflows']:
+                        if cashflow.way_to_pay == 'E':
+                            day_income_cash += decimal.Decimal(cashflow.total)
+                        elif cashflow.way_to_pay == 'Y':
+                            day_income_yape += decimal.Decimal(cashflow.total)
+                        elif cashflow.way_to_pay == 'D':
+                            day_income_deposit += decimal.Decimal(cashflow.total)
+            
+            # Totales de pagos de fechas anteriores
+            total_previous_payments = 0
+            previous_payments_cash = 0
+            previous_payments_yape = 0
+            previous_payments_deposit = 0
+            
+            for key, data in previous_payments.items():
+                total_previous_payments += data['total_amount']
                 for cashflow in data['cashflows']:
                     if cashflow.way_to_pay == 'E':
-                        advances_efectivo += decimal.Decimal(cashflow.total)
+                        previous_payments_cash += decimal.Decimal(cashflow.total)
                     elif cashflow.way_to_pay == 'Y':
-                        advances_yape += decimal.Decimal(cashflow.total)
+                        previous_payments_yape += decimal.Decimal(cashflow.total)
                     elif cashflow.way_to_pay == 'D':
-                        advances_deposito += decimal.Decimal(cashflow.total)
+                        previous_payments_deposit += decimal.Decimal(cashflow.total)
             
-            payments_efectivo = payments_cashflows.filter(way_to_pay='E').aggregate(total=Sum('total'))['total'] or 0
-            payments_yape = payments_cashflows.filter(way_to_pay='Y').aggregate(total=Sum('total'))['total'] or 0
-            payments_deposito = payments_cashflows.filter(way_to_pay='D').aggregate(total=Sum('total'))['total'] or 0
+            # Totales de egresos
+            total_expenses_amount = expenses_cashflows.aggregate(total=Sum('total'))['total'] or 0
             
             # Totales generales
-            total_efectivo = advances_efectivo + payments_efectivo
-            total_yape = advances_yape + payments_yape
-            total_deposito = advances_deposito + payments_deposito
-            total_general = total_efectivo + total_yape + total_deposito + total_apertura
+            total_cash = day_income_cash + previous_payments_cash
+            total_yape = day_income_yape + previous_payments_yape
+            total_deposit = day_income_deposit + previous_payments_deposit
+            total_general = total_cash + total_yape + total_deposit + total_apertura
 
             context = {
                 'report_date': datetime.strptime(report_date, "%Y-%m-%d").strftime("%d-%m-%Y"),
-                'advances_grouped': advances_grouped,
+                'day_income': day_income,  # Nuevo dict con ingresos del día
+                'previous_payments': previous_payments,  # Nuevo dict con pagos anteriores
                 'orders_of_day': orders_of_day,  # Todas las órdenes del día
-                'payments_cashflows': payments_cashflows.order_by('order_id'),  # Solo cancelaciones
                 'expenses_cashflows': expenses_cashflows.order_by('id'),
-                'total_advances': total_advances,  # Total ingresos del día
-                'total_payments': total_payments,  # Total cancelaciones
+                'total_day_income': total_day_income,  # Total ingresos del día
+                'total_previous_payments': total_previous_payments,  # Total pagos anteriores
                 'total_expenses_amount': total_expenses_amount,
                 'total_apertura': total_apertura,  # Total apertura de caja
-                'advances_efectivo': advances_efectivo,
-                'advances_yape': advances_yape,
-                'advances_deposito': advances_deposito,
-                'payments_efectivo': payments_efectivo,
-                'payments_yape': payments_yape,
-                'payments_deposito': payments_deposito,
-                'total_efectivo': total_efectivo,
+                'day_income_cash': day_income_cash,
+                'day_income_yape': day_income_yape,
+                'day_income_deposit': day_income_deposit,
+                'previous_payments_cash': previous_payments_cash,
+                'previous_payments_yape': previous_payments_yape,
+                'previous_payments_deposit': previous_payments_deposit,
+                'total_cash': total_cash,
                 'total_yape': total_yape,
-                'total_deposito': total_deposito,
+                'total_deposit': total_deposit,
                 'total_general': total_general,
                 'subsidiary': subsidiary_obj,
             }

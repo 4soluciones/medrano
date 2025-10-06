@@ -44,10 +44,9 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% if advances_grouped %}
-                                {% comment %}Primero mostrar adelantos (órdenes no pagadas en su totalidad){% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if not data.is_paid_in_full %}
+                            {% if day_income %}
+                                {% for key, data in day_income.items %}
+                                    {% if data.type == 'advance' %}
                                         {% for cashflow in data.cashflows %}
                                             <tr>
                                                 {% if forloop.first %}
@@ -84,7 +83,7 @@
                                                 </td>
                                                 {% if forloop.first %}
                                                     <td class="text-right" rowspan="{{ data.cashflow_count }}">
-                                                        S/ {{ data.saldo|replace_round }}
+                                                        S/ {{ data.balance|replace_round }}
                                                     </td>
                                                     <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.order.total|replace_round }}
@@ -92,21 +91,11 @@
                                                 {% endif %}
                                             </tr>
                                         {% endfor %}
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% comment %}Separador visual{% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if data.is_paid_in_full and forloop.first %}
+                                    {% elif data.type == 'separator' %}
                                         <tr>
                                             <td colspan="9" class="payment-separator" style="padding: 0;"></td>
                                         </tr>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% comment %}Luego mostrar pagos completos{% endcomment %}
-                                {% for order_id, data in advances_grouped.items %}
-                                    {% if data.is_paid_in_full %}
+                                    {% elif data.type == 'full_payment' %}
                                         {% for cashflow in data.cashflows %}
                                             <tr class="payment-full-row">
                                                 {% if forloop.first %}
@@ -165,17 +154,17 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="8" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ advances_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ day_income_yape|replace_round }}</strong></td>
 
                             </tr>
                             <tr>
                                 <td colspan="8" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ advances_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ day_income_cash|replace_round }}</strong></td>
 
                             </tr>
                             <tr class="bg-primary text-white">
                                 <td colspan="8" class="text-right"><strong>TOTAL INGRESOS:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ total_advances|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;" ><strong>S/ {{ total_day_income|replace_round }}</strong></td>
 
                             </tr>
                             </tfoot>
@@ -213,28 +202,30 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% if payments_cashflows %}
-                                {% for cashflow in payments_cashflows %}
-                                    <tr>
-                                        <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
-                                        <td class="text-center">{{ cashflow.order.register_date|date:'d-m-Y' }}</td>
-                                        <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
-                                        <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
-                                        <td class="text-center">
-                                            {% if cashflow.way_to_pay == 'E' %}
-                                                <span class="badge badge-success small">EFECTIVO</span>
-                                            {% elif cashflow.way_to_pay == 'Y' %}
-                                                <span class="badge badge-info small">YAPE</span>
-                                            {% elif cashflow.way_to_pay == 'D' %}
-                                                <span class="badge badge-warning small">DEPÓSITO</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
-                                    </tr>
+                            {% if previous_payments %}
+                                {% for key, data in previous_payments.items %}
+                                    {% for cashflow in data.cashflows %}
+                                        <tr>
+                                            <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
+                                            <td class="text-center">{{ data.transaction_date|date:'d-m-Y' }}</td>
+                                            <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
+                                            <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                            <td class="text-center">
+                                                {% if cashflow.way_to_pay == 'E' %}
+                                                    <span class="badge badge-success small">EFECTIVO</span>
+                                                {% elif cashflow.way_to_pay == 'Y' %}
+                                                    <span class="badge badge-info small">YAPE</span>
+                                                {% elif cashflow.way_to_pay == 'D' %}
+                                                    <span class="badge badge-warning small">DEPÓSITO</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-right" style="padding: 0.3rem 0.4rem !important;">S/ {{ cashflow.total|replace_round }}</td>
+                                        </tr>
+                                    {% endfor %}
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">
+                                    <td colspan="6" class="text-center text-muted py-3">
                                         <i class="fas fa-info-circle mr-2"></i>
                                         No hay cancelaciones para esta fecha
                                     </td>
@@ -244,15 +235,15 @@
                             <tfoot class="bg-light">
                             <tr>
                                 <td colspan="5" class="text-right"><strong>YAPE:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_yape|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ previous_payments_yape|replace_round }}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right"><strong>EFECTIVO:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ payments_efectivo|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ previous_payments_cash|replace_round }}</strong></td>
                             </tr>
                             <tr class="bg-success text-white">
                                 <td colspan="5" class="text-right"><strong>TOTAL CANCELACIONES:</strong></td>
-                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_payments|replace_round }}</strong></td>
+                                <td class="text-right" style="padding: 0.3rem 0.4rem !important;"><strong>S/ {{ total_previous_payments|replace_round }}</strong></td>
                             </tr>
                             </tfoot>
                         </table>
@@ -356,18 +347,18 @@
                                     </tr>
                                     <tr>
                                         <td><strong>INGRESOS DEL DÍA:</strong></td>
-                                        <td class="text-right"><strong>S/ {{ total_advances|replace_round }}</strong>
+                                        <td class="text-right"><strong>S/ {{ total_day_income|replace_round }}</strong>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td><strong>SALDOS:</strong></td>
-                                        <td class="text-right"><strong>S/ {{ total_payments|replace_round }}</strong>
+                                        <td class="text-right"><strong>S/ {{ total_previous_payments|replace_round }}</strong>
                                         </td>
                                     </tr>
                                     <tr class="bg-light">
                                         <td><strong>SUBTOTAL INGRESOS:</strong></td>
                                         <td class="text-right">
-                                            <strong>S/ {{ total_apertura|add:total_advances|add:total_payments|replace_round }}</strong>
+                                            <strong>S/ {{ total_apertura|add:total_day_income|add:total_previous_payments|replace_round }}</strong>
                                         </td>
                                     </tr>
                                 </table>
@@ -393,7 +384,7 @@
                         <div class="col-6 col-md-3 mb-2">
                             <h6 class="text-success" style="font-size: 0.85rem;">TOTAL EFECTIVO</h6>
                             <h5 class="text-success mb-1" style="font-size: 1rem;">
-                                S/ {{ total_efectivo|replace_round }}</h5>
+                                S/ {{ total_cash|replace_round }}</h5>
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <h6 class="text-info" style="font-size: 0.85rem;">TOTAL YAPE</h6>
