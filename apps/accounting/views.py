@@ -2423,6 +2423,7 @@ def sales_report_by_user(request):
                 order_type_entry='T',  # Solo pagos totales
                 transaction_date=report_date,  # Solo del día del reporte
                 user_id=user_id,  # Hechos por el usuario
+                order__register_date=report_date  # De órdenes de hoy
             ).exclude(
                 order__user_id=user_id  # Excluir órdenes creadas por el usuario
             ).order_by('order_id', 'id')
