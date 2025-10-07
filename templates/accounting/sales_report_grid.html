@@ -193,11 +193,11 @@
                                style="font-size: 0.75rem; min-width: 700px;">
                             <thead class="bg-success text-white">
                             <tr>
-                                <th class="text-center" style="width: 10%">N° COMPROBANTE</th>
+                                <th class="text-center" style="width: 5%">N° CPTE.</th>
                                 <th class="text-center" style="width: 10%">FECHA</th>
-                                <th class="text-center" style="width: 30%">DESCRIPCIÓN</th>
+                                <th class="text-center" style="width: 50%">DESCRIPCIÓN</th>
                                 <th class="text-center" style="width: 15%">USUARIO</th>
-                                <th class="text-center" style="width: 15%">TIPO PAGO</th>
+                                <th class="text-center" style="width: 10%">TIPO PAGO</th>
                                 <th class="text-right" style="width: 10%; padding: 0.3rem 0.4rem !important;">S/TOTAL</th>
                             </tr>
                             </thead>
@@ -208,7 +208,20 @@
                                         <tr>
                                             <td class="text-center">{{ cashflow.order.subsidiary.serial }}-{{ cashflow.order.correlative|stringformat:"03d" }}</td>
                                             <td class="text-center">{{ data.transaction_date|date:'d-m-Y' }}</td>
-                                            <td>{{ cashflow.description|default:"PAGO TOTAL" }}</td>
+                                            <td>
+                                                {{ cashflow.description|default:"PAGO TOTAL" }} (<strong>Usuario: {{ cashflow.order.user.first_name|default:cashflow.order.user.username|default:"-" }}</strong>)
+                                                <br>
+                                                {% if cashflow.order %}
+                                                    {% for detail in cashflow.order.orderdetail_set.all %}
+                                                        -{{ detail.product_name }}{% if not forloop.last %}<br> {% endif %}
+                                                    {% empty %}
+                                                        SIN PRODUCTOS
+                                                    {% endfor %}
+                                                {% else %}
+                                                    {{ cashflow.description|default:"PAGO TOTAL" }}
+                                                {% endif %}
+
+                                            </td>
                                             <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
                                             <td class="text-center">
                                                 {% if cashflow.way_to_pay == 'E' %}
