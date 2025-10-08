@@ -93,7 +93,11 @@
                                         {% endfor %}
                                     {% elif data.tipo == 'separador' %}
                                         <tr>
-                                            <td colspan="9" class="payment-separator" style="padding: 0;"></td>
+                                            <td colspan="9" class="payment-separator-blue" style="padding: 0;"></td>
+                                        </tr>
+                                    {% elif data.tipo == 'separador_cancelaciones' %}
+                                        <tr>
+                                            <td colspan="9" class="payment-separator-orange" style="padding: 0;"></td>
                                         </tr>
                                     {% elif data.tipo == 'pago_total_usuario' %}
                                         {% for cashflow in data.cashflows %}
@@ -142,7 +146,7 @@
                                         {% endfor %}
                                     {% elif data.tipo == 'pago_total_otros' %}
                                         {% for cashflow in data.cashflows %}
-                                            <tr class="payment-full-row pago-total-otros">
+                                            <tr class="cancelacion-row">
                                                 {% if forloop.first %}
                                                     <td class="text-center" rowspan="{{ data.cashflow_count }}">
                                                         {{ data.order.subsidiary.serial }}-{{ data.order.correlative|stringformat:"03d" }}
@@ -165,11 +169,11 @@
                                                 <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
                                                 <td class="text-center" style="padding: 0.3rem 0.4rem">
                                                     {% if cashflow.way_to_pay == 'E' %}
-                                                        <span class="badge badge-payment-full small">EFECTIVO</span>
+                                                        <span class="badge badge-cancelacion small">EFECTIVO</span>
                                                     {% elif cashflow.way_to_pay == 'Y' %}
-                                                        <span class="badge badge-payment-full small">YAPE</span>
+                                                        <span class="badge badge-cancelacion small">YAPE</span>
                                                     {% elif cashflow.way_to_pay == 'D' %}
-                                                        <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                        <span class="badge badge-cancelacion small">DEPÓSITO</span>
                                                     {% endif %}
                                                 </td>
                                                 <td class="text-right" style="padding: 0.3rem 0.4rem !important;">
@@ -177,7 +181,7 @@
                                                 </td>
                                                 {% if forloop.first %}
                                                     <td class="text-right"  rowspan="{{ data.cashflow_count }}">
-                                                        <span class="saldo-completo">CANCELACIÓN</span>
+                                                        <span class="saldo-cancelacion">CANCELACIÓN</span>
                                                     </td>
                                                     <td class="text-right" style="padding: 0.3rem 0.4rem !important;" rowspan="{{ data.cashflow_count }}">
                                                         S/ {{ data.order.total|replace_round }}
@@ -782,12 +786,21 @@
         background-color: #bbdefb !important; /* Azul un poco más intenso al hacer hover */
     }
     
-    /* Separador visual entre adelantos y pagos totales */
-    .payment-separator {
+    /* Separador azul delgado entre adelantos y pagos totales del usuario */
+    .payment-separator-blue {
         height: 2px;
         background: linear-gradient(90deg, transparent 0%, #2196f3 50%, transparent 100%);
-        margin: 10px 0;
+        margin: 0;
         border-radius: 1px;
+    }
+    
+    /* Separador naranja antes de cancelaciones */
+    .payment-separator-orange {
+        height: 4px;
+        background: #ff9800;
+        margin: 0;
+        border-radius: 2px;
+        box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
     }
     
     /* Badge especial para pagos completos */
@@ -858,6 +871,82 @@
             background-color: #1b5e20 !important;
             color: #81c784 !important;
         }
+        
+        .cancelacion-row {
+            background-color: #d4d4d4 !important;
+            border-left-color: #e65100 !important;
+        }
+    }
+    
+    /* ===== ESTILOS PARA TABLA DE CANCELACIONES ===== */
+    
+    /* Fila de cancelación - fondo naranja claro */
+    .cancelacion-row {
+        background-color: #fff3e0 !important; /* Naranja muy claro */
+        border-left: 5px solid #ff9800 !important; /* Borde naranja más grueso */
+        position: relative;
+    }
+    
+    .cancelacion-row td {
+        padding: 0.3rem 0.4rem !important;
+    }
+    
+    .cancelacion-row:hover {
+        background-color: #ffe0b2 !important; /* Naranja un poco más intenso al hacer hover */
+    }
+    
+    /* Badge especial para cancelaciones */
+    .badge-cancelacion {
+        background-color: #ff9800 !important;
+        color: white !important;
+        border: 1px solid #f57c00 !important;
+        font-weight: 600 !important;
+        position: relative;
+    }
+    
+    .badge-cancelacion::after {
+        content: " ⚡";
+        font-weight: bold;
+        color: #ffc107;
+    }
+    
+    /* Estilo para el indicador de CANCELACIÓN en el saldo */
+    .saldo-cancelacion {
+        background-color: #ffe0b2 !important;
+        color: #e65100 !important;
+        font-weight: 700 !important;
+        padding: 3px 8px !important;
+        border-radius: 4px !important;
+        border: 2px solid #ff9800 !important;
+        display: inline-block;
+        font-size: 0.75em;
+    }
+    
+    /* Animación sutil para cancelaciones */
+    .cancelacion-row {
+        animation: fadeInCancelacion 0.5s ease-in;
+    }
+    
+    @keyframes fadeInCancelacion {
+        from {
+            background-color: transparent;
+            border-left-color: transparent;
+        }
+        to {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+    }
+    
+    /* Estilos para el encabezado de la tabla de cancelaciones */
+    .bg-warning.text-white {
+        background-color: #ff9800 !important;
+    }
+    
+    /* Hover effect para tabla de cancelaciones */
+    .cancelacion-row:hover {
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        transition: all 0.3s ease;
     }
 
 </style>

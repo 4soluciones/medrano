@@ -158,7 +158,7 @@ def get_api_person(request):
 
                 if r.get('numeroDocumento') == document_number:
 
-                    business_name = r.get('nombre')
+                    business_name = r.get('razonSocial')
                     address_business = r.get('direccion')
                     result = business_name
                     address = address_business

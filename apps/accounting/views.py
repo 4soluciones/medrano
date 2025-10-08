@@ -2535,7 +2535,11 @@ def sales_report_by_user(request):
             # 3. Agregar pagos totales del usuario
             ingresos_del_dia.update(pagos_totales_usuario)
             
-            # 4. Agregar pagos totales de otros
+            # 4. Agregar separador de cancelaciones (solo si hay cancelaciones)
+            if pagos_totales_otros:
+                ingresos_del_dia['separador_cancelaciones'] = {'tipo': 'separador_cancelaciones'}
+            
+            # 5. Agregar pagos totales de otros (cancelaciones)
             ingresos_del_dia.update(pagos_totales_otros)
             
             # ========================================
@@ -2582,9 +2586,13 @@ def sales_report_by_user(request):
             ingresos_efectivo = 0
             ingresos_yape = 0
             ingresos_deposito = 0
+            total_cancelaciones_otros = 0
+            cancelaciones_efectivo = 0
+            cancelaciones_yape = 0
+            cancelaciones_deposito = 0
             
             for key, data in ingresos_del_dia.items():
-                if data['tipo'] != 'separador':
+                if data['tipo'] not in ['separador', 'separador_cancelaciones']:
                     total_ingresos_dia += data['total_amount']
                     for cashflow in data['cashflows']:
                         if cashflow.way_to_pay == 'E':
@@ -2593,6 +2601,16 @@ def sales_report_by_user(request):
                             ingresos_yape += decimal.Decimal(cashflow.total)
                         elif cashflow.way_to_pay == 'D':
                             ingresos_deposito += decimal.Decimal(cashflow.total)
+                        
+                        # Calcular totales específicos para cancelaciones de otros
+                        if data['tipo'] == 'pago_total_otros':
+                            total_cancelaciones_otros += float(cashflow.total)
+                            if cashflow.way_to_pay == 'E':
+                                cancelaciones_efectivo += decimal.Decimal(cashflow.total)
+                            elif cashflow.way_to_pay == 'Y':
+                                cancelaciones_yape += decimal.Decimal(cashflow.total)
+                            elif cashflow.way_to_pay == 'D':
+                                cancelaciones_deposito += decimal.Decimal(cashflow.total)
             
             # Totales de pagos de fechas anteriores
             total_pagos_anteriores = 0
@@ -2640,6 +2658,10 @@ def sales_report_by_user(request):
                 'total_deposito': total_deposito,
                 'total_general': total_general,
                 'user': user_obj,
+                'total_cancelaciones_otros': total_cancelaciones_otros,  # Total cancelaciones de otros usuarios
+                'cancelaciones_efectivo': cancelaciones_efectivo,
+                'cancelaciones_yape': cancelaciones_yape,
+                'cancelaciones_deposito': cancelaciones_deposito,
             }
             
             tpl = loader.get_template('accounting/sales_report_by_user_grid.html')
