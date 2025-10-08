@@ -1,6 +1,8 @@
 from django.urls import path, include
 from django.contrib.auth.decorators import login_required
 from .views import *
+from .views_excel import export_sales_report_excel, export_sales_report_by_user_excel
+from .views_pdf import export_sales_report_pdf, export_sales_report_by_user_pdf
 
 urlpatterns = [
     # URLs para gestión de cuentas/cajas

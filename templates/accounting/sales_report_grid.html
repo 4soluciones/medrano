@@ -117,14 +117,23 @@
                                                         {% endfor %}
                                                     </td>
                                                 {% endif %}
-                                                <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
-                                                <td class="text-center" style="padding: 0.3rem 0.4rem">
-                                                    {% if cashflow.way_to_pay == 'E' %}
-                                                        <span class="badge badge-payment-full small">EFECTIVO</span>
-                                                    {% elif cashflow.way_to_pay == 'Y' %}
-                                                        <span class="badge badge-payment-full small">YAPE</span>
-                                                    {% elif cashflow.way_to_pay == 'D' %}
-                                                        <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                <td class="text-center align-middle">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                                <td class="text-center" style="padding: 0.3rem 0.4rem; position: relative;">
+                                                    <div style="display: flex; justify-content: center; align-items: center;">
+                                                        <div>
+                                                            {% if cashflow.way_to_pay == 'E' %}
+                                                                <span class="badge badge-payment-full small">EFECTIVO</span>
+                                                            {% elif cashflow.way_to_pay == 'Y' %}
+                                                                <span class="badge badge-payment-full small">YAPE</span>
+                                                            {% elif cashflow.way_to_pay == 'D' %}
+                                                                <span class="badge badge-payment-full small">DEPÓSITO</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% if cashflow.order_type_entry == 'A' %}
+                                                        <div style="position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%);">
+                                                            <span class="text-secondary small">({{ cashflow.order_type_entry }})</span>
+                                                        </div>
                                                     {% endif %}
                                                 </td>
                                                 <td class="text-right" style="padding: 0.3rem 0.4rem;">
@@ -220,10 +229,9 @@
                                                 {% else %}
                                                     {{ cashflow.description|default:"PAGO TOTAL" }}
                                                 {% endif %}
-
                                             </td>
-                                            <td class="text-center">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
-                                            <td class="text-center">
+                                            <td class="text-center align-middle">{{ cashflow.user.first_name|default:cashflow.user.username|default:"-" }}</td>
+                                            <td class="text-center align-middle">
                                                 {% if cashflow.way_to_pay == 'E' %}
                                                     <span class="badge badge-success small">EFECTIVO</span>
                                                 {% elif cashflow.way_to_pay == 'Y' %}

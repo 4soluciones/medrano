@@ -780,6 +780,8 @@ def update_daily_payment_status(request):
             daily_payment_id = request.POST.get('daily_payment_id', '')
             new_status = request.POST.get('status', '')
             notes = request.POST.get('notes', '')
+            hours_worked = request.POST.get('hours_worked', '')
+            working_hours_per_day = request.POST.get('working_hours_per_day', '9')
             
             if not daily_payment_id or not new_status:
                 return JsonResponse({
@@ -787,10 +789,43 @@ def update_daily_payment_status(request):
                     'message': 'ID del pago diario y estado son obligatorios'
                 }, status=HTTPStatus.BAD_REQUEST)
             
+            # Validar horas si el estado es POR_HORAS
+            if new_status == 'POR_HORAS':
+                if not hours_worked:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Las horas trabajadas son obligatorias para el estado "Por Horas"'
+                    }, status=HTTPStatus.BAD_REQUEST)
+                
+                try:
+                    hours_worked_decimal = decimal.Decimal(hours_worked)
+                    working_hours_decimal = decimal.Decimal(working_hours_per_day)
+                    
+                    if hours_worked_decimal <= 0 or hours_worked_decimal > working_hours_decimal:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Las horas trabajadas deben ser entre 0 y {working_hours_per_day} horas'
+                        }, status=HTTPStatus.BAD_REQUEST)
+                except:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Las horas ingresadas no son válidas'
+                    }, status=HTTPStatus.BAD_REQUEST)
+            
             daily_payment = DailyPayment.objects.get(id=daily_payment_id)
             daily_payment.status = new_status
+            
             if notes:
                 daily_payment.notes = notes
+            
+            # Actualizar horas si el estado es POR_HORAS
+            if new_status == 'POR_HORAS':
+                daily_payment.hours_worked = decimal.Decimal(hours_worked)
+                daily_payment.working_hours_per_day = decimal.Decimal(working_hours_per_day)
+            else:
+                # Limpiar horas si no es estado POR_HORAS
+                daily_payment.hours_worked = None
+            
             daily_payment.save()
             
             # Recalcular total del período
@@ -801,7 +836,9 @@ def update_daily_payment_status(request):
                 'success': True,
                 'message': 'Estado actualizado exitosamente',
                 'new_amount': str(daily_payment.amount),
-                'new_total': str(daily_payment.payment_period.total_amount)
+                'new_total': str(daily_payment.payment_period.total_amount),
+                'hourly_rate': str(daily_payment.hourly_rate) if new_status == 'POR_HORAS' else None,
+                'hours_worked': str(daily_payment.hours_worked) if daily_payment.hours_worked else None
             }, status=HTTPStatus.OK)
             
         except DailyPayment.DoesNotExist:

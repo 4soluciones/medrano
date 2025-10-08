@@ -103,6 +103,11 @@
                                                             <i class="fas fa-check-circle mr-1"></i>Completo
                                                         {% elif daily.status == 'MEDIO_DIA' %}
                                                             <i class="fas fa-clock-half mr-1"></i>Medio Día
+                                                        {% elif daily.status == 'POR_HORAS' %}
+                                                            <i class="fas fa-hourglass-half mr-1"></i>Por Horas
+                                                            {% if daily.hours_worked %}
+                                                                <br><small class="text-muted">({{ daily.hours_worked|floatformat:2 }}h de {{ daily.working_hours_per_day|floatformat:2 }}h)</small>
+                                                            {% endif %}
                                                         {% elif daily.status == 'PERMISO' %}
                                                             <i class="fas fa-clock mr-1"></i>Permiso
                                                         {% elif daily.status == 'FALTA' %}
@@ -116,6 +121,9 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <strong>S/ {{ daily.daily_rate|safe }}</strong>
+                                                    {% if daily.status == 'POR_HORAS' and daily.hours_worked %}
+                                                        <br><small class="text-muted">Hora: S/ {{ daily.hourly_rate|floatformat:2 }}</small>
+                                                    {% endif %}
                                                 </td>
                                                 <td class="text-center">
                                                     <h5 class="mb-0 {% if daily.amount > 0 %}text-success{% else %}text-muted{% endif %}">
@@ -307,25 +315,61 @@
                         <input type="hidden" id="daily_payment_id" name="daily_payment_id">
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="edit_status" class="form-label">
                                     <i class="fas fa-toggle-on mr-2"></i>Estado <span class="text-danger">*</span>
                                 </label>
                                 <select class="form-control" id="edit_status" name="status" required>
                                     <option value="COMPLETO">Completo</option>
                                     <option value="MEDIO_DIA">Medio Día</option>
+                                    <option value="POR_HORAS">Por Horas</option>
                                     <option value="PERMISO">Permiso</option>
                                     <option value="FALTA">Falta</option>
                                     <option value="VACACIONES">Vacaciones</option>
                                     <option value="DIA_LIBRE">Día Libre</option>
                                 </select>
                             </div>
+                        </div>
+                        
+                        <!-- Campos de horas (solo visible cuando el estado es POR_HORAS) -->
+                        <div class="row" id="hours-fields" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_hours_worked" class="form-label">
+                                    <i class="fas fa-clock mr-2"></i>Horas Trabajadas <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="edit_hours_worked" name="hours_worked" 
+                                       step="0.5" min="0.5" max="24" placeholder="Ej: 4.5">
+                                <small class="text-muted">Puede usar decimales: 4.5, 6.0, etc.</small>
+                            </div>
                             
                             <div class="col-md-6 mb-3">
+                                <label for="edit_working_hours_per_day" class="form-label">
+                                    <i class="fas fa-business-time mr-2"></i>Horas Laborales por Día
+                                </label>
+                                <input type="number" class="form-control" id="edit_working_hours_per_day" 
+                                       name="working_hours_per_day" value="9" step="0.5" min="1" max="24">
+                                <small class="text-muted">Por defecto: 9 horas</small>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <div class="alert alert-success border-0" id="hourly-calculation">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-calculator text-success mr-2"></i>
+                                        <div>
+                                            <small><strong>Cálculo:</strong></small><br>
+                                            <small id="calculation-details">Ingrese las horas para ver el cálculo</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
                                 <label for="edit_notes" class="form-label">
                                     <i class="fas fa-sticky-note mr-2"></i>Observaciones
                                 </label>
-                                <textarea class="form-control" id="edit_notes" name="notes" rows="3" 
+                                <textarea class="form-control" id="edit_notes" name="notes" rows="2" 
                                           placeholder="Observaciones sobre este día..."></textarea>
                             </div>
                         </div>
@@ -337,6 +381,7 @@
                                     <small class="mb-0">
                                         <strong>Completo:</strong> Se paga la tarifa completa<br>
                                         <strong>Medio Día:</strong> Se paga el 50% de la tarifa<br>
+                                        <strong>Por Horas:</strong> Se paga según horas trabajadas (tarifa_diaria ÷ horas_laborales × horas_trabajadas)<br>
                                         <strong>Permiso:</strong> No se paga (S/ 0.00)<br>
                                         <strong>Falta:</strong> No se paga (S/ 0.00)<br>
                                         <strong>Vacaciones:</strong> Se paga la tarifa completa<br>
@@ -580,6 +625,11 @@
             color: #495057;
         }
         
+        .status-por_horas {
+            background-color: #cfe2ff;
+            color: #084298;
+        }
+        
         .status-permiso {
             background-color: #fff3cd;
             color: #856404;
@@ -750,6 +800,9 @@
 
 {% block extrajs %}
     <script type="text/javascript">
+        // Variable global para almacenar la tarifa diaria actual
+        let currentDailyRate = 0;
+        
         $(document).ready(function() {
             console.log('Detalle del período de pago cargado');
             
@@ -764,17 +817,62 @@
                 $('#modal-total-amount').text(`S/ ${currentTotal}`);
                 $('#total-header').text(`S/ ${currentTotal}`);
             });
+            
+            // Evento para mostrar/ocultar campos de horas según el estado seleccionado
+            $('#edit_status').on('change', function() {
+                toggleHoursFields();
+            });
+            
+            // Eventos para calcular el monto cuando cambian las horas
+            $('#edit_hours_worked, #edit_working_hours_per_day').on('input', function() {
+                calculateHourlyAmount();
+            });
         });
+        
+        function toggleHoursFields() {
+            const status = $('#edit_status').val();
+            if (status === 'POR_HORAS') {
+                $('#hours-fields').slideDown();
+                $('#edit_hours_worked').prop('required', true);
+            } else {
+                $('#hours-fields').slideUp();
+                $('#edit_hours_worked').prop('required', false);
+                $('#edit_hours_worked').val('');
+            }
+        }
+        
+        function calculateHourlyAmount() {
+            const hoursWorked = parseFloat($('#edit_hours_worked').val()) || 0;
+            const workingHours = parseFloat($('#edit_working_hours_per_day').val()) || 9;
+            
+            if (currentDailyRate > 0 && hoursWorked > 0 && workingHours > 0) {
+                const hourlyRate = currentDailyRate / workingHours;
+                const totalAmount = hourlyRate * hoursWorked;
+                
+                $('#calculation-details').html(
+                    `Tarifa por hora: S/ ${hourlyRate.toFixed(2)}<br>` +
+                    `${hoursWorked} horas × S/ ${hourlyRate.toFixed(2)} = <strong>S/ ${totalAmount.toFixed(2)}</strong>`
+                );
+            } else {
+                $('#calculation-details').text('Ingrese las horas para ver el cálculo');
+            }
+        }
 
         function editDailyPayment(dailyId) {
-            // Obtener datos del pago diario
+            // Obtener datos del pago diario desde la fila
             let row = $(`tr[data-daily-id="${dailyId}"]`);
-            let status = row.find('.status-badge').text().trim();
+            let statusBadge = row.find('.status-badge');
+            let status = statusBadge.text().trim();
             let notes = row.find('td:eq(5) small').text().trim();
+            
+            // Obtener la tarifa diaria de la fila
+            let dailyRateText = row.find('td:eq(3) strong').text().replace('S/ ', '').trim();
+            currentDailyRate = parseFloat(dailyRateText) || 0;
             
             // Mapear estado a valor del select
             let statusValue = 'COMPLETO';
             if (status.includes('Medio Día')) statusValue = 'MEDIO_DIA';
+            else if (status.includes('Por Horas')) statusValue = 'POR_HORAS';
             else if (status.includes('Permiso')) statusValue = 'PERMISO';
             else if (status.includes('Falta')) statusValue = 'FALTA';
             else if (status.includes('Vacaciones')) statusValue = 'VACACIONES';
@@ -784,6 +882,22 @@
             $('#daily_payment_id').val(dailyId);
             $('#edit_status').val(statusValue);
             $('#edit_notes').val(notes === '-' ? '' : notes);
+            
+            // Si el estado es POR_HORAS, extraer las horas del badge
+            if (statusValue === 'POR_HORAS') {
+                let hoursText = statusBadge.find('small').text();
+                let hoursMatch = hoursText.match(/\((.+?)h de (.+?)h\)/);
+                if (hoursMatch) {
+                    $('#edit_hours_worked').val(hoursMatch[1]);
+                    $('#edit_working_hours_per_day').val(hoursMatch[2]);
+                }
+                $('#hours-fields').show();
+                calculateHourlyAmount();
+            } else {
+                $('#hours-fields').hide();
+                $('#edit_hours_worked').val('');
+                $('#edit_working_hours_per_day').val('9');
+            }
             
             // Mostrar modal
             $('#modal-edit-daily-payment').modal('show');
@@ -912,6 +1026,12 @@
             } else if (newStatus === 'MEDIO_DIA') {
                 statusText = '<i class="fas fa-clock-half mr-1"></i>Medio Día';
                 statusClass = 'status-medio_dia';
+            } else if (newStatus === 'POR_HORAS') {
+                let hoursWorked = $('#edit_hours_worked').val();
+                let workingHours = $('#edit_working_hours_per_day').val();
+                statusText = '<i class="fas fa-hourglass-half mr-1"></i>Por Horas<br>' +
+                           `<small class="text-muted">(${hoursWorked}h de ${workingHours}h)</small>`;
+                statusClass = 'status-por_horas';
             } else if (newStatus === 'PERMISO') {
                 statusText = '<i class="fas fa-clock mr-1"></i>Permiso';
                 statusClass = 'status-permiso';
@@ -927,6 +1047,21 @@
             }
             
             statusBadge.removeClass().addClass(`status-badge ${statusClass}`).html(statusText);
+            
+            // Actualizar tarifa diaria (agregar info de hora si es POR_HORAS)
+            let dailyRateCell = row.find('td:eq(3)');
+            let dailyRateText = dailyRateCell.find('strong').text();
+            if (newStatus === 'POR_HORAS' && currentDailyRate > 0) {
+                let workingHours = parseFloat($('#edit_working_hours_per_day').val()) || 9;
+                let hourlyRate = currentDailyRate / workingHours;
+                dailyRateCell.html(
+                    `<strong>${dailyRateText}</strong><br>` +
+                    `<small class="text-muted">Hora: S/ ${hourlyRate.toFixed(2)}</small>`
+                );
+            } else if (!dailyRateText.includes('Hora:')) {
+                // Mantener solo el monto diario si no es POR_HORAS
+                dailyRateCell.html(`<strong>${dailyRateText}</strong>`);
+            }
             
             // Actualizar monto
             let amountCell = row.find('td:eq(4) h5');

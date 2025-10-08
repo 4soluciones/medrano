@@ -165,6 +165,7 @@ class DailyPayment(models.Model):
     STATUS_CHOICES = [
         ('COMPLETO', 'Completo'),
         ('MEDIO_DIA', 'Medio Día'),
+        ('POR_HORAS', 'Por Horas'),
         ('PERMISO', 'Permiso'),
         ('FALTA', 'Falta'),
         ('VACACIONES', 'Vacaciones'),
@@ -178,6 +179,8 @@ class DailyPayment(models.Model):
     status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='COMPLETO')
     amount = models.DecimalField('Monto', max_digits=10, decimal_places=2, default=0.00)
     daily_rate = models.DecimalField('Tarifa diaria', max_digits=10, decimal_places=2)
+    hours_worked = models.DecimalField('Horas trabajadas', max_digits=5, decimal_places=2, null=True, blank=True)
+    working_hours_per_day = models.DecimalField('Horas laborales por día', max_digits=5, decimal_places=2, default=9.00)
     notes = models.CharField('Observaciones', max_length=200, null=True, blank=True)
     created_at = models.DateTimeField('Fecha de creación', auto_now_add=True)
 
@@ -200,6 +203,15 @@ class DailyPayment(models.Model):
             self.amount = self.daily_rate
         elif self.status == 'MEDIO_DIA':
             self.amount = self.daily_rate / 2  # 50% del pago diario
+        elif self.status == 'POR_HORAS':
+            # Calcular pago por hora: (tarifa_diaria / horas_laborales) * horas_trabajadas
+            if self.hours_worked and self.working_hours_per_day:
+                hourly_rate = self.daily_rate / self.working_hours_per_day
+                calculated_amount = hourly_rate * self.hours_worked
+                # Redondear a 2 decimales
+                self.amount = round(calculated_amount, 2)
+            else:
+                self.amount = 0.00
         elif self.status == 'PERMISO':
             self.amount = 0.00
         elif self.status == 'FALTA':
@@ -215,6 +227,13 @@ class DailyPayment(models.Model):
         if self.payment_period:
             self.payment_period.calculate_total()
             self.payment_period.save()
+
+    @property
+    def hourly_rate(self):
+        """Calcula y retorna la tarifa por hora redondeada a 2 decimales"""
+        if self.working_hours_per_day and self.working_hours_per_day > 0:
+            return round(self.daily_rate / self.working_hours_per_day, 2)
+        return 0
 
 
 class PaymentTemplate(models.Model):
