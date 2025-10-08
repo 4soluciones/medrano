@@ -928,6 +928,8 @@ def order_list(request):
                 
                 # Obtener adelantos por tipo de pago para esta orden específica
                 advance_payments_by_type = []
+                # Obtener pagos completos por tipo de pago para esta orden específica
+                full_payments_by_type = []
                 if order.type == 'O':  # Solo para órdenes, no cotizaciones
                     try:
                         from apps.accounting.models import CashFlow
@@ -935,6 +937,16 @@ def order_list(request):
                             order_id=order.id,
                             type='E',  # Entrada
                             order_type_entry='A'  # Adelanto
+                        ).values('way_to_pay').annotate(
+                            total_amount=Sum('total'),
+                            count=Count('id')
+                        ).order_by('way_to_pay')
+                        
+                        # Obtener pagos completos/totales para esta orden
+                        full_payments = CashFlow.objects.filter(
+                            order_id=order.id,
+                            type='E',  # Entrada
+                            order_type_entry='T'  # Pago Total
                         ).values('way_to_pay').annotate(
                             total_amount=Sum('total'),
                             count=Count('id')
@@ -954,8 +966,17 @@ def order_list(request):
                                 'amount': float(payment['total_amount'] or 0),
                                 'count': payment['count']
                             })
+                        
+                        for payment in full_payments:
+                            full_payments_by_type.append({
+                                'way_to_pay': payment['way_to_pay'],
+                                'name': payment_type_names.get(payment['way_to_pay'], 'Desconocido'),
+                                'amount': float(payment['total_amount'] or 0),
+                                'count': payment['count']
+                            })
                     except ImportError:
                         advance_payments_by_type = []
+                        full_payments_by_type = []
                 
                 order_data = {
                     'id': order.id,
@@ -981,6 +1002,7 @@ def order_list(request):
                     'total': str(round(order.total, 2)),
                     'cash_advance': str(round(order.cash_advance, 2)),
                     'advance_payments': advance_payments_by_type,  # Nuevos datos de adelantos por tipo
+                    'full_payments': full_payments_by_type,  # Nuevos datos de pagos completos por tipo
                     # Información de completado
                     'completed_by': order.completed_by.first_name if order.completed_by else None,
                     'completed_at': order.completed_at,
@@ -1029,10 +1051,12 @@ def order_list(request):
             ).aggregate(total=Sum('total'))['total'] or 0
             
             # El balance total se calcula basándose en los pagos reales
-            if total_cash_pay > 0:
-                total_balance = total_sales - total_cash_pay
-            else:
-                total_balance = total_sales - total_cash_advance
+            # if total_cash_pay > 0:
+            #     total_balance = total_sales - total_cash_pay
+            # else:
+            #     total_balance = total_sales - total_cash_advance
+
+            total_balance = total_sales - (total_cash_pay + total_cash_advance)
 
             # Obtener estadísticas de tipos de pago desde CashFlow
             try:
