@@ -858,16 +858,21 @@ def order_list(request):
         date_now = my_date.strftime("%Y-%m-%d")
         product_set = Product.objects.filter(is_enabled=True).select_related('product_category')
         
-        # Obtener cuentas de caja para los modales (solo de la sucursal del usuario)
+        # Obtener cuentas de caja para los modales
         try:
             from apps.accounting.models import Cash
-            if request.user.subsidiary:
-                cash_accounts = Cash.objects.filter(subsidiary=request.user.subsidiary).select_related('subsidiary')
+            is_admin = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
+            if is_admin:
+                # Si el usuario tiene acceso a todo, mostrar todas las cajas
+                cash_accounts = Cash.objects.all().select_related('subsidiary').order_by('subsidiary_id')
             else:
-                # Si el usuario no tiene sucursal asignada, mostrar todas las cuentas
-                cash_accounts = Cash.objects.all().select_related('subsidiary')
+                # Si no tiene acceso a todo, solo mostrar las cajas de su sucursal
+                cash_accounts = Cash.objects.filter(subsidiary=request.user.subsidiary).select_related('subsidiary')
         except ImportError:
             cash_accounts = []
+        
+        # Verificar si el usuario tiene acceso a todo
+        user_has_access_to_all = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
         
         return render(request, 'sales/order_list.html', {
             'subsidiary_set': subsidiary_set,
@@ -876,6 +881,7 @@ def order_list(request):
             'product_set': product_set,
             'date_now': date_now,
             'cash_accounts': cash_accounts,
+            'user_has_access_to_all': user_has_access_to_all,
         })
     elif request.method == 'POST':
         try:

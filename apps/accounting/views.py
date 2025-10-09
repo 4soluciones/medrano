@@ -424,7 +424,7 @@ def cashflow_list(request):
         # Filtrar cajas según permisos del usuario
         if is_admin:
             # Usuario admin puede ver todas las cajas
-            cash_accounts = Cash.objects.all()
+            cash_accounts = Cash.objects.all().order_by('subsidiary_id')
             # Buscar la primera cuenta de tipo 'E' de cualquier sucursal
             first_cash_account = Cash.objects.filter(account_type='E').first()
         else:
