@@ -275,13 +275,14 @@
 
                             </button>
                             <button type="button" class="btn btn-action btn-edit"
-                                    {% if not user.has_access_to_all %}disabled{% endif %}
+                                    onclick="editOrder({{ order.id }})">
+                                    <!--{% if not user.has_access_to_all %}disabled{% endif %}
                                     {% if user.has_access_to_all %}
                                         onclick="editOrder({{ order.id }})"
                                         title="Editar Orden"
                                     {% else %}
                                         title="Necesita permisos de administrador para editar"
-                                    {% endif %}>
+                                    {% endif %}>-->
                                 <i class="fas fa-pen-alt"></i>
 
                             </button>

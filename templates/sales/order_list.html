@@ -719,12 +719,14 @@
                                     </label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="edit_client_search_input"
-                                               placeholder="Escriba para buscar cliente..." autocomplete="off">
+                                               placeholder="Escriba para buscar cliente..." autocomplete="off"
+                                               {% if not user_has_access_to_all %}readonly style="background-color: #f8f9fa;"{% endif %}>
                                         <input type="hidden" id="edit_client_id" name="client_id" required>
                                         <!-- Campos ocultos para datos adicionales del cliente en edición -->
                                         <input type="hidden" id="edit_client_address" name="client_address" value="">
                                         <input type="hidden" id="edit_client_phone" name="client_phone" value="">
                                         <input type="hidden" id="edit_client_email" name="client_email" value="">
+                                        {% if user_has_access_to_all %}
                                         <div class="input-group-append">
                                             <button type="button" class="btn btn-outline-success"
                                                     onclick="openCreateClientModal()" title="Crear nuevo cliente">
@@ -736,13 +738,21 @@
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
+                                        {% endif %}
                                     </div>
+                                    {% if user_has_access_to_all %}
                                     <div id="edit_client_autocomplete_results" class="client-autocomplete-results"
                                          style="display: none;"></div>
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle mr-1"></i>
                                         Escriba el nombre o documento del cliente para buscar rápidamente
                                     </small>
+                                    {% else %}
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-lock mr-1"></i>
+                                        Solo puedes editar los adelantos de esta orden
+                                    </small>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -753,7 +763,8 @@
                                     <label for="edit_order_type" class="form-label">
                                         <i class="fas fa-tag mr-1"></i>Tipo de Orden <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-control" id="edit_order_type" name="order_type" required>
+                                    <select class="form-control" id="edit_order_type" name="order_type" required
+                                            {% if not user_has_access_to_all %}disabled style="background-color: #f8f9fa;"{% endif %}>
                                         <option value="">Seleccione tipo</option>
                                         <option value="C">Cotización</option>
                                         <option value="O">Orden de Servicio</option>
@@ -812,7 +823,7 @@
                                         <i class="fas fa-calendar mr-1"></i>Fecha <span class="text-danger">*</span>
                                     </label>
                                     <input type="date" class="form-control" id="edit_register_date" name="register_date"
-                                           required>
+                                           required {% if not user_has_access_to_all %}readonly style="background-color: #f8f9fa;"{% endif %}>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -821,7 +832,7 @@
                                         <i class="fas fa-calendar-check mr-1"></i>Fecha de Entrega
                                     </label>
                                     <input type="date" class="form-control" id="edit_delivery_date"
-                                           name="delivery_date">
+                                           name="delivery_date" {% if not user_has_access_to_all %}readonly style="background-color: #f8f9fa;"{% endif %}>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -829,7 +840,8 @@
                                     <label for="edit_voucher_type" class="form-label">
                                         <i class="fas fa-receipt mr-1"></i>Tipo de Comprobante
                                     </label>
-                                    <select class="form-control" id="edit_voucher_type" name="voucher_type">
+                                    <select class="form-control" id="edit_voucher_type" name="voucher_type"
+                                            {% if not user_has_access_to_all %}disabled style="background-color: #f8f9fa;"{% endif %}>
                                         <option value="T">TICKET</option>
                                         <option value="B">BOLETA</option>
                                         <option value="F">FACTURA</option>
@@ -865,8 +877,9 @@
                         </div>
 
                         <!-- Buscador de Productos -->
+                        {% if user_has_access_to_all %}
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-10">
                                 <div class="form-group">
                                     <label for="edit_product_search" class="form-label">
                                         <i class="fas fa-search mr-1"></i>Buscar Producto
@@ -885,6 +898,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Lista de Productos Encontrados -->
                         <div class="row mb-3" id="edit_products_results" style="display: none;">
@@ -975,6 +989,7 @@
                         </div>
 
                         <!-- Botón para agregar producto manualmente -->
+                        {% if user_has_access_to_all %}
                         <div class="row mt-2">
                             <div class="col-12 text-center">
                                 <button type="button" class="btn btn-outline-success btn-sm"
@@ -983,6 +998,7 @@
                                 </button>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Tabla de adelantos responsive -->
                         <div class="row mt-2" id="edit_advance_payments_section" style="display: none;">
@@ -2771,6 +2787,9 @@
         // Variables para completar orden con pagos múltiples
         let completePayments = [];
         let completePaymentCounter = 0;
+        
+        // Permisos del usuario
+        const userHasAccessToAll = {{ user_has_access_to_all|yesno:"true,false" }};
 
         function openCreateOrderModal() {
             // Limpiar formulario
@@ -4582,6 +4601,13 @@
             </td>*/
 
         function addEditDetailRow(detail) {
+            const isReadonly = !userHasAccessToAll ? 'readonly style="background-color: #f8f9fa;"' : '';
+            const deleteButton = userHasAccessToAll ? 
+                `<button type="button" class="btn btn-danger btn-sm" onclick="removeEditDetail(${detail.id})">
+                    <i class="fas fa-trash fa-2xs"></i>
+                </button>` : 
+                `<i class="fas fa-lock text-muted" title="Solo puedes editar adelantos"></i>`;
+            
             const row = `
         <tr id="edit-detail-row-${detail.id}">
             <td class="text-center">${detail.id}</td>
@@ -4589,27 +4615,28 @@
                 <input type="text" class="form-control form-control-sm"
                        value="${detail.product_name}"
                        placeholder="Nombre del producto"
+                       ${isReadonly}
                        onkeyup="updateEditDetailField(${detail.id}, 'product_name', this.value)">
             </td>
             <td class="text-center">
                 <input type="number" class="form-control form-control-sm"
                        value="${detail.quantity}"
                        min="0.01" step="0.01"
+                       ${isReadonly}
                        onkeyup="updateEditDetailField(${detail.id}, 'quantity', this.value)">
             </td>
             <td class="text-right">
                 <input type="number" class="form-control form-control-sm"
                        value="${detail.price_unit}"
                        min="0" step="0.01"
+                       ${isReadonly}
                        onkeyup="updateEditDetailField(${detail.id}, 'price_unit', this.value)">
             </td>
             <td class="text-right font-weight-bold">
                 S/ <span id="edit-subtotal-${detail.id}">${detail.subtotal.toFixed(2)}</span>
             </td>
             <td class="text-center">
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeEditDetail(${detail.id})">
-                    <i class="fas fa-trash fa-2xs"></i>
-                </button>
+                ${deleteButton}
             </td>
         </tr>
     `;
@@ -4617,6 +4644,11 @@
         }
 
         function updateEditDetailField(detailId, field, value) {
+            // Solo permitir cambios si el usuario tiene acceso total
+            if (!userHasAccessToAll) {
+                return;
+            }
+            
             const detail = editOrderDetails.find(d => d.id === detailId);
             if (detail) {
                 detail[field] = field === 'quantity' || field === 'price_unit' ? parseFloat(value) || 0 : value;
@@ -4630,6 +4662,12 @@
         }
 
         function removeEditDetail(detailId) {
+            // Solo permitir eliminar si el usuario tiene acceso total
+            if (!userHasAccessToAll) {
+                toastr.warning('Solo puedes editar los adelantos de esta orden');
+                return;
+            }
+            
             editOrderDetails = editOrderDetails.filter(d => d.id !== detailId);
             $(`#edit-detail-row-${detailId}`).remove();
             updateEditTotals();
@@ -4738,6 +4776,12 @@
         }
 
         function addEditProductToOrder(productId, productName, price, unit) {
+            // Solo permitir agregar productos si el usuario tiene acceso total
+            if (!userHasAccessToAll) {
+                toastr.warning('Solo puedes editar los adelantos de esta orden');
+                return;
+            }
+            
             // Permitir que los productos se repitan en lugar de incrementar cantidad
             const newDetail = {
                 id: ++editDetailCounter,
@@ -4758,6 +4802,12 @@
         }
 
         function addEmptyEditProductRow() {
+            // Solo permitir agregar productos si el usuario tiene acceso total
+            if (!userHasAccessToAll) {
+                toastr.warning('Solo puedes editar los adelantos de esta orden');
+                return;
+            }
+            
             const newDetail = {
                 id: ++editDetailCounter,
                 product_id: null,
