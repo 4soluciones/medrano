@@ -460,16 +460,28 @@ def cashflow_list(request):
         try:
             # Filtrar gastos según parámetros
             cash_id = request.POST.get('cash_account')
-            report_date = request.POST.get('report_date')
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
             
             cashflows = CashFlow.objects.filter(type__in=['S', 'A'])
         
             if cash_id and cash_id != '0':
                 cashflows = cashflows.filter(cash_id=cash_id)
 
-            # Filtro de fecha única
-            if report_date:
-                cashflows = cashflows.filter(transaction_date=report_date)
+            # Filtro por rango de fechas
+            # Por defecto, si no se especifica, usar la fecha de hoy
+            if not start_date and not end_date:
+                # Si no se proporcionan fechas, usar la fecha de hoy
+                peru_tz = pytz.timezone("America/Lima")
+                today = datetime.now(peru_tz).date()
+                cashflows = cashflows.filter(transaction_date=today)
+            else:
+                # Si se proporciona fecha de inicio, filtrar desde esa fecha
+                if start_date:
+                    cashflows = cashflows.filter(transaction_date__gte=start_date)
+                # Si se proporciona fecha de fin, filtrar hasta esa fecha
+                if end_date:
+                    cashflows = cashflows.filter(transaction_date__lte=end_date)
 
             # Ordenar: aperturas primero, luego por id
             cashflows = cashflows.select_related('cash', 'user', 'cash__subsidiary').order_by(
