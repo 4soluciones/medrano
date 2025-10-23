@@ -349,7 +349,7 @@
                         <!-- Campos condicionales para Factura/Boleta -->
                         <div id="financial-fields" style="display: none;">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="subtotal" class="form-label">
                                             <i class="fas fa-calculator mr-1"></i>Subtotal
@@ -363,7 +363,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="igv" class="form-label">
                                             <i class="fas fa-percentage mr-1"></i>IGV
@@ -377,7 +377,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="total" class="form-label">
                                             <i class="fas fa-money-bill-wave mr-1"></i>Total <span
@@ -390,6 +390,19 @@
                                             <input type="number" class="form-control" id="total" name="total"
                                                    min="0" step="0.01" value="0.00" placeholder="0.00" required>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="payment_type_financial" class="form-label">
+                                            <i class="fas fa-credit-card mr-1"></i>Tipo de Pago <span
+                                                class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control" id="payment_type_financial" name="payment_type_financial" required>
+                                            <option value="E">Efectivo</option>
+                                            <option value="Y">Yape</option>
+                                            <option value="D">Deposito y/o Transferencia</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -412,6 +425,19 @@
                                                    name="total_simple"
                                                    min="0" step="0.01" value="0.00" placeholder="0.00" required>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="payment_type" class="form-label">
+                                            <i class="fas fa-credit-card mr-1"></i>Tipo de Pago <span
+                                                class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control" id="payment_type" name="payment_type" required>
+                                            <option value="E">Efectivo</option>
+                                            <option value="Y">Yape</option>
+                                            <option value="D">Deposito y/o Transferencia</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -881,7 +907,7 @@
                         <!-- Campos condicionales para Factura/Boleta -->
                         <div id="edit-financial-fields" style="display: none;">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="edit_subtotal" class="form-label">
                                             <i class="fas fa-calculator mr-1"></i>Subtotal
@@ -895,7 +921,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="edit_igv" class="form-label">
                                             <i class="fas fa-percentage mr-1"></i>IGV
@@ -909,7 +935,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="edit_total" class="form-label">
                                             <i class="fas fa-money-bill-wave mr-1"></i>Total <span
@@ -922,6 +948,19 @@
                                             <input type="number" class="form-control" id="edit_total" name="total"
                                                    min="0" step="0.01" value="0.00" placeholder="0.00" required>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="edit_payment_type_financial" class="form-label">
+                                            <i class="fas fa-credit-card mr-1"></i>Tipo de Pago <span
+                                                class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control" id="edit_payment_type_financial" name="payment_type_financial" required>
+                                            <option value="E">Efectivo</option>
+                                            <option value="Y">Yape</option>
+                                            <option value="D">Deposito y/o Transferencia</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -944,6 +983,19 @@
                                                    name="total_simple"
                                                    min="0" step="0.01" value="0.00" placeholder="0.00" required>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_payment_type" class="form-label">
+                                            <i class="fas fa-credit-card mr-1"></i>Tipo de Pago <span
+                                                class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control" id="edit_payment_type" name="payment_type" required>
+                                            <option value="E">Efectivo</option>
+                                            <option value="Y">Yape</option>
+                                            <option value="D">Deposito y/o Transferencia</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -1151,6 +1203,10 @@
             $('#igv').val('0.00');
             $('#total').val('0.00');
             $('#total_simple').val('0.00');
+            
+            // Establecer tipo de pago por defecto (Efectivo)
+            $('#payment_type').val('E');
+            $('#payment_type_financial').val('E');
 
             // Mostrar modal
             $('#createCashflowModal').modal('show');
@@ -1233,12 +1289,16 @@
                 formData.set('total', total);
                 formData.set('subtotal', $('#subtotal').val() || '0.00');
                 formData.set('igv', $('#igv').val() || '0.00');
+                // Usar el tipo de pago del campo financiero
+                formData.set('payment_type', $('#payment_type_financial').val());
             } else {
                 // Para otros tipos, usar el total simple
                 const totalSimple = $('#total_simple').val();
                 formData.set('total', totalSimple);
                 formData.set('subtotal', '0.00');
                 formData.set('igv', '0.00');
+                // Usar el tipo de pago del campo simple
+                formData.set('payment_type', $('#payment_type').val());
             }
 
             // Enviar formulario
@@ -1603,6 +1663,8 @@
                         $('#edit_igv').val(cashflow.igv || '0.00');
                         $('#edit_total').val(cashflow.total);
                         $('#edit_total_simple').val(cashflow.total);
+                        $('#edit_payment_type').val(cashflow.way_to_pay || 'E');
+                        $('#edit_payment_type_financial').val(cashflow.way_to_pay || 'E');
 
                         // Manejar la visibilidad de los campos según el tipo de documento
                         handleEditDocumentTypeChange();
@@ -1698,12 +1760,16 @@
                 formData.set('total', total);
                 formData.set('subtotal', $('#edit_subtotal').val() || '0.00');
                 formData.set('igv', $('#edit_igv').val() || '0.00');
+                // Usar el tipo de pago del campo financiero
+                formData.set('payment_type', $('#edit_payment_type_financial').val());
             } else {
                 // Para otros tipos, usar el total simple
                 const totalSimple = $('#edit_total_simple').val();
                 formData.set('total', totalSimple);
                 formData.set('subtotal', '0.00');
                 formData.set('igv', '0.00');
+                // Usar el tipo de pago del campo simple
+                formData.set('payment_type', $('#edit_payment_type').val());
             }
 
             // Enviar formulario

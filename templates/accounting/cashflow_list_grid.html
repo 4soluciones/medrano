@@ -3,19 +3,19 @@
     <table class="table table-hover table-striped">
         <thead class="thead-dark">
         <tr>
-            <th class="text-center" style="width: 5%;">
+            <th class="text-center" style="width: 4%;">
                 <i class="fas fa-hashtag"></i>
             </th>
-            <th style="width: 10%;">
+            <th style="width: 8%;">
                 <i class="fas fa-calendar mr-1"></i>Fecha
             </th>
-            <th style="width: 10%;">
+            <th style="width: 8%;">
                 <i class="fas fa-exchange-alt mr-1"></i>Tipo
             </th>
-            <th style="width: 30%;">
+            <th style="width: 22%;">
                 <i class="fas fa-comment mr-1"></i>Descripción
             </th>
-            <th style="width: 15%;">
+            <th style="width: 13%;">
                 <i class="fas fa-university mr-1"></i>Cuenta
             </th>
             <th style="width: 10%;">
@@ -25,12 +25,15 @@
                 <i class="fas fa-tags mr-1"></i>Gasto
             </th>
             <th style="width: 10%;">
+                <i class="fas fa-credit-card mr-1"></i>Tipo Pago
+            </th>
+            <th style="width: 10%;">
                 <i class="fas fa-money-bill-wave mr-1"></i>Total
             </th>
             {% if user.has_access_to_all %}
-            <th class="text-center" style="width: 8%;">
-                <i class="fas fa-cogs mr-1"></i>Acciones
-            </th>
+                <th class="text-center" style="width: 5%;">
+                    <i class="fas fa-cogs mr-1"></i>Acciones
+                </th>
             {% endif %}
         </tr>
         </thead>
@@ -85,6 +88,21 @@
                             -
                         </td>
                         <td>
+                            {% if cashflow.way_to_pay == 'E' %}
+                                <span class="badge badge-success badge-pill">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Efectivo
+                                </span>
+                            {% elif cashflow.way_to_pay == 'Y' %}
+                                <span class="badge badge-info badge-pill">
+                                    <i class="fas fa-mobile-alt mr-1"></i>Yape
+                                </span>
+                            {% elif cashflow.way_to_pay == 'D' %}
+                                <span class="badge badge-primary badge-pill">
+                                    <i class="fas fa-university mr-1"></i>Dep/Trans
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <div class="d-flex flex-column">
                                 <strong class="text-dark text-success">
                                     S/ {{ cashflow.total|floatformat:2 }}
@@ -97,16 +115,19 @@
                             </div>
                         </td>
                         {% if user.has_access_to_all %}
-                        <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-warning btn-sm" onclick="editCashflow({{ cashflow.id }})" title="Editar gasto">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteCashflow({{ cashflow.id }}, '{{ cashflow.description }}', {{ cashflow.total }})" title="Eliminar gasto">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-warning btn-sm"
+                                            onclick="editCashflow({{ cashflow.id }})" title="Editar gasto">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="deleteCashflow({{ cashflow.id }}, '{{ cashflow.description }}', {{ cashflow.total }})"
+                                            title="Eliminar gasto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
                         {% endif %}
                     </tr>
                 {% endif %}
@@ -191,7 +212,26 @@
                                     <span class="badge badge-secondary badge-pill">
                                 <i class="fas fa-ellipsis-h mr-1"></i>Otro
                             </span>
+                                {% elif cashflow.type_expense == 'M' %}
+                                    <span class="badge badge-secondary badge-pill">
+                                Materiales / Insumos
+                            </span>
                                 {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cashflow.way_to_pay == 'E' %}
+                                <span class="badge badge-success badge-pill">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Efectivo
+                                </span>
+                            {% elif cashflow.way_to_pay == 'Y' %}
+                                <span class="badge badge-info badge-pill">
+                                    <i class="fas fa-mobile-alt mr-1"></i>Yape
+                                </span>
+                            {% elif cashflow.way_to_pay == 'D' %}
+                                <span class="badge badge-primary badge-pill">
+                                    <i class="fas fa-university mr-1"></i>Dep/Trans
+                                </span>
                             {% endif %}
                         </td>
                         <td>
@@ -207,23 +247,26 @@
                             </div>
                         </td>
                         {% if user.has_access_to_all %}
-                        <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-warning btn-sm" onclick="editCashflow({{ cashflow.id }})" title="Editar gasto">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteCashflow({{ cashflow.id }}, '{{ cashflow.description }}', {{ cashflow.total }})" title="Eliminar gasto">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-warning btn-sm"
+                                            onclick="editCashflow({{ cashflow.id }})" title="Editar gasto">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="deleteCashflow({{ cashflow.id }}, '{{ cashflow.description }}', {{ cashflow.total }})"
+                                            title="Eliminar gasto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
                         {% endif %}
                     </tr>
                 {% endif %}
             {% endfor %}
         {% else %}
             <tr>
-                <td colspan="{% if user.has_access_to_all %}9{% else %}8{% endif %}" class="text-center py-5">
+                <td colspan="{% if user.has_access_to_all %}10{% else %}9{% endif %}" class="text-center py-5">
                     <div class="empty-state">
                         <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No hay gastos registrados</h5>

@@ -327,6 +327,7 @@ def cashflow_get(request):
                 'subtotal': float(cashflow_obj.subtotal),
                 'igv': float(cashflow_obj.igv),
                 'total': float(cashflow_obj.total),
+                'way_to_pay': cashflow_obj.way_to_pay,
             }
             
             return JsonResponse({
@@ -573,6 +574,7 @@ def cashflow_save(request):
             cash_id = request.POST.get('cash_id')
             operation_code = request.POST.get('operation_code', '').strip()
             expense_type = request.POST.get('expense_type', 'O')
+            payment_type = request.POST.get('payment_type', 'E')
             user_id = request.POST.get('user_id')
             
             # Validaciones básicas
@@ -618,6 +620,7 @@ def cashflow_save(request):
                 cash=cash_obj,
                 operation_code=operation_code.upper() if operation_code else None,
                 type_expense=expense_type,
+                way_to_pay=payment_type,
                 user=user_obj,
                 subsidiary=cash_obj.subsidiary
             )
@@ -691,6 +694,7 @@ def cashflow_update(request):
             cash_id = request.POST.get('cash_id')
             operation_code = request.POST.get('operation_code', '').strip()
             expense_type = request.POST.get('expense_type', 'O')
+            payment_type = request.POST.get('payment_type', 'E')
             user_id = request.POST.get('user_id')
             
             # Validaciones básicas
@@ -735,6 +739,7 @@ def cashflow_update(request):
             cashflow_obj.cash = cash_obj
             cashflow_obj.operation_code = operation_code.upper() if operation_code else None
             cashflow_obj.type_expense = expense_type
+            cashflow_obj.way_to_pay = payment_type
             cashflow_obj.user = user_obj
             cashflow_obj.save()
             
@@ -1504,12 +1509,24 @@ def sales_report_by_user(request):
     if request.method == 'GET':
         from apps.users.models import CustomUser
         
-        # Obtener todos los usuarios que tienen acceso al sistema
-        users_set = CustomUser.objects.filter(
-            has_access_system=True,
-            is_active=True,
-            is_staff=False
-        ).order_by('first_name', 'last_name')
+        # Verificar si el usuario tiene permisos de administrador
+        is_admin = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
+        
+        # Obtener usuarios según permisos
+        if is_admin:
+            # Admin: mostrar todos los usuarios
+            users_set = CustomUser.objects.filter(
+                has_access_system=True,
+                is_active=True,
+                is_staff=False
+            ).order_by('first_name', 'last_name')
+        else:
+            # Usuario normal: solo mostrar su propio usuario
+            users_set = CustomUser.objects.filter(
+                id=request.user.id,
+                has_access_system=True,
+                is_active=True
+            )
         
         # Fecha actual para el filtro
         date_now = datetime.now().strftime('%Y-%m-%d')
@@ -1518,6 +1535,7 @@ def sales_report_by_user(request):
             'users_set': users_set,
             'date_now': date_now,
             'current_user': request.user,
+            'is_admin': is_admin,
         })
     elif request.method == 'POST':
         try:

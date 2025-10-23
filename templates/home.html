@@ -1018,6 +1018,13 @@
                                             <p>Gastos</p>
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a href="{% url 'apps.accounting:sales_report_by_user' %}"
+                                           class="nav-link text-cyan font-weight-light">
+                                            <i class="nav-icon fa-solid fa-clipboard-list"></i>
+                                            <p>Reporte Ventas por Usuario</p>
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         {% endif %}
@@ -1036,13 +1043,6 @@
                                            class="nav-link text-cyan font-weight-light">
                                             <i class="nav-icon fas fa-chart-bar"></i>
                                             <p>Reporte Ventas por Sucursal</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{% url 'apps.accounting:sales_report_by_user' %}"
-                                           class="nav-link text-cyan font-weight-light">
-                                            <i class="nav-icon fa-solid fa-clipboard-list"></i>
-                                            <p>Reporte Ventas por Usuario</p>
                                         </a>
                                     </li>
                                     {% if user.has_access_to_all %}

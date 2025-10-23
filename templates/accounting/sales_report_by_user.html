@@ -31,10 +31,16 @@
                             <div class="form-group">
                                 <label for="user">Usuario:</label>
                                 <select class="form-control" id="user">
-                                    <option value="0">Todos los Usuarios</option>
-                                    {% for user in users_set %}
-                                        <option value="{{ user.id }}" {% if current_user and user.id == current_user.id %}selected{% endif %}>{{ user.first_name|default:user.username|upper }} {{ user.last_name|default:""|upper }}</option>
-                                    {% endfor %}
+                                    {% if is_admin %}
+                                        <option value="0">Todos los Usuarios</option>
+                                        {% for user in users_set %}
+                                            <option value="{{ user.id }}" {% if current_user and user.id == current_user.id %}selected{% endif %}>{{ user.first_name|default:user.username|upper }} {{ user.last_name|default:""|upper }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for user in users_set %}
+                                            <option value="{{ user.id }}" selected>{{ user.first_name|default:user.username|upper }} {{ user.last_name|default:""|upper }}</option>
+                                        {% endfor %}
+                                    {% endif %}
                                 </select>
                             </div>
                         </div>
