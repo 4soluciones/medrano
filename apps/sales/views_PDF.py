@@ -151,6 +151,13 @@ def generate_ticket_pdf(order_id):
             fontSize=6
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Center_7',
+            alignment=TA_CENTER,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=7
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Bold_Justify_6',
             alignment=TA_JUSTIFY,
             leading=7,  # Espaciado reducido
@@ -165,6 +172,13 @@ def generate_ticket_pdf(order_id):
             fontSize=6
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Right_7',
+            alignment=TA_RIGHT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=7
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Bold_Left_8',
             alignment=TA_LEFT,
             leading=9,  # Espaciado reducido
@@ -177,6 +191,13 @@ def generate_ticket_pdf(order_id):
             leading=7,  # Espaciado reducido
             fontName='Helvetica-Bold',
             fontSize=6
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Left_7',
+            alignment=TA_LEFT,
+            leading=7,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=7
         ))
         styles.add(ParagraphStyle(
             name='Helvetica_Right_6',
@@ -205,6 +226,13 @@ def generate_ticket_pdf(order_id):
             leading=8,  # Espaciado reducido
             fontName='Helvetica',
             fontSize=7
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Center_9',
+            alignment=TA_CENTER,
+            leading=8,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=9
         ))
         styles.add(ParagraphStyle(
             name='Helvetica_Center_6',
@@ -349,8 +377,8 @@ def generate_ticket_pdf(order_id):
             else:
                 logo_path = "static/assets/img/log_medrano_no_bg.png"
             logo_img = Image(logo_path)
-            logo_img.drawHeight = 0.8 * inch
-            logo_img.drawWidth = 2.4 * inch
+            logo_img.drawHeight = 0.9 * inch
+            logo_img.drawWidth = 2.6 * inch
             elements.append(logo_img)
             elements.append(Spacer(3, 3))
         except:
@@ -388,7 +416,7 @@ def generate_ticket_pdf(order_id):
         # elements.append(Spacer(2, 2))
 
         phone_data = []
-        phone_icon = Image("media/phone_icon.png")
+        phone_icon = Image("media/free-phone-icon.png")
         phone_icon.drawHeight = 0.12 * inch  # Icono más pequeño
         phone_icon.drawWidth = 0.12 * inch  # Icono más pequeño
         phone = order.subsidiary.phone
@@ -420,9 +448,9 @@ def generate_ticket_pdf(order_id):
         # elements.append(Paragraph(order.subsidiary.address.capitalize(), styles['TicketHeaderAddress']))
         subsidiary_address = order.subsidiary.address.title()
         location_data = []
-        location_icon = Image("media/image_location.png")
-        location_icon.drawHeight = 0.10 * inch  # Icono más pequeño
-        location_icon.drawWidth = 0.10 * inch  # Icono más pequeño
+        location_icon = Image("media/locate-icon.png")
+        location_icon.drawHeight = 0.13 * inch  # Icono más pequeño
+        location_icon.drawWidth = 0.13 * inch  # Icono más pequeño
         location_data.append([
             location_icon,
             Paragraph(subsidiary_address, styles['TicketHeaderAddress'])
@@ -628,15 +656,15 @@ def generate_ticket_pdf(order_id):
         # Encabezados de la tabla de productos
         table_data = []
         table_data_title = [[
-            Paragraph("Cant.", styles['Helvetica_Bold_Left_6']),
-            Paragraph("Descripción", styles['Helvetica_Bold_Left_6']),
-            Paragraph("Und", styles['Helvetica_Bold_Center_6']),
-            Paragraph("P.U.", styles['Helvetica_Bold_Right_6']),
-            Paragraph("Total", styles['Helvetica_Bold_Right_6'])
+            Paragraph("Cant", styles['Helvetica_Bold_Left_7']),
+            Paragraph("Descripción", styles['Helvetica_Bold_Left_7']),
+            Paragraph("Und", styles['Helvetica_Bold_Center_7']),
+            Paragraph("P.U.", styles['Helvetica_Bold_Right_7']),
+            Paragraph("Total", styles['Helvetica_Bold_Right_7'])
         ]]
         _wt2 = 2.83 * inch - 4 * 0.05 * inch
         table_title = Table(table_data_title,
-                            colWidths=[_wt2 * 9 / 100, _wt2 * 51 / 100, _wt2 * 8 / 100, _wt2 * 16 / 100,
+                            colWidths=[_wt2 * 10 / 100, _wt2 * 49 / 100, _wt2 * 9 / 100, _wt2 * 16 / 100,
                                        _wt2 * 16 / 100])
         table_title.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
@@ -667,7 +695,7 @@ def generate_ticket_pdf(order_id):
                     unit_name = product_detail.unit.name
 
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_6']),
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_9']),
                 Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
                 Paragraph(unit_name, styles['Helvetica_Left_6']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
