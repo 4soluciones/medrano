@@ -223,7 +223,9 @@
                                         data-order-id="{{ order.id }}"
                                         data-order-status="{{ order.status }}"
                                         onchange="updateOrderStatus({{ order.id }}, this.value)"
-                                        {% if order.status == 'C' or order.status == 'A' %}disabled{% endif %}>
+                                        {% if not request.user.is_superuser and not request.user.has_access_to_all %}
+                                            {% if order.status == 'C' or order.status == 'A' %}disabled{% endif %}
+                                        {% endif %}>
                                     <option value="P" {% if order.status == 'P' %}selected{% endif %}>PENDIENTE</option>
                                     <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
                                     <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>

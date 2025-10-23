@@ -31,6 +31,7 @@ from ..users.models import CustomUser
 
 # Create your views here.
 
+
 def get_client_list(request):
     if request.method == 'GET':
         client_set = Person.objects.filter(type='C').order_by('id')
@@ -205,6 +206,7 @@ def save_client(request):
         client_surname = request.POST.get('surname', '')
         client_second_surname = request.POST.get('second-surname', '')
         client_business_name = request.POST.get('business-name', '')
+        client_full_name_no_doc = request.POST.get('full-name-no-doc', '')
 
         client_address = request.POST.get('client-address', '')
         client_occupation = request.POST.get('client-occupation', '')
@@ -217,6 +219,9 @@ def save_client(request):
             full_name = client_business_name
         elif client_type_document == '01':
             full_name = client_first_name.upper() + ' ' + client_second_name.upper() + ' ' + client_surname.upper() + ' ' + client_second_surname.upper()
+        else:
+            # Sin documento: usar el nombre completo proporcionado
+            full_name = client_full_name_no_doc
 
         # Crear y guardar el cliente
         client_obj = Person(
@@ -287,6 +292,7 @@ def update_client(request):
         client_surname = request.POST.get('surname', '')
         client_second_surname = request.POST.get('second-surname', '')
         client_business_name = request.POST.get('business-name', '')
+        client_full_name_no_doc = request.POST.get('full-name-no-doc', '')
         client_address = request.POST.get('client-address', '')
         client_occupation = request.POST.get('client-occupation', '')
         client_email = request.POST.get('client-email', '')
@@ -298,6 +304,9 @@ def update_client(request):
             full_name = client_business_name
         elif client_type_document == '01':
             full_name = client_first_name.upper() + ' ' + client_second_name.upper() + ' ' + client_surname.upper() + ' ' + client_second_surname.upper()
+        else:
+            # Sin documento: usar el nombre completo proporcionado
+            full_name = client_full_name_no_doc
 
         # Actualizar los campos del cliente
         client_obj.document = client_type_document
@@ -2437,6 +2446,7 @@ def get_order_for_cancellation(request):
                 'id': order.id,
                 'serial': order.serial,
                 'correlative': order.correlative,
+                'status': order.status,
                 'client': {
                     'id': order.client.id,
                     'full_name': order.client.full_name,
@@ -2445,6 +2455,7 @@ def get_order_for_cancellation(request):
                 },
                 'total': float(order.total),
                 'cash_advance': float(order.cash_advance),
+                'cash_pay': float(order.cash_pay),
                 'subsidiary': {
                     'id': order.subsidiary.id,
                     'name': order.subsidiary.name
@@ -2757,12 +2768,14 @@ def cancel_order_with_reason(request):
                     'message': 'La orden ya está anulada'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Verificar que la orden no esté completada
+            # Verificar que la orden no esté completada (solo para usuarios no admin)
             if order.status == 'C':
-                return JsonResponse({
-                    'success': False,
-                    'message': 'No se puede anular una orden completada'
-                }, status=HTTPStatus.BAD_REQUEST)
+                # Permitir anulación si el usuario es admin
+                if not request.user.is_superuser and not request.user.has_access_to_all:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No se puede anular una orden completada. Solo administradores pueden realizar esta acción.'
+                    }, status=HTTPStatus.BAD_REQUEST)
             
             # Si se va a devolver el adelanto, obtener la cuenta de caja
             cash_account = None
@@ -2776,29 +2789,45 @@ def cancel_order_with_reason(request):
                         'message': 'Cuenta de caja no encontrada'
                     }, status=HTTPStatus.NOT_FOUND)
             
+            # Guardar el estado original antes de modificar
+            original_status = order.status
+            
             # Registrar la devolución en cashflow si es necesario
-            if refund_advance and order.cash_advance > 0:
+            total_refund = 0
+            if refund_advance:
                 from apps.accounting.models import CashFlow
                 from datetime import datetime
                 
-                # Crear salida en cashflow por la devolución
-                cashflow_refund = CashFlow.objects.create(
-                    transaction_date=date.today(),
-                    # created_at=datetime.now(),
-                    description=f"Devolución de adelanto - Orden anulada {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}",
-                    serial=order.subsidiary.serial,
-                    n_receipt=order.correlative,
-                    document_type_attached='O',  # Otro
-                    type='S',  # Salida
-                    subtotal=order.cash_advance,
-                    total=order.cash_advance,
-                    igv=decimal.Decimal('0.00'),
-                    cash=cash_account,
-                    order=order,
-                    user=request.user,
-                    type_expense='O',  # Otros
-                    subsidiary=order.subsidiary
-                )
+                # Calcular el monto total a devolver
+                # Si la orden está completada, devolver adelanto + pago completo
+                # Si no está completada, solo devolver el adelanto
+                if original_status == 'C':
+                    total_refund = order.cash_advance + order.cash_pay
+                    refund_description = f"Devolución total - Orden completada anulada {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}"
+                else:
+                    total_refund = order.cash_advance
+                    refund_description = f"Devolución de adelanto - Orden anulada {order.subsidiary.serial}-{order.correlative:03d} - {order.client.full_name}"
+                
+                # Solo crear el registro si hay monto a devolver
+                if total_refund > 0:
+                    # Crear salida en cashflow por la devolución
+                    cashflow_refund = CashFlow.objects.create(
+                        transaction_date=date.today(),
+                        # created_at=datetime.now(),
+                        description=refund_description,
+                        serial=order.subsidiary.serial,
+                        n_receipt=order.correlative,
+                        document_type_attached='O',  # Otro
+                        type='S',  # Salida
+                        subtotal=total_refund,
+                        total=total_refund,
+                        igv=decimal.Decimal('0.00'),
+                        cash=cash_account,
+                        order=order,
+                        user=request.user,
+                        type_expense='O',  # Otros
+                        subsidiary=order.subsidiary
+                    )
             
             # Actualizar la orden
             order.status = 'A'
@@ -2807,8 +2836,10 @@ def cancel_order_with_reason(request):
             
             # Mensaje de confirmación
             message = f'Orden anulada exitosamente. Motivo: {cancellation_reason}'
-            if refund_advance and order.cash_advance > 0:
-                message += f'. Devolución de S/ {order.cash_advance} registrada en {cash_account.name}'
+            if refund_advance and total_refund > 0:
+                message += f'. Devolución de S/ {total_refund} registrada en {cash_account.name}'
+                if original_status == 'C' and order.cash_pay > 0:
+                    message += f' (Adelanto: S/ {order.cash_advance} + Pago: S/ {order.cash_pay})'
             
             return JsonResponse({
                 'success': True,

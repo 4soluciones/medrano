@@ -1443,7 +1443,7 @@
 
                         <div class="form-group">
                             <label for="refund_advance" class="form-label">
-                                <i class="fas fa-undo mr-1"></i>Devolución del Adelanto
+                                <i class="fas fa-undo mr-1"></i>Devolución del Dinero
                             </label>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="refund_advance"
@@ -1452,7 +1452,7 @@
                                     Marcar si se debe devolver el adelanto al cliente
                                 </label>
                             </div>
-                            <small class="form-text text-muted">
+                            <small class="form-text text-muted" id="refund-help-text">
                                 Si marca esta opción, se registrará una salida de dinero por el monto del adelanto
                             </small>
                         </div>
@@ -5083,20 +5083,45 @@
                 success: function (response) {
                     if (response.success) {
                         const order = response.order;
+                        const isCompleted = order.status === 'C';
+                        
+                        // Calcular monto a devolver según el estado
+                        const totalRefund = isCompleted ? 
+                            (parseFloat(order.cash_advance) + parseFloat(order.cash_pay)) : 
+                            parseFloat(order.cash_advance);
 
                         // Llenar información del modal
                         $('#cancel_order_id').val(orderId);
                         $('#cancel_order_advance').val(order.cash_advance);
-                        $('#refund_amount').val(order.cash_advance);
+                        $('#refund_amount').val(totalRefund.toFixed(2));
 
                         // Mostrar información de la orden
-                        const orderInfo = `
+                        let orderInfo = `
                             <strong>Orden:</strong> ${order.serial}-${order.correlative.toString().padStart(3, '0')}<br>
                             <strong>Cliente:</strong> ${order.client.full_name}<br>
                             <strong>Total:</strong> S/ ${order.total}<br>
                             <strong>Adelanto:</strong> S/ ${order.cash_advance}
                         `;
+                        
+                        // Si la orden está completada, mostrar información adicional
+                        if (isCompleted) {
+                            orderInfo += `<br><strong>Pago Completo:</strong> S/ ${order.cash_pay}`;
+                            orderInfo += `<br><div class="mt-2 alert alert-info p-2 mb-0"><i class="fas fa-info-circle mr-1"></i><strong>Orden Completada:</strong> Al devolver el dinero, se devolverá el monto total pagado (Adelanto + Pago)</div>`;
+                        }
+                        
                         $('#cancel-order-info').html(orderInfo);
+                        
+                        // Actualizar el texto del checkbox según el estado
+                        const refundLabel = isCompleted ? 
+                            'Marcar si se debe devolver el monto total al cliente (Adelanto + Pago Completo)' :
+                            'Marcar si se debe devolver el adelanto al cliente';
+                        $('#refund_advance').next('label').text(refundLabel);
+                        
+                        // Actualizar el texto de ayuda según el estado
+                        const refundHelpText = isCompleted ?
+                            'Si marca esta opción, se registrará una salida de dinero por el monto total (adelanto + pago completo)' :
+                            'Si marca esta opción, se registrará una salida de dinero por el monto del adelanto';
+                        $('#refund-help-text').text(refundHelpText);
 
                         // Limpiar campos
                         $('#cancellation_reason').val('');

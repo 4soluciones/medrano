@@ -465,6 +465,13 @@ def cashflow_list(request):
             
             cashflows = CashFlow.objects.filter(type__in=['S', 'A'])
         
+            # Verificar permisos del usuario
+            is_admin = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
+            
+            # Si no es admin, solo mostrar sus propios gastos
+            if not is_admin:
+                cashflows = cashflows.filter(user=request.user)
+        
             if cash_id and cash_id != '0':
                 cashflows = cashflows.filter(cash_id=cash_id)
 

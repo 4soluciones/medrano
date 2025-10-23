@@ -32,7 +32,7 @@ class CashFlow(models.Model):
     DOCUMENT_TYPE_ATTACHED_CHOICES = (
         ('F', 'Factura'), ('B', 'Boleta'), ('T', 'Ticket'), ('O', 'Otro'))
     TYPE_CHOICES = (('A', 'Apertura'), ('C', 'Cierre'), ('E', 'Entrada'), ('S', 'Salida'), ('D', 'Deposito'))
-    TYPE_EXPENSE = (('V', 'GASTOS VARIABLES'), ('F', 'GASTOS FIJOS'), ('P', 'GASTOS PERSONALES'), ('O', 'OTROS'))
+    TYPE_EXPENSE = (('V', 'GASTOS VARIABLES'), ('F', 'GASTOS FIJOS'), ('P', 'GASTOS PERSONALES'), ('M', 'GASTOS POR MATERIALES/INSUMOS'), ('O', 'OTROS'))
     TYPE_CHOICES_PAYMENT = (('E', 'Efectivo'), ('Y', 'Yape'), ('D', 'Deposito y/o Transferencia'))
     TYPE_ENTRY_ORDER_CHOICES = (('A', 'ADELANTO'), ('T', 'PAGO TOTAL'),)
     transaction_date = models.DateField(null=True, blank=True)

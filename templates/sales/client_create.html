@@ -33,22 +33,23 @@
                                     <div class="col-md-3">
                                         <div class="form-group mb-0">
                                             <label class="form-label" for="type_client">
-                                                <i class="fas fa-tag mr-1"></i>Tipo de Documento <span class="text-danger">*</span>
+                                                <i class="fas fa-tag mr-1"></i>Tipo de Documento
                                             </label>
                                             <select class="form-control" id="type_client" name="type-client">
                                                 <option value="01">DNI</option>
                                                 <option value="06">RUC</option>
+                                                <option value="">Sin Documento</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-9">
                                         <div class="form-group mb-0">
                                             <label class="form-label" for="client_number">
-                                                <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
+                                                <i class="fas fa-hashtag mr-1"></i>Número de Documento
                                             </label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" id="client_number"
-                                                       name="client-number" required
+                                                       name="client-number"
                                                        placeholder="Ingrese el número y presione Enter para consultar...">
                                                 <div class="input-group-append">
                                                     <button type="button" class="btn btn-outline-info" onclick="searchClientAPI()" title="Buscar en sistema externo">
@@ -139,6 +140,33 @@
                                             </label>
                                             <input type="text" class="form-control" id="business_name"
                                                    name="business-name" placeholder="Ingrese la razón social">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Sin Documento -->
+                <div class="row mb-4 no-document d-none">
+                    <div class="col-12">
+                        <div class="card card-outline card-secondary">
+                            <div class="card-header">
+                                <h6 class="card-title text-secondary mb-0">
+                                    <i class="fas fa-user-circle mr-2"></i>Información General
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-group mb-0">
+                                            <label class="form-label" for="full_name_no_doc">
+                                                <i class="fas fa-user mr-1"></i>Nombre Completo <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="full_name_no_doc"
+                                                   name="full-name-no-doc" 
+                                                   placeholder="Ingrese el nombre completo del cliente">
                                         </div>
                                     </div>
                                 </div>
@@ -256,6 +284,10 @@
     
     .card-outline.card-warning {
         border-top: 3px solid #ffc107;
+    }
+    
+    .card-outline.card-secondary {
+        border-top: 3px solid #6c757d;
     }
     
     .card-header {
@@ -416,18 +448,34 @@
         $(document).on('change', '#type_client', function (e) {
             let _type = $(this).val();
             if (_type === "01") {
+                // Mostrar campos DNI, ocultar RUC y Sin Documento
                 $('.ruc').addClass('d-none');
+                $('.no-document').addClass('d-none');
                 $('.dni').removeClass('d-none');
-                // Remover required de campos RUC y agregar a campos DNI
+                // Remover required de campos RUC y Sin Documento, agregar a campos DNI
                 $('#business_name').removeAttr('required');
+                $('#full_name_no_doc').removeAttr('required');
                 $('#first_name, #surname').attr('required', 'required');
                 clearFormFields();
             } else if (_type === '06') {
+                // Mostrar campos RUC, ocultar DNI y Sin Documento
                 $('.dni').addClass('d-none');
+                $('.no-document').addClass('d-none');
                 $('.ruc').removeClass('d-none');
-                // Remover required de campos DNI y agregar a campos RUC
+                // Remover required de campos DNI y Sin Documento, agregar a campos RUC
                 $('#first_name, #surname').removeAttr('required');
+                $('#full_name_no_doc').removeAttr('required');
                 $('#business_name').attr('required', 'required');
+                clearFormFields();
+            } else {
+                // Sin documento: ocultar DNI y RUC, mostrar campo de nombre completo
+                $('.dni').addClass('d-none');
+                $('.ruc').addClass('d-none');
+                $('.no-document').removeClass('d-none');
+                // Remover required de campos DNI y RUC, agregar a campo sin documento
+                $('#first_name, #surname').removeAttr('required');
+                $('#business_name').removeAttr('required');
+                $('#full_name_no_doc').attr('required', 'required');
                 clearFormFields();
             }
             $("#client_number").focus();
@@ -441,6 +489,7 @@
             $("#surname").val("");
             $("#second_surname").val("");
             $("#business_name").val("");
+            $("#full_name_no_doc").val("");
             $("#address_id").val("");
             $("#occupation_id").val("");
             $("#email_id").val("");
