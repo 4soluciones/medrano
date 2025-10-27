@@ -109,6 +109,21 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        {% if user.has_access_to_all %}
+                                        <div class="col-md-2">
+                                            <div class="form-group mb-1">
+                                                <label for="expense-type-filter"
+                                                       class="form-label-sm">Tipo de Gasto</label>
+                                                <select class="form-control form-control-sm" id="expense-type-filter"
+                                                        name="expense_type">
+                                                    <option value="0">Todos los tipos</option>
+                                                    {% for code, name in expense_types %}
+                                                        <option value="{{ code }}">{{ name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                     <div class="row g-2 mt-2">
                                         <div class="col-12">

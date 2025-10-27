@@ -463,6 +463,7 @@ def cashflow_list(request):
             cash_id = request.POST.get('cash_account')
             start_date = request.POST.get('start_date')
             end_date = request.POST.get('end_date')
+            expense_type = request.POST.get('expense_type')
             
             cashflows = CashFlow.objects.filter(type__in=['S', 'A'])
         
@@ -475,6 +476,10 @@ def cashflow_list(request):
         
             if cash_id and cash_id != '0':
                 cashflows = cashflows.filter(cash_id=cash_id)
+            
+            # Filtro por tipo de gasto (solo para admins)
+            if is_admin and expense_type and expense_type != '0':
+                cashflows = cashflows.filter(type_expense=expense_type)
 
             # Filtro por rango de fechas
             # Por defecto, si no se especifica, usar la fecha de hoy
