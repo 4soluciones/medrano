@@ -1786,6 +1786,24 @@ def sales_report_by_user(request):
                     'transaction_date': cashflow.order.register_date,
                     'cashflow_count': 1
                 }
+
+            # Adelantos de fechas anteriores hechos en la fecha actual
+            previous_advances = cashflows.filter(
+                type='E',  # Solo entradas
+                order_type_entry='A',  # Adelantos
+                user_id=user_id,  # Hechos por el usuario
+                transaction_date=report_date,  # Registrados en la fecha del reporte
+                order__register_date__lt=report_date  # Pertenecen a órdenes de fechas anteriores
+            ).order_by('order_id', 'id')
+
+            for cashflow in previous_advances:
+                pagos_fechas_anteriores[f"previous_advance_{cashflow.id}"] = {
+                    'order': cashflow.order,
+                    'cashflows': [cashflow],
+                    'total_amount': float(cashflow.total),
+                    'transaction_date': cashflow.order.register_date,
+                    'cashflow_count': 1
+                }
             
             # ========================================
             # EGRESOS (mantener como estaba)
