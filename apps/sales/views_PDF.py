@@ -100,16 +100,16 @@ def generate_ticket_pdf(order_id):
         # Configurar el documento con el ancho especificado para tickets
         details = order.orderdetail_set.all()
         _counter = details.count()
-        _wt = 2.83 * inch - 4 * 0.05 * inch
+        _wt = 2.93 * inch - 4 * 0.05 * inch
 
         # Calcular altura adicional para las direcciones de sucursales
         subsidiaries_with_address = all_subsidiaries.filter(address__isnull=False).exclude(address='').count()
         additional_height = subsidiaries_with_address * 0.2 * inch  # Espacio adicional por sucursal
 
         # pz_thermal = (3.14961 * inch, (11.6 * inch + (_counter * 0.13 * inch)))
-        pz_thermal = (2.83 * inch, (11.6 * inch + (_counter * 0.13 * inch) + additional_height))
+        pz_thermal = (2.93 * inch, (11.6 * inch + (_counter * 0.13 * inch) + additional_height))
 
-        ml = 0.05 * inch
+        ml = 0.01 * inch
         mr = 0.05 * inch
         ms = 0.039 * inch
         mi = 0.039 * inch
@@ -193,6 +193,13 @@ def generate_ticket_pdf(order_id):
             fontSize=6
         ))
         styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Left_5',
+            alignment=TA_LEFT,
+            leading=5,  # Espaciado reducido
+            fontName='Helvetica-Bold',
+            fontSize=5
+        ))
+        styles.add(ParagraphStyle(
             name='Helvetica_Bold_Left_7',
             alignment=TA_LEFT,
             leading=7,  # Espaciado reducido
@@ -230,6 +237,13 @@ def generate_ticket_pdf(order_id):
         styles.add(ParagraphStyle(
             name='Helvetica_Center_9',
             alignment=TA_CENTER,
+            leading=8,  # Espaciado reducido
+            fontName='Helvetica',
+            fontSize=9
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Left_9',
+            alignment=TA_LEFT,
             leading=8,  # Espaciado reducido
             fontName='Helvetica',
             fontSize=9
@@ -656,15 +670,18 @@ def generate_ticket_pdf(order_id):
         # Encabezados de la tabla de productos
         table_data = []
         table_data_title = [[
-            Paragraph("Cant", styles['Helvetica_Bold_Left_7']),
+            Paragraph("Cant", styles['Helvetica_Bold_Left_6']),
+            Paragraph("Und", styles['Helvetica_Bold_Left_6']),
             Paragraph("Descripción", styles['Helvetica_Bold_Left_7']),
-            Paragraph("Und", styles['Helvetica_Bold_Center_7']),
             Paragraph("P.U.", styles['Helvetica_Bold_Right_7']),
             Paragraph("Total", styles['Helvetica_Bold_Right_7'])
         ]]
-        _wt2 = 2.83 * inch - 4 * 0.05 * inch
+        m_left = 0.00 * inch
+        m_right = 0.15 * inch
+
+        _wt2 = 2.93 * inch - m_left - m_right  # 2.73 inch usable
         table_title = Table(table_data_title,
-                            colWidths=[_wt2 * 10 / 100, _wt2 * 49 / 100, _wt2 * 9 / 100, _wt2 * 16 / 100,
+                            colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100,  _wt2 * 18 / 100,
                                        _wt2 * 16 / 100])
         table_title.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
@@ -678,7 +695,11 @@ def generate_ticket_pdf(order_id):
             ('RIGHTPADDING', (0, 0), (-1, -1), 1),
             ('RIGHTPADDING', (3, -1), (3, -1), 2),
             ('LEFTPADDING', (1, 0), (1, 0), 2),
-            # ('BACKGROUND', (1, 0), (1, 0), colors.green),
+            # ('BACKGROUND', (0, 0), (0, 0), colors.green),
+            ('LEFTPADDING', (0, 0), (0, 0), 0),
+            ('RIGHTPADDING', (0, 0), (0, 0), 0),
+            ('LEFTPADDING', (1, 0), (1, 0), 1),
+            ('RIGHTPADDING', (1, 0), (1, 0), 0),
             # ('GRID', (0, 0), (-1, -1), 0.5, colors.red),
         ]))
         elements.append(table_title)
@@ -695,9 +716,9 @@ def generate_ticket_pdf(order_id):
                     unit_name = product_detail.unit.name
 
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_9']),
-                Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Left_9']),
                 Paragraph(unit_name, styles['Helvetica_Left_6']),
+                Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
                 Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_8'])
             ])
@@ -705,9 +726,9 @@ def generate_ticket_pdf(order_id):
         # Crear tabla con 4 columnas
 
         table = Table(table_data,
-                      colWidths=[_wt2 * 8 / 100, _wt2 * 54 / 100, _wt2 * 6 / 100, _wt2 * 16 / 100, _wt2 * 16 / 100])
+                      colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100,  _wt2 * 18 / 100, _wt2 * 16 / 100])
         table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),  # Cantidad centrada
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),  # Descripción a la izquierda
             ('ALIGN', (2, 0), (2, -1), 'RIGHT'),  # Precio unitario a la derecha
             ('ALIGN', (3, 0), (3, -1), 'RIGHT'),  # Total a la derecha
@@ -717,8 +738,10 @@ def generate_ticket_pdf(order_id):
             ('LEFTPADDING', (0, 0), (-1, -1), 1),
             ('RIGHTPADDING', (0, 0), (-1, -1), 1),
             # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            # ('BACKGROUND', (3, -1), (3, -1), colors.green),
+            # ('BACKGROUND', (1, 0), (1, -1), colors.green),
             ('RIGHTPADDING', (3, -1), (3, -1), 3),
+
+
         ]))
 
         elements.append(table)
