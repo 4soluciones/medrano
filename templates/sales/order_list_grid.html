@@ -229,6 +229,9 @@
                                     <option value="P" {% if order.status == 'P' %}selected{% endif %}>PENDIENTE</option>
                                     <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
                                     <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>
+                                    {% if order.status == 'C' %}
+                                    <option value="E">EMITIR COMPR.</option>
+                                    {% endif %}
                                 </select>
                                 {% if order.status == 'C' and order.completed_by and order.completed_at %}
                                     
@@ -290,15 +293,17 @@
                             </button>
                             <button type="button" class="btn btn-action btn-download"
                                     onclick="downloadTicketPDF({{ order.id }})"
-                                    title="Descargar PDF">
+                                    title="Descargar Ticket PDF">
                                 <i class="fas fa-download"></i>
 
                             </button>
-{#                            <button type="button" class="btn btn-action btn-generate"#}
-{#                                    onclick="generateBill({{ order.id }})"#}
-{#                                    title="Generar Comprobante">#}
-{#                                <i class="fa-solid fa-file-export"></i>#}
-{#                            </button>#}
+                            {% if order.has_bill %}
+                            <button type="button" class="btn btn-action btn-bill"
+                                    onclick="downloadBillPDF({{ order.id }})"
+                                    title="Descargar Comprobante Electrónico PDF">
+                                <i class="fas fa-file-invoice"></i>
+                            </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -677,6 +682,22 @@
     .btn-download {
         color: #198754;
         border-color: #198754;
+    }
+
+    /* Botón Factura/Comprobante */
+    .btn-bill {
+        color: #6f42c1;
+        border-color: #6f42c1;
+    }
+
+    .btn-bill:hover {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+        color: white;
+        border-color: #5a32a3;
+    }
+
+    .btn-bill:hover i {
+        transform: scale(1.1);
     }
 
     /* Botón Generar */

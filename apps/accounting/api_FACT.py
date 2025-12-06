@@ -1,94 +1,143 @@
 import requests
+import decimal
 from django.db.models import Max
 from django.db.models.functions import Coalesce
 
 from .format_to_dates import utc_to_local
 from .models import *
+from ..sales.models import Order, OrderDetail, Product
 from datetime import datetime, date
 
-GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
-# GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
+# GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
+GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
 
 tokens = {
-    "20603890214": "gAAAAABoH8-CRbROAwEiA2258mrFryXlS5o3TJRtcW6fo1VAWt9I1zdUmB3Nun7eZLTc5TBGakxrd1ekG_ldmxhPqEoh_J2OTg==",
+    "10471315198": "gAAAAABoH8-CRbROAwEiA2258mrFryXlS5o3TJRtcW6fo1VAWt9I1zdUmB3Nun7eZLTc5TBGakxrd1ekG_ldmxhPqEoh_J2OTg==",
 }
 
 
+def get_new_correlative(serial, document_type):
+    """
+    Obtiene un nuevo correlativo para el serial y tipo de documento especificado.
+    document_type: '1' para Factura, '2' para Boleta
+    """
+    # Buscar el último correlativo usando los campos de Order directamente
+    # bill_type: '1' para Factura, '2' para Boleta
+    last_order = Order.objects.filter(
+        subsidiary__serial=serial,
+        bill_type=document_type
+    ).exclude(bill_number__isnull=True).order_by('-bill_number').first()
+    
+    if last_order and last_order.bill_number:
+        return last_order.bill_number + 1
+    else:
+        return 1
+
+
 def send_bill_4_fact(order_id):  # FACTURA 4 FACT
-    order_obj = Order.objects.get(id=int(order_id))
-    serial = order_obj.subsidiary_store.subsidiary.serial
+    order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
+    
+    # Obtener serial de la sucursal
+    if not order_obj.subsidiary:
+        return {"error": "La orden no tiene sucursal asignada"}
+    serial = order_obj.subsidiary.serial or ""
+    
     correlative = get_new_correlative(serial, '1')
     details = OrderDetail.objects.filter(order=order_obj)
-    client_obj = order_obj.client
-    client_name = str(client_obj.names).replace('"', "'")
-    client_first_address = client_obj.clientaddress_set.first()
-    client_address = str(client_first_address).replace('"', "'")
-    client_document = client_obj.clienttype_set.filter(document_type_id='06').first()
-    register_date = order_obj.create_at
+    
+    # Usar bill_client si existe, sino usar client
+    if order_obj.bill_client:
+        client_obj = order_obj.bill_client
+    elif order_obj.client:
+        client_obj = order_obj.client
+    else:
+        return {"error": "La orden no tiene cliente asignado"}
+    
+    # Obtener nombre del cliente
+    client_name = str(client_obj.full_name or "").replace('"', "'")
+    if not client_name:
+        client_name = f"{client_obj.first_name or ''} {client_obj.surname or ''}".strip()
+    
+    # Obtener dirección del cliente
+    client_address = str(client_obj.address or "").replace('"', "'")
+    
+    # Obtener documento del cliente (RUC para factura)
+    if client_obj.document == '06':
+        client_document_number = client_obj.number or ""
+    else:
+        return {"error": "El cliente debe tener RUC para generar una factura"}
+    
+    # Obtener fecha de registro
+    if order_obj.creation_date:
+        register_date = order_obj.creation_date
+    elif order_obj.register_date:
+        register_date = datetime.combine(order_obj.register_date, datetime.min.time())
+    else:
+        register_date = datetime.now()
+    
     formatdate = register_date.strftime("%Y-%m-%d")
     hour_date = register_date.strftime("%H:%M:%S")
-
+    
+    # Obtener total de detracción
+    total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
+    
     items = []
     items_credit_graphql = []
     index = 1
-    sub_total = 0
-    total = 0
-    igv_total = 0
-    _base_total_v = 0
-    _base_amount_v = 0
-    _igv = 0
-
-    if order_obj.way_to_pay_type == 'C':
-        description = f"{order_obj.pay_condition} Días"
+    sub_total = decimal.Decimal(0)
+    total = decimal.Decimal(0)
+    igv_total = decimal.Decimal(0)
+    
+    # Verificar si es pago a crédito
+    if order_obj.way_to_pay == 'C':
+        # Para crédito, necesitaríamos PaymentFees si existe ese modelo
+        # Por ahora, asumimos que no hay cuotas definidas
         payment = 9
-        credits_detail = PaymentFees.objects.filter(order=order_obj)
-
-        credit = []
-        for j, c in enumerate(credits_detail, start=1):
-            credit.append({
-                "cuota": str(j),
-                "transaction_date": c.date.strftime("%Y-%m-%d"),
-                "importe": round(float(c.amount), 2),
-                "descripcion": description
-            })
-
-        items_credit_graphql = ", ".join(
-            f"""{{
-                transactionDate: "{item['transaction_date']}",
-                amount: {item['importe']},
-                description: "{item['descripcion']}"
-            }}"""
-            for item in credit
-        )
-        items_credit_graphql = f"[{items_credit_graphql}]"
+        items_credit_graphql = "[]"
     else:
         payment = 1
-
+        items_credit_graphql = "[]"
+    
+    # Procesar detalles de la orden
     for d in details:
-        base_total = d.quantity_sold * d.price_unit  # 5 * 20 = 100
-        base_amount = base_total / decimal.Decimal(1.1800)  # 100 / 1.18 = 84.75
-        igv = base_total - base_amount  # 100 - 84.75 = 15.25
-        sub_total = sub_total + base_amount
+        if not d.product:
+            # Si no hay producto, usar product_name
+            product_name = str(d.product_name or "").replace('"', "'")
+        else:
+            product_name = str(d.product.name or "").replace('"', "'")
+        
+        # Obtener cantidad (usar quantity en lugar de quantity_sold)
+        quantity = decimal.Decimal(d.quantity or 0)
+        if quantity == 0:
+            continue
+        
+        base_total = quantity * decimal.Decimal(d.price_unit or 0)
+        base_amount = base_total / decimal.Decimal(1.1800)
+        igv = base_total - base_amount
+        sub_total = sub_total + decimal.Decimal(base_amount)
         total = total + base_total
-        igv_total = igv_total + igv
-        _base_amount_v = float(round((base_amount / d.quantity_sold), 6))
-        product_name = str(d.product.name).replace('"', "'")
+        igv_total = igv_total + decimal.Decimal(igv)
+        _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
+        
+        # Unidad siempre será NIU
         _unit = 'NIU'
-        if d.unit.name == 'ZZ':
-            _unit = 'ZZ'
-
+        
         item = {
             "index": str(index),
             "codigoUnidad": str(_unit),
             "codigoProducto": "0000",
             "codigoSunat": "10000000",
             "producto": product_name,
-            "cantidad": float(d.quantity_sold),
-            "precioBase": float(round(_base_amount_v, 6)),
+            "cantidad": quantity,
+            "precioBase": _base_amount_v,
             "tipoIgvCodigo": "10"
         }
         items.append(item)
-
+        index += 1
+    
+    if not items:
+        return {"error": "La orden no tiene items válidos"}
+    
     items_graphql = ", ".join(
         f"""{{  
                producto: "{item['producto']}", 
@@ -101,15 +150,15 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
         }}"""
         for item in items
     )
-
+    
     items_graphql = f"[{items_graphql}]"
-
+    
     graphql_query = f"""
     mutation RegisterSale  {{
         registerSale(            
             cliente: {{
                 razonSocialNombres: "{client_name}",
-                numeroDocumento: "{client_document.document_number}",
+                numeroDocumento: "{client_document_number}",
                 codigoTipoEntidad: 6,
                 clienteDireccion: "{client_address}"
             }},
@@ -127,8 +176,9 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
                 totalIgv: {float(igv_total)},
                 totalExonerada: 0,
                 totalInafecta: 0,
-                totalImporte: {float(round(total, 2))},
-                totalAPagar: {float(round(total, 2))},
+                totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
+                totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
+                totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},
                 tipoDocumentoCodigo: "01",
                 nota: " "
             }},
@@ -141,23 +191,23 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
         }}
     }}
     """
-    # print(graphql_query)
-
-    token = tokens.get("20603890214", "ID no encontrado")
-
+    print(graphql_query)
+    
+    token = tokens.get("10471315198", "ID no encontrado")
+    
     HEADERS = {
         "Content-Type": "application/json",
         "token": token
     }
-
+    
     try:
         response = requests.post(GRAPHQL_URL, json={"query": graphql_query}, headers=HEADERS)
         response.raise_for_status()
-
+        
         result = response.json()
-
+        
         success = result.get("data", {}).get("registerSale", {}).get("success")
-
+        
         if success:
             return {
                 "success": success,
@@ -173,7 +223,7 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
                 "success": False,
                 "message": "La operación no fue exitosa, revise la venta e informe a Sistemas",
             }
-
+    
     except requests.exceptions.RequestException as e:
         return {"error": f"Error en la solicitud: {str(e)}"}
     except ValueError:
@@ -181,53 +231,99 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
 
 
 def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
-    order_obj = Order.objects.get(id=int(order_id))
-    serial = order_obj.subsidiary_store.subsidiary.serial
+    order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
+    
+    # Obtener serial de la sucursal
+    if not order_obj.subsidiary:
+        return {"error": "La orden no tiene sucursal asignada"}
+    serial = order_obj.subsidiary.serial or ""
+    
     correlative = get_new_correlative(serial, '2')
     details = OrderDetail.objects.filter(order=order_obj)
-    client_obj = order_obj.client
-    client_name = str(client_obj.names).replace('"', "'")
-    client_address = ""
-    if client_obj.clientaddress_set.first():
-        client_address = str(client_obj.clientaddress_set.first().address).replace('"', "'")
-    client_document = client_obj.clienttype_set.filter(document_type_id='01').first()
-    register_date = utc_to_local(order_obj.create_at)
+    
+    # Usar bill_client si existe, sino usar client
+    if order_obj.bill_client:
+        client_obj = order_obj.bill_client
+    elif order_obj.client:
+        client_obj = order_obj.client
+    else:
+        return {"error": "La orden no tiene cliente asignado"}
+    
+    # Obtener nombre del cliente
+    client_name = str(client_obj.full_name or "").replace('"', "'")
+    if not client_name:
+        client_name = f"{client_obj.first_name or ''} {client_obj.surname or ''}".strip()
+    
+    # Obtener dirección del cliente
+    client_address = str(client_obj.address or "").replace('"', "'")
+    
+    # Obtener documento del cliente (DNI para boleta)
+    if client_obj.document == '01':
+        client_document_number = client_obj.number or ""
+    else:
+        # Si no es DNI, intentar usar el número de documento que tenga
+        client_document_number = client_obj.number or ""
+    
+    # Obtener fecha de registro
+    if order_obj.creation_date:
+        register_date = utc_to_local(order_obj.creation_date)
+    elif order_obj.register_date:
+        register_date = datetime.combine(order_obj.register_date, datetime.min.time())
+    else:
+        register_date = datetime.now()
+    
     formatdate = register_date.strftime("%Y-%m-%d")
     hour_date = register_date.strftime("%H:%M:%S")
-
+    
+    # Obtener total de detracción
+    total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
+    
     items = []
     index = 1
-    sub_total = 0
-    total = 0
-    igv_total = 0
-    _base_total_v = 0
-    _base_amount_v = 0
-    _igv = 0
+    sub_total = decimal.Decimal(0)
+    total = decimal.Decimal(0)
+    igv_total = decimal.Decimal(0)
+    
+    # Procesar detalles de la orden
     for d in details:
-        base_total = d.quantity_sold * d.price_unit
+        if not d.product:
+            # Si no hay producto, usar product_name
+            product_name = str(d.product_name or "").replace('"', "'")
+        else:
+            product_name = str(d.product.name or "").replace('"', "'")
+        
+        # Obtener cantidad (usar quantity en lugar de quantity_sold)
+        quantity = decimal.Decimal(d.quantity or 0)
+        if quantity == 0:
+            continue
+        
+        base_total = quantity * decimal.Decimal(d.price_unit or 0)
         base_amount = base_total / decimal.Decimal(1.1800)
         igv = base_total - base_amount
-        sub_total = sub_total + base_amount
+        sub_total = sub_total + decimal.Decimal(base_amount)
         total = total + base_total
-        igv_total = igv_total + igv
-        _base_amount_v = float(round((base_amount / d.quantity_sold), 6))
-        product_name = str(d.product.name).replace('"', "'")
+        igv_total = igv_total + decimal.Decimal(igv)
+        _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
+        
+        # Unidad siempre será NIU
         _unit = 'NIU'
-        if d.unit.name == 'ZZ':
-            _unit = 'ZZ'
-
+        
         item = {
             "index": str(index),
             "codigoUnidad": _unit,
             "codigoProducto": "0000",
             "codigoSunat": "10000000",
             "producto": product_name,
-            "cantidad": float(d.quantity_sold),
-            "precioBase": float(round(_base_amount_v, 6)),
+            "cantidad": quantity,
+            "precioBase": _base_amount_v,
             "tipoIgvCodigo": "10"
         }
         items.append(item)
-
+        index += 1
+    
+    if not items:
+        return {"error": "La orden no tiene items válidos"}
+    
     items_graphql = ", ".join(
         f"""{{                     
                 codigoUnidad: "{item['codigoUnidad']}", 
@@ -240,15 +336,15 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
             }}"""
         for item in items
     )
-
+    
     items_graphql = f"[{items_graphql}]"
-
+    
     graphql_query = f"""
         mutation RegisterSale  {{
             registerSale(            
                 cliente: {{
                     razonSocialNombres: "{client_name}",
-                    numeroDocumento: "{client_document}",
+                    numeroDocumento: "{client_document_number}",
                     codigoTipoEntidad: 1,
                     clienteDireccion: "{client_address}"
                 }},
@@ -266,8 +362,9 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
                     totalIgv: {float(igv_total)},
                     totalExonerada: 0,
                     totalInafecta: 0,
-                    totalImporte: {float(round(total, 2))},
-                    totalAPagar: {float(round(total, 2))},
+                    totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
+                    totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
+                    totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},
                     tipoDocumentoCodigo: "03",
                     nota: " "
                 }},
@@ -279,24 +376,24 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
             }}
         }}
         """
-
-    # print(graphql_query)
-
-    token = tokens.get("20603890214", "ID no encontrado")
-
+    
+    print(graphql_query)
+    
+    token = tokens.get("10471315198", "ID no encontrado")
+    
     HEADERS = {
         "Content-Type": "application/json",
         "token": token
     }
-
+    
     try:
         response = requests.post(GRAPHQL_URL, json={"query": graphql_query}, headers=HEADERS)
         response.raise_for_status()
-
+        
         result = response.json()
-
+        
         success = result.get("data", {}).get("registerSale", {}).get("success")
-
+        
         if success:
             return {
                 "success": success,
@@ -312,7 +409,7 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
                 "success": False,
                 "message": "La operación no fue exitosa",
             }
-
+    
     except requests.exceptions.RequestException as e:
         return {"error": f"Error en la solicitud: {str(e)}"}
     except ValueError:
@@ -320,9 +417,18 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
 
 
 def number_note(serial=None):
-    number = CreditNote.objects.filter(serial=serial).aggregate(
-        r=Coalesce(Max('correlative'), 0)).get('r')
-    return number + 1
+    """
+    Obtiene el siguiente número de nota de crédito.
+    Si no existe el modelo CreditNote, retorna 1.
+    """
+    try:
+        from .models import CreditNote
+        number = CreditNote.objects.filter(serial=serial).aggregate(
+            r=Coalesce(Max('correlative'), 0)).get('r')
+        return number + 1
+    except (ImportError, AttributeError):
+        # Si no existe el modelo, retornar 1
+        return 1
 
 
 def send_credit_note_fact(pk, details, motive):
@@ -333,8 +439,8 @@ def send_credit_note_fact(pk, details, motive):
     # date_voucher = datetime.now().strftime("%d-%m-%Y")
     items = []
     index = 1
-    sub_total = 0
-    total = 0
+    sub_total = decimal.Decimal(0)
+    total = decimal.Decimal(0)
     for d in details:
         if d['quantityReturned']:
             product_id = int(d['productID'])
@@ -347,22 +453,21 @@ def send_credit_note_fact(pk, details, motive):
             igv_item = total_item_igv - total_item_sin_igv
             total = total + total_item_igv
             sub_total = sub_total + total_item_sin_igv
+            # Unidad siempre será NIU
             _unit = 'NIU'
-            if d['unit'] == 'ZZ':
-                _unit = 'ZZ'
-
+            
             item = {
                 "index": str(index),
                 "codigoUnidad": str(_unit),
                 "codigoProducto": str(product_obj.code),
                 "codigoSunat": "10000000",
                 "producto": description,
-                "cantidad": round(float(d['quantityReturned']), 4),
-                "precioBase": round(price_sin_igv, 6),
+                "cantidad": decimal.Decimal(d['quantityReturned']).quantize(decimal.Decimal('0.0001')),
+                "precioBase": price_sin_igv.quantize(decimal.Decimal('0.000001')),
                 "tipoIgvCodigo": "10"
             }
             items.append(item)
-
+    
     items_graphql = ", ".join(
         f"""{{  
                    producto: "{item['producto']}", 
@@ -375,35 +480,47 @@ def send_credit_note_fact(pk, details, motive):
             }}"""
         for item in items
     )
-
+    
     items_graphql = f"[{items_graphql}]"
-
+    
     _type_document = '01' if order_obj.voucher_type == 'B' else '06'
-
-    client_type = ClientType.objects.get(client=client_obj, document_type=_type_document)
-    client_names = str(client_obj.names).replace('"', "'")
-    client_document = client_type.document_number
-    client_document_type = int(client_type.document_type.id)
-
-    client_first_address = client_obj.clientaddress_set.first()
-    client_address = str(client_first_address).replace('"', "'")
-
+    
+    # Obtener datos del cliente según el modelo Person
+    client_names = str(client_obj.full_name or "").replace('"', "'")
+    if not client_names:
+        client_names = f"{client_obj.first_name or ''} {client_obj.surname or ''}".strip()
+    
+    client_document = client_obj.number or ""
+    client_document_type = 1 if client_obj.document == '01' else 6
+    
+    client_address = str(client_obj.address or "").replace('"', "'")
+    
     total_engraved = decimal.Decimal(sub_total)
     total_invoice = total_engraved * decimal.Decimal(1.1800)
     total_igv = total_invoice - total_engraved
-
+    
     formatdate = datetime.now().strftime("%Y-%m-%d")
     hour_date = datetime.now().strftime("%H:%M:%S")
-
+    
     type_document_code = ''
-
-    order_bill_obj = OrderBill.objects.get(order=order_obj)
-
-    if order_bill_obj.type == '2':
+    
+    # Usar los campos de Order directamente en lugar de OrderBill
+    # bill_type: '1' para Factura, '2' para Boleta
+    if order_obj.bill_type == '2':
         type_document_code = '03'
-    if order_bill_obj.type == '1':
+    elif order_obj.bill_type == '1':
         type_document_code = '01'
-
+    else:
+        # Si no hay bill_type, intentar inferir del voucher_type
+        if order_obj.voucher_type == 'B':
+            type_document_code = '03'
+        elif order_obj.voucher_type == 'F':
+            type_document_code = '01'
+    
+    # Obtener serial y número del comprobante desde Order
+    bill_serial = order_obj.bill_serial or ""
+    bill_number = order_obj.bill_number or 0
+    
     graphql_query = f"""
         mutation RegisterCreditNote  {{
             registerCreditNote(            
@@ -427,15 +544,15 @@ def send_credit_note_fact(pk, details, motive):
                     totalIgv: {float(total_igv)},
                     totalExonerada: 0,
                     totalInafecta: 0,
-                    totalImporte: {float(round(total_invoice, 2))},
-                    totalAPagar: {float(round(total_invoice, 2))},
+                    totalImporte: {float(total_invoice.quantize(decimal.Decimal('0.01')))},
+                    totalAPagar: {float(total_invoice.quantize(decimal.Decimal('0.01')))},
                     tipoDocumentoCodigo: "07",
                     nota: "",
                     motiveCreditNote: "{motive}"
                 }},
                 relatedDocuments: {{
-                    serial: "{str(order_bill_obj.serial)}"      
-                    number: "{str(order_bill_obj.n_receipt)}"      
+                    serial: "{str(bill_serial)}"      
+                    number: "{str(bill_number)}"      
                     codeTypeDocument: "{str(type_document_code)}"      
                 }},
                 items: {items_graphql}
@@ -447,22 +564,22 @@ def send_credit_note_fact(pk, details, motive):
         }}
         """
     # print(graphql_query)
-
+    
     token = tokens.get("20603890214", "ID no encontrado")
-
+    
     HEADERS = {
         "Content-Type": "application/json",
         "token": token
     }
-
+    
     try:
         response = requests.post(GRAPHQL_URL, json={"query": graphql_query}, headers=HEADERS)
         response.raise_for_status()
-
+        
         result = response.json()
-
+        
         success = not result.get("data", {}).get("registerCreditNote", {}).get("error")
-
+        
         if success:
             operation_id = result.get("data", {}).get("registerCreditNote", {}).get("operationId")
             enlace_pdf = f'https://ng.tuf4ctur4.net.pe/operations/print_credit_note/{operation_id}/'
@@ -484,7 +601,7 @@ def send_credit_note_fact(pk, details, motive):
                 "message": "La operación no fue exitosa, revise la venta e informe a Sistemas",
                 "error": result.get("data", {}).get("registerCreditNote", {}).get("error"),
             }
-
+    
     except requests.exceptions.RequestException as e:
         return {"error": f"Error en la solicitud: {str(e)}"}
     except ValueError:
@@ -492,15 +609,16 @@ def send_credit_note_fact(pk, details, motive):
 
 
 def annul_invoice(order_id):
-    order_bill_obj = OrderBill.objects.get(order_id=int(order_id))
-    correlative = order_bill_obj.n_receipt
-    serial = order_bill_obj.serial
-
+    # Usar los campos de Order directamente
+    order_obj = Order.objects.get(id=int(order_id))
+    correlative = order_obj.bill_number or 0
+    serial = order_obj.bill_serial or ""
+    
     variables = {
         "correlative": correlative,
         "serial": serial
     }
-
+    
     mutation = """
     mutation AnnulInvoice($correlative: Int!, $serial: String!) {
         annulInvoice(correlative: $correlative, serial: $serial) {
@@ -509,19 +627,19 @@ def annul_invoice(order_id):
         }
     }
     """
-
+    
     token = tokens.get("20603890214", "ID no encontrado")
-
+    
     HEADERS = {
         "Content-Type": "application/json",
         "token": token
     }
-
+    
     # print("Enviando mutación GraphQL:")
     # print("Query:", mutation)
     # print("Variables:", variables)
     # print("Headers:", HEADERS)
-
+    
     try:
         response = requests.post(
             GRAPHQL_URL,
@@ -529,11 +647,11 @@ def annul_invoice(order_id):
             headers=HEADERS
         )
         response.raise_for_status()
-
+        
         result = response.json()
-
+        
         data = result.get("data", {}).get("annulInvoice")
-
+        
         if data and data.get("success"):
             return {
                 "success": True,
@@ -544,7 +662,7 @@ def annul_invoice(order_id):
                 "success": False,
                 "message": data.get("message") if data else "No se obtuvo respuesta del servidor.",
             }
-
+    
     except requests.exceptions.RequestException as e:
         return {"success": False, "message": f"Error en la solicitud: {str(e)}"}
     except ValueError:

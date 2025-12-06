@@ -67,6 +67,14 @@ class Order(models.Model):
     # Campos para el usuario que entregó la orden
     delivered_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders_delivered')
     delivered_at = models.DateTimeField('Fecha y hora de entrega', null=True, blank=True)
+    bill_serial = models.CharField('Serie', max_length=5, null=True, blank=True)
+    bill_type = models.CharField('TIPO', max_length=2, null=True, blank=True)
+    bill_number = models.IntegerField(verbose_name='CORRELATIVO', null=True, blank=True)
+    bill_date = models.DateTimeField(null=True, blank=True)
+    bill_qr = models.CharField('Codigo QR', max_length=500, null=True, blank=True)
+    bill_enlace_pdf = models.CharField('Sunat Enlace Pdf', max_length=500, null=True, blank=True)
+    total_detraction = models.DecimalField('total', max_digits=10, decimal_places=2, default=0)
+    bill_client = models.ForeignKey('sales.Person', on_delete=models.SET_NULL, related_name='bill_client', null=True, blank=True)
 
     def __str__(self):
         return str(self.id)

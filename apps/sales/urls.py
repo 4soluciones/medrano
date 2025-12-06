@@ -2,7 +2,7 @@ from django.urls import path, include
 from django.contrib.auth.decorators import login_required
 # from apps.user.views import users_list, UserList, user_create, user_update, user_save
 from .views import *
-from .views_PDF import download_ticket_pdf
+from .views_PDF import download_ticket_pdf, download_bill_pdf
 
 urlpatterns = [
     # URLs existentes para clientes
@@ -64,11 +64,13 @@ urlpatterns = [
     path('orders/get-for-cancellation/', login_required(get_order_for_cancellation), name='get_order_for_cancellation'),
     path('orders/complete-with-payment/', login_required(complete_order_with_payment), name='complete_order_with_payment'),
     path('orders/cancel-with-reason/', login_required(cancel_order_with_reason), name='cancel_order_with_reason'),
+    path('orders/emit-electronic-document/', login_required(emit_electronic_document), name='emit_electronic_document'),
 
     # =============================================================================
     # URLs PARA PDFs
     # =============================================================================
     path('orders/<int:order_id>/ticket-pdf/', login_required(download_ticket_pdf), name='download_ticket_pdf'),
+    path('orders/<int:order_id>/bill-pdf/', login_required(download_bill_pdf), name='download_bill_pdf'),
 
     # =============================================================================
     # URLs DEL DASHBOARD

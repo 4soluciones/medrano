@@ -1209,7 +1209,7 @@
                                     </div>
                                     <div class="card-body py-2">
                                         <div class="row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label class="form-label-sm text-muted">Subtotal</label>
                                                     <div class="input-group">
@@ -1222,7 +1222,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label class="form-label-sm text-muted">IGV (18%)</label>
                                                     <div class="input-group">
@@ -1235,7 +1235,23 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Detracción (12%)</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
+                                                               id="complete_detraction" readonly>
+                                                    </div>
+                                                    <small class="form-text text-muted" id="detraction_help">
+                                                        Se aplica automáticamente si el total supera S/ 700.00
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label class="form-label-sm text-muted">Total</label>
                                                     <div class="input-group">
@@ -1253,74 +1269,257 @@
                                 </div>
                             </div>
                         </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmCompleteOrder()">
+                        <i class="fas fa-check mr-1"></i>Completar Orden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <!-- Checkbox para emitir comprobante electrónico -->
-                        <div class="form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="emit_electronic_document" name="emit_electronic_document">
-                                <label class="custom-control-label" for="emit_electronic_document">
-                                    <i class="fas fa-file-invoice mr-1"></i>Emitir Comprobante Electrónico
-                                </label>
+    <!-- Modal para emitir comprobante electrónico -->
+    <div class="modal fade" id="emitDocumentModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg roboto-condensed-regular" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-invoice mr-2"></i>Emitir Comprobante Electrónico
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="emit-document-form">
+                        <input type="hidden" id="emit_order_id" name="order_id" value="">
+                        <input type="hidden" id="emit_order_total" name="order_total" value="">
+                        <input type="hidden" id="emit_bill_client_id" name="bill_client_id" value="">
+
+                        <!-- Información de la orden -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0 py-2">
+                                    <div class="row">
+                                        <div class="col-md-1 text-center">
+                                            <i class="fas fa-info-circle fa-lg text-primary"></i>
+                                        </div>
+                                        <div class="col-md-11">
+                                            <strong class="small">Información de la Orden:</strong>
+                                            <div id="emit-order-info" class="mt-1 small"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Panel de comprobante electrónico (inicialmente oculto) -->
-                        <div id="electronic-document-panel" style="display: none;">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white py-2">
-                                    <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante Electrónico</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="document_type" class="form-label">
-                                                    <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
-                                                </label>
-                                                <select class="form-control" id="document_type" name="document_type">
-                                                    <option value="">Seleccione tipo</option>
-                                                    <option value="B">BOLETA</option>
-                                                    <option value="F">FACTURA</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="document_number" class="form-label">
-                                                    <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
-                                                </label>
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control" id="document_number" name="document_number" placeholder="DNI o RUC del cliente">
-                                                    <div class="input-group-append">
-                                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="searchClientInElectronicDocument()">
-                                                            <i class="fas fa-search"></i>
-                                                        </button>
+                        <!-- Totales de la orden -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="mb-0"><i class="fas fa-calculator mr-2"></i>Totales de la Orden</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Subtotal</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
+                                                               id="emit_subtotal" readonly>
                                                     </div>
                                                 </div>
-                                                <small class="form-text text-muted">
-                                                    <span id="document_help">Ingrese el documento del cliente</span>
-                                                </small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">IGV (18%)</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
+                                                               id="emit_igv" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Detracción (12%)</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
+                                                               id="emit_detraction" readonly>
+                                                    </div>
+                                                    <small class="form-text text-muted" id="emit_detraction_help">
+                                                        Se aplica automáticamente si el total supera S/ 700.00
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label class="form-label-sm text-muted">Total</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">S/</span>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control text-right font-weight-bold"
+                                                               id="emit_total" readonly>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="client_full_name" class="form-label">
-                                                    <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" class="form-control" id="client_full_name" name="client_full_name" placeholder="Nombre completo o razón social">
+                        <!-- Detalles de la Orden (Editables) -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-info text-dark py-2">
+                                        <h6 class="mb-0 text-dark"><i class="fas fa-list mr-2 text-dark"></i>Detalles de la Orden</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
+                                                <thead class="table-light">
+                                                <tr>
+                                                    <th style="padding: 0.3rem; width: 5%;">#</th>
+                                                    <th style="padding: 0.3rem;">Descripción</th>
+                                                    <th style="padding: 0.3rem; width: 12%;">Cantidad</th>
+                                                    <th style="padding: 0.3rem; width: 15%;">Precio Unit.</th>
+                                                    <th style="padding: 0.3rem; width: 15%;">Subtotal</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="emit_order_details_body">
+                                                <!-- Los detalles se cargarán dinámicamente aquí -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de comprobante electrónico -->
+                        <div class="card">
+                            <div class="card-header bg-primary text-white py-2">
+                                <h6 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>Datos del Comprobante Electrónico</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="emit_document_type" class="form-label">
+                                                <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="emit_document_type" name="document_type">
+                                                <option value="">Seleccione tipo</option>
+                                                <option value="B">BOLETA</option>
+                                                <option value="F">FACTURA</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="emit_document_number" class="form-label">
+                                                <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="emit_document_number" name="document_number" autocomplete="off" placeholder="DNI o RUC del cliente">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-primary btn-sm" onclick="searchClientInEmitDocument()">
+                                                        <i class="fas fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                <span id="emit_document_help">Ingrese el documento del cliente</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="emit_client_full_name" class="form-label">
+                                                <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="emit_client_full_name" name="client_full_name" placeholder="Nombre completo o razón social">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="emit_client_address" class="form-label">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                                            </label>
+                                            <input type="text" class="form-control" id="emit_client_address" name="client_address" placeholder="Dirección del cliente">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de comprobante emitido (si ya existe) -->
+                        <div id="emit_bill_info_panel" class="card mt-3" style="display: none;">
+                            <div class="card-header bg-success text-white py-2">
+                                <h6 class="mb-0"><i class="fas fa-check-circle mr-2"></i>Comprobante Electrónico Emitido</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label-sm text-muted font-weight-bold">Tipo de Comprobante:</label>
+                                            <div id="emit_bill_type_display" class="font-weight-bold text-success"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label-sm text-muted font-weight-bold">Número de Comprobante:</label>
+                                            <div id="emit_bill_number_display" class="font-weight-bold text-primary"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label-sm text-muted font-weight-bold">Fecha de Emisión:</label>
+                                            <div id="emit_bill_date_display"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label-sm text-muted font-weight-bold">Enlace SUNAT:</label>
+                                            <div id="emit_bill_enlace_display">
+                                                <a href="#" id="emit_bill_enlace_link" target="_blank" class="text-primary">
+                                                    <i class="fas fa-external-link-alt mr-1"></i>Ver comprobante en SUNAT
+                                                </a>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="client_address" class="form-label">
-                                                    <i class="fas fa-map-marker-alt mr-1"></i>Dirección
-                                                </label>
-                                                <input type="text" class="form-control" id="client_address" name="client_address" placeholder="Dirección del cliente">
-                                            </div>
-                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12 text-center">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="downloadBillPDFFromModal()">
+                                            <i class="fas fa-download mr-1"></i>Descargar PDF del Comprobante
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1331,8 +1530,11 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         <i class="fas fa-times mr-1"></i>Cancelar
                     </button>
-                    <button type="button" class="btn btn-success" onclick="confirmCompleteOrder()">
-                        <i class="fas fa-check mr-1"></i>Completar Orden
+                    <button type="button" class="btn btn-success" id="emit_download_bill_btn" onclick="downloadBillPDFFromModal()" style="display: none;">
+                        <i class="fas fa-download mr-1"></i>Descargar PDF
+                    </button>
+                    <button type="button" class="btn btn-primary" id="emit_confirm_btn" onclick="confirmEmitDocument()">
+                        <i class="fas fa-file-invoice mr-1"></i>Emitir Comprobante
                     </button>
                 </div>
             </div>
@@ -1992,9 +2194,24 @@
 
         // Función para inicializar colores de todos los selects
         function initializeSelectColors() {
-            // Inicializar colores de status-select
+            // Inicializar colores de status-select y añadir opción de emitir comprobante
             $('.status-select').each(function() {
                 updateSelectColor(this);
+                
+                // Añadir opción "emitir compr." si la orden está completada
+                const currentStatus = $(this).attr('data-order-status');
+                const selectElement = $(this);
+                
+                // Verificar si ya existe la opción
+                const hasEmitOption = selectElement.find('option[value="E"]').length > 0;
+                
+                if (currentStatus === 'C' && !hasEmitOption) {
+                    // Añadir la opción antes de la última opción (ANULADO)
+                    selectElement.find('option[value="A"]').before('<option value="E">EMITIR COMPR.</option>');
+                } else if (currentStatus !== 'C' && hasEmitOption) {
+                    // Remover la opción si la orden no está completada
+                    selectElement.find('option[value="E"]').remove();
+                }
             });
 
             // Inicializar colores de delivery-select
@@ -2668,7 +2885,7 @@
                 $('#complete_order_total').val('');
                 $('#complete_client_document').val('');
                 $('#complete_client_name').val('');
-                resetElectronicDocumentFields();
+                resetCompleteOrderFields();
                 
                 // Limpiar pagos múltiples
                 completePayments = [];
@@ -2709,6 +2926,11 @@
                 });
             });
 
+            // Event listener para resetear campos cuando se cierra el modal de emitir comprobante
+            $('#emitDocumentModal').on('hidden.bs.modal', function () {
+                resetEmitDocumentFields();
+            });
+
             $('#cancelOrderModal').on('hidden.bs.modal', function () {
                 $('#cancel-order-form')[0].reset();
                 $('#cancel_order_id').val('');
@@ -2734,25 +2956,6 @@
                 }
                 // Limpiar el formulario
                 $('#orderDeliveryStatusForm')[0].reset();
-            });
-
-            // Event listeners para el modal de completar orden
-            $('#emit_electronic_document').on('change', function () {
-                if ($(this).is(':checked')) {
-                    $('#electronic-document-panel').slideDown(300);
-                    // Cargar datos del cliente automáticamente
-                    loadClientDataForDocument();
-                } else {
-                    $('#electronic-document-panel').slideUp(300);
-                }
-            });
-
-            // Event listener para cambio de tipo de comprobante
-            $('#document_type').on('change', function () {
-                const documentType = $(this).val();
-                if (documentType) {
-                    updateDocumentFields(documentType);
-                }
             });
 
             // Event listener para cancelar el modal de completar orden
@@ -4341,7 +4544,7 @@
                     <div class="modal fade" id="orderDetailModal" tabindex="-1" role="dialog">
                         <div class="modal-dialog modal-lg" role="document">
                             <div class="modal-content">
-                                <div class="modal-header bg-info text-white">
+                                <div class="modal-header bg-info text-dark">
                                     <h5 class="modal-title">
                                         <i class="fas fa-eye mr-2"></i>Detalles de la Orden
                                     </h5>
@@ -4398,6 +4601,35 @@
             setTimeout(() => {
                 toastr.success('PDF generado y descargado exitosamente', 'Descarga Completada');
             }, 1000);
+        }
+
+        function downloadBillPDF(orderId) {
+            // Mostrar indicador de descarga
+            toastr.info('Generando PDF del comprobante electrónico... Por favor espere', 'Generando PDF');
+
+            // Crear un enlace temporal para descargar el PDF
+            const downloadLink = document.createElement('a');
+            downloadLink.href = `{% url "apps.sales:download_bill_pdf" 0 %}`.replace('0', orderId);
+            downloadLink.download = `comprobante_${orderId}.pdf`;
+
+            // Simular clic en el enlace
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            // Mostrar confirmación
+            setTimeout(() => {
+                toastr.success('PDF del comprobante electrónico generado y descargado exitosamente', 'Descarga Completada');
+            }, 1000);
+        }
+
+        function downloadBillPDFFromModal() {
+            const orderId = $('#emit_order_id').val();
+            if (orderId) {
+                downloadBillPDF(orderId);
+            } else {
+                toastr.error('No se encontró el ID de la orden', 'Error');
+            }
         }
 
         function editOrder(orderId) {
@@ -4953,6 +5185,15 @@
                 openCompleteOrderModal(orderId);
                 // Restaurar valor original en el select
                 selectElement.val(originalValue);
+            } else if (newStatus === 'E') {
+                // Abrir modal para emitir comprobante (solo si está completado)
+                if (originalValue === 'C') {
+                    openEmitDocumentModal(orderId);
+                } else {
+                    toastr.warning('Solo se puede emitir comprobante para órdenes completadas', 'Advertencia');
+                }
+                // Restaurar valor original en el select
+                selectElement.val(originalValue);
             } else if (newStatus === 'A') {
                 // Abrir modal para anular orden
                 openCancelOrderModal(orderId);
@@ -5039,8 +5280,20 @@
                         $('#complete_client_document').val(order.client.document);
                         $('#complete_client_name').val(order.client.full_name);
 
-                        // Calcular y mostrar totales
-                        calculateOrderTotals(order.total);
+                        // Cargar detalles de la orden
+                        completeOrderDetails = [];
+                        if (order.details && order.details.length > 0) {
+                            order.details.forEach(function(detail, index) {
+                                completeOrderDetails.push({
+                                    id: detail.id,
+                                    product_name: detail.product_name || '',
+                                    quantity: parseFloat(detail.quantity) || 0,
+                                    price_unit: parseFloat(detail.price_unit) || 0,
+                                    subtotal: parseFloat(detail.subtotal) || 0,
+                                    observation: detail.observation || ''
+                                });
+                            });
+                        }
 
                         // Mostrar información de la orden
                         const orderInfo = `
@@ -5052,8 +5305,8 @@
                         `;
                         $('#complete-order-info').html(orderInfo);
 
-                        // Limpiar campos del comprobante electrónico
-                        resetElectronicDocumentFields();
+                        // Calcular y mostrar totales
+                        calculateOrderTotals(order.total);
 
                         // Inicializar pagos múltiples
                         completePayments = [];
@@ -5069,6 +5322,555 @@
                 },
                 error: function () {
                     toastr.error('Error al cargar la información de la orden', 'Error');
+                }
+            });
+        }
+
+        // Variable global para detalles del modal de emitir comprobante
+        let emitOrderDetails = [];
+        
+        // Variable global para detalles del modal de completar orden
+        let completeOrderDetails = [];
+
+        // Función para abrir modal de emitir comprobante
+        function openEmitDocumentModal(orderId) {
+            // Limpiar campos del comprobante electrónico primero (pero no los detalles)
+            $('#emit_document_type').val('');
+            $('#emit_document_number').val('');
+            $('#emit_client_full_name').val('');
+            $('#emit_client_address').val('');
+            $('#emit_bill_client_id').val('');
+            $('#emit_document_type').removeClass('is-invalid');
+            $('#emit_document_number').removeClass('is-invalid');
+            $('#emit_client_full_name').removeClass('is-invalid');
+            
+            // Ocultar panel de comprobante emitido inicialmente
+            $('#emit_bill_info_panel').hide();
+            $('#emit_download_bill_btn').hide();
+            $('#emit_confirm_btn').show();
+            
+            // Obtener información de la orden
+            $.ajax({
+                url: '{% url "apps.sales:get_order_for_completion" %}',
+                type: 'GET',
+                data: {'order_id': orderId},
+                success: function (response) {
+                    if (response.success) {
+                        const order = response.order;
+                        console.log('Orden recibida:', order);
+                        console.log('Detalles recibidos:', order.details);
+
+                        // Llenar información del modal
+                        $('#emit_order_id').val(orderId);
+                        $('#emit_order_total').val(order.total);
+
+                        // Cargar detalles de la orden
+                        emitOrderDetails = [];
+                        if (order.details && order.details.length > 0) {
+                            console.log('Procesando', order.details.length, 'detalles');
+                            order.details.forEach(function(detail, index) {
+                                console.log('Detalle', index, ':', detail);
+                                emitOrderDetails.push({
+                                    id: detail.id,
+                                    product_name: detail.product_name || '',
+                                    quantity: parseFloat(detail.quantity) || 0,
+                                    price_unit: parseFloat(detail.price_unit) || 0,
+                                    subtotal: parseFloat(detail.subtotal) || 0,
+                                    observation: detail.observation || ''
+                                });
+                            });
+                        } else {
+                            console.log('No hay detalles en la orden');
+                        }
+
+                        console.log('emitOrderDetails después de cargar:', emitOrderDetails);
+
+                        // Renderizar detalles en la tabla
+                        renderEmitOrderDetails();
+
+                        // Calcular y mostrar totales
+                        calculateEmitOrderTotals();
+
+                        // Mostrar información de la orden
+                        const orderInfo = `
+                            <strong>Orden:</strong> ${order.serial}-${order.correlative.toString().padStart(3, '0')}<br>
+                            <strong>Cliente:</strong> ${order.client.full_name}<br>
+                            <strong>Total:</strong> S/ ${order.total}
+                        `;
+                        $('#emit-order-info').html(orderInfo);
+
+                        // Si ya tiene comprobante emitido, cargar los datos
+                        if (order.has_bill && order.bill_serial && order.bill_number) {
+                            // Determinar tipo de comprobante
+                            let docType = '';
+                            let docTypeDisplay = '';
+                            if (order.bill_type === '1') {
+                                docType = 'F';
+                                docTypeDisplay = 'FACTURA ELECTRÓNICA';
+                            } else if (order.bill_type === '2') {
+                                docType = 'B';
+                                docTypeDisplay = 'BOLETA DE VENTA ELECTRÓNICA';
+                            } else {
+                                docTypeDisplay = 'COMPROBANTE ELECTRÓNICO';
+                            }
+                            
+                            // Llenar campos del formulario
+                            if (docType) {
+                                $('#emit_document_type').val(docType);
+                            }
+                            
+                            // Cargar datos del cliente del comprobante
+                            if (order.bill_client_id) {
+                                $('#emit_bill_client_id').val(order.bill_client_id);
+                            }
+                            
+                            if (order.client.number) {
+                                $('#emit_document_number').val(order.client.number);
+                            }
+                            
+                            if (order.client.full_name) {
+                                $('#emit_client_full_name').val(order.client.full_name);
+                            }
+                            
+                            if (order.client.address) {
+                                $('#emit_client_address').val(order.client.address);
+                            }
+                            
+                            // Mostrar información del comprobante emitido
+                            $('#emit_bill_type_display').text(docTypeDisplay);
+                            const billNumberStr = order.bill_number ? order.bill_number.toString().padStart(8, '0') : '';
+                            $('#emit_bill_number_display').text(`${order.bill_serial}-${billNumberStr}`);
+                            
+                            if (order.bill_date) {
+                                try {
+                                    const billDate = new Date(order.bill_date);
+                                    if (!isNaN(billDate.getTime())) {
+                                        const formattedDate = billDate.toLocaleDateString('es-PE', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                        $('#emit_bill_date_display').text(formattedDate);
+                                    } else {
+                                        $('#emit_bill_date_display').text(order.bill_date);
+                                    }
+                                } catch (e) {
+                                    $('#emit_bill_date_display').text(order.bill_date || 'No disponible');
+                                }
+                            } else {
+                                $('#emit_bill_date_display').text('No disponible');
+                            }
+                            
+                            if (order.bill_enlace_pdf) {
+                                $('#emit_bill_enlace_link').attr('href', order.bill_enlace_pdf);
+                            } else {
+                                $('#emit_bill_enlace_display').html('<span class="text-muted">No disponible</span>');
+                            }
+                            
+                            // Mostrar panel de comprobante emitido
+                            $('#emit_bill_info_panel').show();
+                            
+                            // Ocultar botón de emitir y mostrar botón de descargar
+                            $('#emit_confirm_btn').hide();
+                            $('#emit_download_bill_btn').show();
+                            
+                            // Deshabilitar campos del formulario
+                            $('#emit_document_type').prop('disabled', true);
+                            $('#emit_document_number').prop('disabled', true);
+                            $('#emit_client_full_name').prop('disabled', true);
+                            $('#emit_client_address').prop('disabled', true);
+                            $('button[onclick="searchClientInEmitDocument()"]').prop('disabled', true);
+                        } else {
+                            // Si no tiene comprobante, habilitar campos
+                            $('#emit_document_type').prop('disabled', false);
+                            $('#emit_document_number').prop('disabled', false);
+                            $('#emit_client_full_name').prop('disabled', false);
+                            $('#emit_client_address').prop('disabled', false);
+                            $('button[onclick="searchClientInEmitDocument()"]').prop('disabled', false);
+                        }
+
+                        // Mostrar modal
+                        $('#emitDocumentModal').modal('show');
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error al cargar orden:', xhr);
+                    toastr.error('Error al cargar la información de la orden', 'Error');
+                }
+            });
+        }
+
+        // Función para renderizar detalles en el modal de emitir comprobante
+        function renderEmitOrderDetails() {
+            const tbody = $('#emit_order_details_body');
+            
+            if (tbody.length === 0) {
+                console.error('No se encontró el elemento #emit_order_details_body');
+                return;
+            }
+            
+            tbody.empty();
+
+            console.log('renderEmitOrderDetails - emitOrderDetails.length:', emitOrderDetails.length);
+            console.log('renderEmitOrderDetails - emitOrderDetails:', emitOrderDetails);
+
+            if (!emitOrderDetails || emitOrderDetails.length === 0) {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted">No hay detalles</td></tr>');
+                return;
+            }
+
+            emitOrderDetails.forEach(function(detail, index) {
+                console.log('Renderizando detalle', index, ':', detail);
+                
+                // Añadir "ELABORACION" al inicio de la descripción si no lo tiene
+                let description = detail.product_name || '';
+                // Remover "ELABORACION" si ya existe para evitar duplicados
+                description = description.trim().replace(/^ELABORACION\s*/i, '');
+                // Añadir "ELABORACION" al inicio
+                description = description ? `ELABORACION ${description}` : 'ELABORACION';
+                console.log('Descripción final:', description);
+                
+                // Escapar caracteres especiales para evitar problemas con comillas
+                const escapedDescription = description.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                
+                // Crear la fila usando jQuery para evitar problemas de escape
+                const row = $('<tr>');
+                
+                // Columna número
+                row.append($('<td>').addClass('text-center').attr('style', 'padding: 0.3rem;').text(index + 1));
+                
+                // Columna descripción
+                const descInput = $('<input>')
+                    .attr('type', 'text')
+                    .addClass('form-control form-control-sm emit-detail-description')
+                    .val(description)
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateEmitDetailField(${detail.id}, 'product_name', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(descInput));
+                
+                // Columna cantidad
+                const qtyInput = $('<input>')
+                    .attr('type', 'number')
+                    .addClass('form-control form-control-sm text-right emit-detail-quantity')
+                    .val(detail.quantity.toFixed(2))
+                    .attr('step', '0.01')
+                    .attr('min', '0')
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateEmitDetailField(${detail.id}, 'quantity', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(qtyInput));
+                
+                // Columna precio
+                const priceInput = $('<input>')
+                    .attr('type', 'number')
+                    .addClass('form-control form-control-sm text-right emit-detail-price')
+                    .val(detail.price_unit.toFixed(2))
+                    .attr('step', '0.01')
+                    .attr('min', '0')
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateEmitDetailField(${detail.id}, 'price_unit', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(priceInput));
+                
+                // Columna subtotal
+                const subtotalSpan = $('<span>')
+                    .addClass('emit-detail-subtotal')
+                    .attr('data-detail-id', detail.id)
+                    .text(detail.subtotal.toFixed(2));
+                row.append($('<td>').addClass('text-right font-weight-bold').attr('style', 'padding: 0.3rem;').html('S/ ').append(subtotalSpan));
+                
+                tbody.append(row);
+            });
+            
+            console.log('Detalles renderizados. Filas en tbody:', tbody.find('tr').length);
+        }
+
+        // Función para actualizar un campo de detalle en el modal de emitir
+        function updateEmitDetailField(detailId, field, value) {
+            const detail = emitOrderDetails.find(d => d.id === detailId);
+            if (!detail) return;
+
+            if (field === 'quantity' || field === 'price_unit') {
+                detail[field] = parseFloat(value) || 0;
+                // Recalcular subtotal
+                detail.subtotal = detail.quantity * detail.price_unit;
+                // Actualizar subtotal en la tabla
+                $(`.emit-detail-subtotal[data-detail-id="${detailId}"]`).text(detail.subtotal.toFixed(2));
+            } else if (field === 'product_name') {
+                // Remover "ELABORACION" si existe al inicio para guardar solo el texto del usuario
+                let cleanValue = value.trim().replace(/^ELABORACION\s*/i, '');
+                // Guardar el valor sin "ELABORACION"
+                detail[field] = cleanValue;
+                // Actualizar el campo visual asegurando que siempre tenga "ELABORACION" al inicio
+                const displayValue = cleanValue ? `ELABORACION ${cleanValue}` : 'ELABORACION';
+                $(`.emit-detail-description[data-detail-id="${detailId}"]`).val(displayValue);
+            }
+
+            // Recalcular totales
+            calculateEmitOrderTotals();
+        }
+
+        // Función para asegurar que "ELABORACION" esté al inicio cuando se pierde el foco
+        $(document).on('blur', '.emit-detail-description', function() {
+            const detailId = $(this).data('detail-id');
+            let currentValue = $(this).val().trim();
+            
+            // Si no empieza con "ELABORACION", añadirlo
+            if (!currentValue.toUpperCase().startsWith('ELABORACION')) {
+                currentValue = 'ELABORACION ' + currentValue;
+                $(this).val(currentValue);
+                // Actualizar el detalle
+                updateEmitDetailField(detailId, 'product_name', currentValue);
+            }
+        });
+
+        // Función para calcular totales en el modal de emitir comprobante
+        function calculateEmitOrderTotals() {
+            // Calcular total desde los detalles editables
+            let totalAmount = 0;
+            if (emitOrderDetails && emitOrderDetails.length > 0) {
+                totalAmount = emitOrderDetails.reduce((sum, detail) => sum + detail.subtotal, 0);
+            } else {
+                // Si no hay detalles, usar el total de la orden original
+                totalAmount = parseFloat($('#emit_order_total').val()) || 0;
+            }
+
+            const subtotal = totalAmount / 1.18; // Calcular subtotal sin IGV
+            const igv = totalAmount - subtotal; // Calcular IGV
+            
+            // Calcular detracción (12% del total si supera S/ 700.00)
+            let detraction = 0;
+            if (totalAmount > 700) {
+                detraction = totalAmount * 0.12;
+            }
+            
+            const totalWithDetraction = totalAmount + detraction;
+
+            // Mostrar totales en el modal
+            $('#emit_subtotal').val(subtotal.toFixed(2));
+            $('#emit_igv').val(igv.toFixed(2));
+            $('#emit_detraction').val(detraction.toFixed(2));
+            $('#emit_total').val(totalWithDetraction.toFixed(2));
+            
+            // Actualizar ayuda de detracción
+            if (detraction > 0) {
+                $('#emit_detraction_help').html('<i class="fas fa-info-circle text-info mr-1"></i>Detracción aplicada (12% del total)');
+            } else {
+                $('#emit_detraction_help').html('Se aplica automáticamente si el total supera S/ 700.00');
+            }
+        }
+
+        // Función para resetear campos del comprobante electrónico en modal de emitir
+        function resetEmitDocumentFields() {
+            $('#emit_document_type').val('');
+            $('#emit_document_number').val('');
+            $('#emit_client_full_name').val('');
+            $('#emit_client_address').val('');
+            $('#emit_bill_client_id').val('');
+            emitOrderDetails = [];
+            $('#emit_order_details_body').empty();
+
+            // Limpiar validaciones
+            $('#emit_document_type').removeClass('is-invalid');
+            $('#emit_document_number').removeClass('is-invalid');
+            $('#emit_client_full_name').removeClass('is-invalid');
+            
+            // Ocultar panel de comprobante emitido
+            $('#emit_bill_info_panel').hide();
+            $('#emit_download_bill_btn').hide();
+            $('#emit_confirm_btn').show();
+            
+            // Habilitar campos
+            $('#emit_document_type').prop('disabled', false);
+            $('#emit_document_number').prop('disabled', false);
+            $('#emit_client_full_name').prop('disabled', false);
+            $('#emit_client_address').prop('disabled', false);
+            $('button[onclick="searchClientInEmitDocument()"]').prop('disabled', false);
+        }
+
+        // Función para buscar cliente en el modal de emitir comprobante
+        function searchClientInEmitDocument() {
+            const documentType = $('#emit_document_type').val();
+            const documentNumber = $('#emit_document_number').val();
+
+            if (!documentType || !documentNumber) {
+                toastr.error('Debe seleccionar el tipo de comprobante y escribir el número de documento', 'Error de validación');
+                return;
+            }
+
+            // Determinar el tipo de documento según el tipo de comprobante
+            let apiDocumentType = '';
+            if (documentType === 'B') {
+                // Para boleta, usar DNI (tipo 01)
+                apiDocumentType = '01';
+            } else if (documentType === 'F') {
+                // Para factura, usar RUC (tipo 06)
+                apiDocumentType = '06';
+            }
+
+            // Validar formato del documento antes de consultar
+            if (apiDocumentType === '01' && documentNumber.length !== 8) {
+                toastr.error('El DNI debe tener exactamente 8 dígitos', 'Error de validación');
+                return;
+            } else if (apiDocumentType === '06' && documentNumber.length !== 11) {
+                toastr.error('El RUC debe tener exactamente 11 dígitos', 'Error de validación');
+                return;
+            }
+
+            // Mostrar loading
+            const numberField = $('#emit_document_number');
+            const searchButton = numberField.next('.input-group-append').find('button');
+            const originalButtonContent = searchButton.html();
+
+            numberField.prop('disabled', true);
+            searchButton.prop('disabled', true);
+            searchButton.html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '{% url "apps.sales:get_api_person" %}',
+                type: 'GET',
+                data: {
+                    'nro_document': documentNumber,
+                    'type': apiDocumentType
+                },
+                success: function (response) {
+                    // Restaurar botón
+                    numberField.prop('disabled', false);
+                    searchButton.prop('disabled', false);
+                    searchButton.html(originalButtonContent);
+
+                    if (response.pk) {
+                        // Cliente encontrado (en BD o API)
+                        if (response.message === 'Cliente encontrado en BD') {
+                            // Cliente ya existe en la base de datos
+                            toastr.info('Cliente encontrado en la base de datos', 'Cliente existente');
+                        } else {
+                            // Cliente encontrado en API externa
+                            toastr.success('Cliente encontrado y registrado automáticamente', '¡Cliente encontrado!');
+                        }
+                        
+                        // Guardar el ID del cliente en el campo oculto
+                        $('#emit_bill_client_id').val(response.pk);
+                        
+                        // Llenar campos con la información obtenida
+                        // Verificar diferentes posibles nombres de campos en la respuesta
+                        const clientName = response.names || response.full_name || response.name || '';
+                        const clientAddress = response.address || response.direccion || '';
+                        
+                        $('#emit_client_full_name').val(clientName);
+                        $('#emit_client_address').val(clientAddress);
+
+                        // Marcar como válido
+                        numberField.addClass('is-valid');
+                        numberField.removeClass('is-invalid');
+                    } else {
+                        // No se encontró el cliente
+                        toastr.warning('Cliente no encontrado. Complete los datos manualmente.', 'Cliente no encontrado');
+
+                        // Marcar como inválido
+                        numberField.addClass('is-invalid');
+                        numberField.removeClass('is-valid');
+
+                        // Limpiar campos
+                        $('#emit_bill_client_id').val('');
+                        $('#emit_client_full_name').val('');
+                        $('#emit_client_address').val('');
+                    }
+                },
+                error: function (xhr) {
+                    // Restaurar botón
+                    numberField.prop('disabled', false);
+                    searchButton.prop('disabled', false);
+                    searchButton.html(originalButtonContent);
+
+                    let errorMessage = 'Error al consultar el documento';
+
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error interno del servidor';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Servicio no disponible';
+                    }
+
+                    toastr.error(errorMessage, 'Error en la consulta');
+
+                    // Marcar como inválido
+                    numberField.addClass('is-invalid');
+                    numberField.removeClass('is-valid');
+                }
+            });
+        }
+
+        // Función para confirmar y emitir comprobante
+        function confirmEmitDocument() {
+            // Validar campos obligatorios
+            const documentType = $('#emit_document_type').val();
+            const orderId = $('#emit_order_id').val();
+
+            if (!orderId) {
+                toastr.error('Error: No se encontró el ID de la orden', 'Error');
+                return;
+            }
+
+            if (!documentType) {
+                toastr.error('Debe seleccionar el tipo de comprobante', 'Error de validación');
+                $('#emit_document_type').focus();
+                $('#emit_document_type').addClass('is-invalid');
+                return;
+            }
+
+            // Mostrar loading
+            const confirmButton = $('#emitDocumentModal .btn-primary');
+            const originalText = confirmButton.html();
+            confirmButton.html('<i class="fas fa-spinner fa-spin mr-1"></i>Emitiendo...');
+            confirmButton.prop('disabled', true);
+
+            // Obtener el ID del cliente del comprobante (si se buscó)
+            const billClientId = $('#emit_bill_client_id').val();
+            
+            // Enviar solicitud para emitir comprobante
+            $.ajax({
+                url: '{% url "apps.sales:emit_electronic_document" %}',
+                type: 'POST',
+                data: {
+                    'order_id': orderId,
+                    'document_type': documentType,
+                    'bill_client_id': billClientId || ''
+                },
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message, '¡Comprobante Emitido!');
+                        
+                        // Descargar automáticamente el PDF del comprobante
+                        setTimeout(() => {
+                            downloadBillPDF(orderId);
+                        }, 500);
+                        
+                        $('#emitDocumentModal').modal('hide');
+                        
+                        // Recargar órdenes para actualizar la vista
+                        loadOrders();
+                    } else {
+                        toastr.error(response.message, 'Error');
+                    }
+                },
+                error: function (xhr) {
+                    let errorMessage = 'Error al emitir el comprobante';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage, 'Error');
+                },
+                complete: function () {
+                    // Restaurar botón
+                    confirmButton.html(originalText);
+                    confirmButton.prop('disabled', false);
                 }
             });
         }
@@ -5143,38 +5945,159 @@
 
         // Función para calcular totales de la orden
         function calculateOrderTotals(total) {
-            const totalAmount = parseFloat(total) || 0;
+            // Usar el total original de la orden
+            let totalAmount = parseFloat(total) || parseFloat($('#complete_order_total').val()) || 0;
+            
             const subtotal = totalAmount / 1.18; // Calcular subtotal sin IGV
             const igv = totalAmount - subtotal; // Calcular IGV
+            
+            // Calcular detracción (12% del total si supera S/ 700.00)
+            let detraction = 0;
+            if (totalAmount > 700) {
+                detraction = totalAmount * 0.12;
+            }
 
             // Mostrar totales en el modal
             $('#complete_subtotal').val(subtotal.toFixed(2));
             $('#complete_igv').val(igv.toFixed(2));
+            $('#complete_detraction').val(detraction.toFixed(2));
             $('#complete_total').val(totalAmount.toFixed(2));
-        }
-
-        // Función para resetear campos del comprobante electrónico
-        function resetElectronicDocumentFields() {
-            $('#emit_electronic_document').prop('checked', false);
-            $('#document_type').val('');
-            $('#document_number').val('');
-            $('#client_full_name').val('');
-            $('#client_address').val('');
-            $('#electronic-document-panel').hide();
-
-            // Limpiar validaciones
-            $('#document_type').removeClass('is-invalid');
-            $('#document_number').removeClass('is-invalid');
-            $('#client_full_name').removeClass('is-invalid');
-        }
-
-        // Función para validar campos del comprobante electrónico
-        function validateElectronicDocument() {
-            const emitDocument = $('#emit_electronic_document').is(':checked');
-
-            if (!emitDocument) {
-                return true; // No es obligatorio si no se marca el checkbox
+            
+            // Actualizar ayuda de detracción
+            if (detraction > 0) {
+                $('#detraction_help').html('<i class="fas fa-info-circle text-info mr-1"></i>Detracción aplicada (12% del total)');
+            } else {
+                $('#detraction_help').html('Se aplica automáticamente si el total supera S/ 700.00');
             }
+        }
+
+        // Función para renderizar detalles en el modal de emitir comprobante (mantener para el modal de emitir)
+        function renderCompleteOrderDetails() {
+            // Esta función ya no se usa en el modal de completar, pero se mantiene por compatibilidad
+            // Los detalles ahora se manejan en el modal de emitir comprobante
+            return;
+        }
+        
+        // Función auxiliar para renderizar detalles (si se necesita en el futuro)
+        function renderOrderDetailsAux(details, tbodyId) {
+            const tbody = $(tbodyId);
+            
+            if (tbody.length === 0) {
+                console.error(`No se encontró el elemento ${tbodyId}`);
+                return;
+            }
+            
+            tbody.empty();
+
+            if (!details || details.length === 0) {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted">No hay detalles</td></tr>');
+                return;
+            }
+
+            details.forEach(function(detail, index) {
+                // Añadir "ELABORACION" al inicio de la descripción si no lo tiene
+                let description = detail.product_name || '';
+                // Remover "ELABORACION" si ya existe para evitar duplicados
+                description = description.trim().replace(/^ELABORACION\s*/i, '');
+                // Añadir "ELABORACION" al inicio
+                description = description ? `ELABORACION ${description}` : 'ELABORACION';
+                
+                // Crear la fila usando jQuery
+                const row = $('<tr>');
+                
+                // Columna número
+                row.append($('<td>').addClass('text-center').attr('style', 'padding: 0.3rem;').text(index + 1));
+                
+                // Columna descripción
+                const descInput = $('<input>')
+                    .attr('type', 'text')
+                    .addClass('form-control form-control-sm complete-detail-description')
+                    .val(description)
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateCompleteDetailField(${detail.id}, 'product_name', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(descInput));
+                
+                // Columna cantidad
+                const qtyInput = $('<input>')
+                    .attr('type', 'number')
+                    .addClass('form-control form-control-sm text-right complete-detail-quantity')
+                    .val(detail.quantity.toFixed(2))
+                    .attr('step', '0.01')
+                    .attr('min', '0')
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateCompleteDetailField(${detail.id}, 'quantity', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(qtyInput));
+                
+                // Columna precio
+                const priceInput = $('<input>')
+                    .attr('type', 'number')
+                    .addClass('form-control form-control-sm text-right complete-detail-price')
+                    .val(detail.price_unit.toFixed(2))
+                    .attr('step', '0.01')
+                    .attr('min', '0')
+                    .attr('data-detail-id', detail.id)
+                    .attr('onchange', `updateCompleteDetailField(${detail.id}, 'price_unit', this.value)`);
+                row.append($('<td>').attr('style', 'padding: 0.3rem;').append(priceInput));
+                
+                // Columna subtotal
+                const subtotalSpan = $('<span>')
+                    .addClass('complete-detail-subtotal')
+                    .attr('data-detail-id', detail.id)
+                    .text(detail.subtotal.toFixed(2));
+                row.append($('<td>').addClass('text-right font-weight-bold').attr('style', 'padding: 0.3rem;').html('S/ ').append(subtotalSpan));
+                
+                tbody.append(row);
+            });
+        }
+
+        // Función para actualizar un campo de detalle en el modal de completar orden
+        function updateCompleteDetailField(detailId, field, value) {
+            const detail = completeOrderDetails.find(d => d.id === detailId);
+            if (!detail) return;
+
+            if (field === 'quantity' || field === 'price_unit') {
+                detail[field] = parseFloat(value) || 0;
+                // Recalcular subtotal
+                detail.subtotal = detail.quantity * detail.price_unit;
+                // Actualizar subtotal en la tabla
+                $(`.complete-detail-subtotal[data-detail-id="${detailId}"]`).text(detail.subtotal.toFixed(2));
+            } else if (field === 'product_name') {
+                // Remover "ELABORACION" si existe al inicio para guardar solo el texto del usuario
+                let cleanValue = value.trim().replace(/^ELABORACION\s*/i, '');
+                // Guardar el valor sin "ELABORACION"
+                detail[field] = cleanValue;
+                // Actualizar el campo visual asegurando que siempre tenga "ELABORACION" al inicio
+                const displayValue = cleanValue ? `ELABORACION ${cleanValue}` : 'ELABORACION';
+                $(`.complete-detail-description[data-detail-id="${detailId}"]`).val(displayValue);
+            }
+
+            // Recalcular totales
+            calculateOrderTotals();
+        }
+
+        // Función para asegurar que "ELABORACION" esté al inicio cuando se pierde el foco en completar orden
+        $(document).on('blur', '.complete-detail-description', function() {
+            const detailId = $(this).data('detail-id');
+            let currentValue = $(this).val().trim();
+            
+            // Si no empieza con "ELABORACION", añadirlo
+            if (!currentValue.toUpperCase().startsWith('ELABORACION')) {
+                currentValue = 'ELABORACION ' + currentValue;
+                $(this).val(currentValue);
+                // Actualizar el detalle
+                updateCompleteDetailField(detailId, 'product_name', currentValue);
+            }
+        });
+
+        // Función para resetear campos del modal de completar orden
+        function resetCompleteOrderFields() {
+            $('#complete_detraction').val('0.00');
+            $('#detraction_help').html('Se aplica automáticamente si el total supera S/ 700.00');
+        }
+
+        // Función para validar campos del modal de completar orden (si se necesita en el futuro)
+        function validateCompleteOrder() {
+            return true;
 
             const documentType = $('#document_type').val();
             const documentNumber = $('#document_number').val();
@@ -5338,12 +6261,6 @@
                 return;
             }
 
-            // Validar campos del comprobante electrónico si está marcado
-            if (!validateElectronicDocument()) {
-                toastr.error('Por favor complete todos los campos del comprobante electrónico', 'Error');
-                return;
-            }
-
             const totalPayments = completePayments.reduce((sum, payment) => sum + payment.amount, 0);
             const balance = parseFloat($('#complete_order_balance').val()) || 0;
 
@@ -5360,18 +6277,6 @@
             confirmButton.html('<i class="fas fa-spinner fa-spin mr-1"></i>Procesando...');
             confirmButton.prop('disabled', true);
 
-            // Preparar datos del comprobante electrónico si está marcado
-            const emitDocument = $('#emit_electronic_document').is(':checked');
-            const documentData = {};
-
-            if (emitDocument) {
-                documentData.emit_document = true;
-                documentData.document_type = $('#document_type').val();
-                documentData.document_number = $('#document_number').val();
-                documentData.client_full_name = $('#client_full_name').val();
-                documentData.client_address = $('#client_address').val();
-            }
-
             // Preparar pagos múltiples como JSON
             const paymentsJson = JSON.stringify(completePayments);
 
@@ -5383,22 +6288,14 @@
                     'payment_date': paymentDate,
                     'completed_by': completedBy,
                     'multiple_payments': true,
-                    'payments': paymentsJson,
-                    ...documentData
+                    'payments': paymentsJson
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 success: function (response) {
                     if (response.success) {
-                        let successMessage = response.message;
-
-                        // Agregar información del comprobante si se generó
-                        if (emitDocument && response.document_info) {
-                            successMessage += `\n\nComprobante electrónico generado: ${response.document_info}`;
-                        }
-
-                        toastr.success(successMessage, '¡Orden Completada!');
+                        toastr.success(response.message, '¡Orden Completada!');
                         $('#completeOrderModal').modal('hide');
                         loadOrders();
                     } else {
@@ -5555,10 +6452,14 @@
                             // Cliente encontrado en API externa
                             toastr.success('Cliente encontrado y registrado automáticamente', '¡Cliente encontrado!');
                         }
-
+                        
                         // Llenar campos con la información obtenida
-                        $('#client_full_name').val(response.names || '');
-                        $('#client_address').val(response.address || '');
+                        // Verificar diferentes posibles nombres de campos en la respuesta
+                        const clientName = response.names || response.full_name || response.name || '';
+                        const clientAddress = response.address || response.direccion || '';
+                        
+                        $('#client_full_name').val(clientName);
+                        $('#client_bill_address').val(clientAddress);
 
                         // Marcar como válido
                         numberField.addClass('is-valid');
@@ -5573,7 +6474,7 @@
 
                         // Limpiar campos
                         $('#client_full_name').val('');
-                        $('#client_address').val('');
+                        $('#client_bill_address').val('');
                     }
                 },
                 error: function (xhr) {
@@ -5600,7 +6501,7 @@
 
                     // Limpiar campos
                     $('#client_full_name').val('');
-                    $('#client_address').val('');
+                    $('#client_bill_address').val('');
                 }
             });
         }

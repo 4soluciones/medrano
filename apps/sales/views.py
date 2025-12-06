@@ -1024,6 +1024,14 @@ def order_list(request):
                     # Información de entrega
                     'delivered_by': order.delivered_by.first_name if order.delivered_by else None,
                     'delivered_at': order.delivered_at,
+                    # Información de facturación
+                    'bill_serial': order.bill_serial,
+                    'bill_number': order.bill_number,
+                    'bill_type': order.bill_type,
+                    'bill_date': order.bill_date,
+                    'bill_qr': order.bill_qr,
+                    'bill_enlace_pdf': order.bill_enlace_pdf,
+                    'has_bill': bool(order.bill_serial and order.bill_number),
                 }
                 for detail in order.orderdetail_set.all():
                     product_id = ''
@@ -2371,6 +2379,130 @@ def weekly_orders_chart(request):
 # VISTAS PARA MANEJO DE ESTADOS DE ÓRDENES CON CASHFLOW
 # =============================================================================
 
+@csrf_exempt
+def emit_electronic_document(request):
+    """Vista para emitir comprobante electrónico (Factura o Boleta)"""
+    if request.method == 'POST':
+        try:
+            order_id = request.POST.get('order_id')
+            document_type = request.POST.get('document_type', '')
+            
+            if not order_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'ID de orden no proporcionado'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            if not document_type:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe seleccionar el tipo de comprobante (Factura o Boleta)'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener la orden
+            order = Order.objects.select_related('client', 'subsidiary', 'bill_client').get(id=int(order_id))
+            
+            # Verificar que la orden esté completada
+            if order.status != 'C':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Solo se puede emitir comprobante para órdenes completadas'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Verificar que la orden no esté anulada
+            if order.status == 'A':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede emitir comprobante para una orden anulada'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Obtener el ID del cliente del comprobante (si se proporcionó)
+            bill_client_id = request.POST.get('bill_client_id', '')
+            if bill_client_id:
+                try:
+                    bill_client = Person.objects.get(id=int(bill_client_id))
+                    # Guardar el cliente del comprobante en la orden
+                    order.bill_client = bill_client
+                    order.save()
+                except Person.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Cliente del comprobante no encontrado'
+                    }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Importar las funciones de emisión
+            from apps.accounting.api_FACT import send_bill_4_fact, send_receipt_4_fact
+            from datetime import datetime
+            
+            # Determinar qué función llamar según el tipo de documento
+            if document_type == 'F':  # Factura
+                result = send_bill_4_fact(order_id)
+                bill_type = '1'
+                doc_type_name = 'Factura'
+            elif document_type == 'B':  # Boleta
+                result = send_receipt_4_fact(order_id)
+                bill_type = '2'
+                doc_type_name = 'Boleta'
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Tipo de documento no válido. Debe ser "F" (Factura) o "B" (Boleta)'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+            # Si la emisión fue exitosa, guardar los datos en la orden
+            if result.get('success'):
+                order.bill_serial = result.get('serie', '')
+                order.bill_type = bill_type
+                order.bill_number = result.get('numero', 0)
+                order.bill_date = datetime.now()
+                
+                # Construir enlace del PDF usando operationId
+                operation_id = result.get('operationId', '')
+                if operation_id:
+                    if document_type == 'F':
+                        # Para factura
+                        order.bill_enlace_pdf = f'https://ng.tuf4ctur4.net.pe/operations/print_invoice/{operation_id}/'
+                        # order.bill_enlace_pdf = f'http://192.168.1.80:9050/operations/print_invoice/{operation_id}/'
+                    elif document_type == 'B':
+                        # Para boleta
+                        order.bill_enlace_pdf = f'https://ng.tuf4ctur4.net.pe/operations/print_receipt/{operation_id}/'
+                        # order.bill_enlace_pdf = f'http://192.168.1.80:9050/operations/print_receipt/{operation_id}/'
+                
+                # El QR generalmente se genera en el PDF, pero si viene en la respuesta se guarda
+                order.bill_qr = result.get('qr', '')
+                order.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{doc_type_name} electrónica emitida correctamente: {result.get("serie", "")}-{result.get("numero", "")}',
+                    'order_id': order_id,
+                    'bill_serial': result.get('serie', ''),
+                    'bill_number': result.get('numero', 0),
+                    'bill_type': bill_type,
+                    'bill_enlace_pdf': order.bill_enlace_pdf
+                }, status=HTTPStatus.OK)
+            else:
+                # Si hay error, retornar el mensaje de error
+                error_msg = result.get('error') or result.get('message', 'Error desconocido al emitir comprobante')
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Error al emitir comprobante: {error_msg}'
+                }, status=HTTPStatus.BAD_REQUEST)
+            
+        except Order.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Orden no encontrada'
+            }, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error al emitir comprobante: {str(e)}'
+            }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return JsonResponse({'message': 'Error de petición.'}, status=HTTPStatus.BAD_REQUEST)
+
+
 def get_order_for_completion(request):
     """Vista para obtener información de una orden para completarla"""
     if request.method == 'GET':
@@ -2383,29 +2515,60 @@ def get_order_for_completion(request):
                     'message': 'ID de orden requerido'
                 }, status=HTTPStatus.BAD_REQUEST)
             
-            # Obtener la orden con información del cliente
-            order = Order.objects.select_related('client', 'subsidiary').get(id=int(order_id))
+            # Obtener la orden con información del cliente, bill_client y detalles
+            order = Order.objects.select_related('client', 'bill_client', 'subsidiary').prefetch_related('orderdetail_set').get(id=int(order_id))
             
             # Calcular el saldo faltante
-            balance = float(order.total - order.cash_advance)
+            balance = decimal.Decimal(order.total - order.cash_advance)
+            
+            # Obtener los detalles de la orden
+            details = []
+            for detail in order.orderdetail_set.all():
+                details.append({
+                    'id': detail.id,
+                    'product_name': detail.product_name or '',
+                    'quantity': decimal.Decimal(detail.quantity),
+                    'price_unit': decimal.Decimal(detail.price_unit),
+                    'subtotal': decimal.Decimal(detail.quantity * detail.price_unit),
+                    'observation': detail.observation or ''
+                })
+            
+            # Usar bill_client si existe, sino usar client
+            if order.bill_client:
+                client_obj = order.bill_client
+            elif order.client:
+                client_obj = order.client
+            else:
+                client_obj = None
             
             order_data = {
                 'id': order.id,
                 'serial': order.serial,
                 'correlative': order.correlative,
                 'client': {
-                    'id': order.client.id,
-                    'full_name': order.client.full_name,
-                    'document': order.client.document,
-                    'number': order.client.number
+                    'id': client_obj.id if client_obj else None,
+                    'full_name': client_obj.full_name if client_obj else '',
+                    'document': client_obj.document if client_obj else '',
+                    'number': client_obj.number if client_obj else '',
+                    'address': client_obj.address if client_obj else ''
                 },
-                'total': float(order.total),
-                'cash_advance': float(order.cash_advance),
+                'total': decimal.Decimal(order.total),
+                'cash_advance': decimal.Decimal(order.cash_advance),
                 'balance': balance,
                 'subsidiary': {
                     'id': order.subsidiary.id,
                     'name': order.subsidiary.name
-                }
+                },
+                'details': details,
+                # Datos de facturación
+                'bill_serial': order.bill_serial,
+                'bill_number': order.bill_number,
+                'bill_type': order.bill_type,
+                'bill_date': order.bill_date.isoformat() if order.bill_date else None,
+                'bill_qr': order.bill_qr,
+                'bill_enlace_pdf': order.bill_enlace_pdf,
+                'has_bill': bool(order.bill_serial and order.bill_number),
+                'bill_client_id': order.bill_client.id if order.bill_client else None
             }
             
             return JsonResponse({

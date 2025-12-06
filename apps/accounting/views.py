@@ -875,8 +875,27 @@ def monthly_report(request):
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
+            # Subconsulta para calcular el total pagado por cada orden pendiente
+            payments_subquery = CashFlow.objects.filter(
+                order=OuterRef('pk'),
+                type='E'  # Solo entradas (pagos)
+            ).values('order').annotate(
+                total_paid=Sum('total')
+            ).values('total_paid')
+            
+            # Anotar las órdenes pendientes con el saldo pendiente
+            pending_orders_annotated = pending_orders.annotate(
+                total_paid=Coalesce(Subquery(payments_subquery), Decimal('0'), output_field=DecimalField()),
+                pending_balance=F('total') - Coalesce(Subquery(payments_subquery), Decimal('0'), output_field=DecimalField())
+            )
+            
+            # Calcular el total de saldos pendientes
+            pending_orders_balance_total = pending_orders_annotated.aggregate(
+                total=Sum('pending_balance')
+            )['total'] or Decimal('0')
+            
             # 3. Productos más solicitados (solo órdenes tipo 'O', no cotizaciones)
-            from django.db.models import Sum, Count
+            from django.db.models import Count
             top_products = OrderDetail.objects.filter(
                 order__register_date__gte=start_date,
                 order__register_date__lt=end_date,
@@ -898,13 +917,35 @@ def monthly_report(request):
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 5. Ingresos mensuales (CashFlow tipo 'E')
+            # 5. COBROS DEL MES (Todo el dinero que ENTRÓ a caja en el mes)
+            # Son los pagos registrados en CashFlow tipo 'E' durante el mes
             monthly_income = CashFlow.objects.filter(
                 transaction_date__gte=start_date,
                 transaction_date__lt=end_date,
                 type='E',
                 **cashflows_filter
-            ).select_related('cash', 'cash__subsidiary')
+            ).select_related('cash', 'cash__subsidiary', 'order')
+            
+            # 5.1. Separar cobros según el ORIGEN de la orden:
+            # 
+            # COBROS DE ÓRDENES DEL MES = Pagos recibidos de órdenes CREADAS en este mes
+            # Ejemplo: Orden creada el 5/Nov, pago recibido el 10/Nov -> cuenta aquí
+            income_current_month = monthly_income.filter(
+                order__register_date__gte=start_date,
+                order__register_date__lt=end_date
+            )
+            income_current_month_total = income_current_month.aggregate(Sum('total'))['total__sum'] or 0
+            
+            # COBROS DE ÓRDENES ANTERIORES = Pagos recibidos de órdenes CREADAS en meses anteriores
+            # Ejemplo: Orden creada el 15/Oct, pago del saldo recibido el 5/Nov -> cuenta aquí
+            income_previous_months = monthly_income.filter(
+                order__register_date__lt=start_date
+            )
+            income_previous_months_total = income_previous_months.aggregate(Sum('total'))['total__sum'] or 0
+            
+            # Ingresos sin orden asociada (aperturas de caja, otros ingresos)
+            income_no_order = monthly_income.filter(order__isnull=True)
+            income_no_order_total = income_no_order.aggregate(Sum('total'))['total__sum'] or 0
             
             # 6. Gastos por sucursal
             monthly_expenses = CashFlow.objects.filter(
@@ -922,12 +963,26 @@ def monthly_report(request):
                 'completed_orders_count': completed_orders.count(),
                 'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_orders_count': pending_orders.count(),
-                'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_orders_balance': float(pending_orders_balance_total),  # Saldo pendiente de cobro
                 'pending_delivery_count': pending_delivery.count(),
-                'monthly_income_total': monthly_income_total,
+                'income_current_month': float(income_current_month_total),  # Ingresos de órdenes del mes
+                'income_previous_months': float(income_previous_months_total),  # Ingresos de órdenes anteriores
+                'income_no_order': float(income_no_order_total),  # Otros ingresos sin orden
+                'monthly_income_total': monthly_income_total,  # Total de ingresos
                 'monthly_expenses_total': monthly_expenses_total,
-                'monthly_profit_total': monthly_income_total - monthly_expenses_total,  # Nueva métrica: diferencia ingresos - gastos
+                'monthly_profit_total': monthly_income_total - monthly_expenses_total,  # Diferencia ingresos - gastos
             }
+            
+            # Calcular saldos pendientes por sucursal para el gráfico
+            pending_orders_by_subsidiary_with_balance = list(
+                pending_orders_annotated.values('subsidiary__name')
+                .annotate(
+                    count=Count('id'), 
+                    total=Sum('total'),
+                    balance=Sum('pending_balance')
+                )
+                .order_by('-count')
+            )
             
             # Datos para gráficos
             chart_data = {
@@ -936,11 +991,7 @@ def monthly_report(request):
                     .annotate(count=Count('id'), total=Sum('total'))
                     .order_by('-count')
                 ),
-                'pending_orders_by_subsidiary': list(
-                    pending_orders.values('subsidiary__name')
-                    .annotate(count=Count('id'), total=Sum('total'))
-                    .order_by('-count')
-                ),
+                'pending_orders_by_subsidiary': pending_orders_by_subsidiary_with_balance,
                 'top_products': list(top_products),
                 'income_by_subsidiary': list(
                     monthly_income.values('cash__subsidiary__name')
@@ -977,6 +1028,7 @@ def monthly_report(request):
                 'success': False,
                 'message': f'Error al generar reporte mensual: {str(e)}'
             }, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
 
 @csrf_exempt
 def weekly_report(request):
@@ -1051,8 +1103,27 @@ def weekly_report(request):
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
+            # Subconsulta para calcular el total pagado por cada orden pendiente
+            payments_subquery = CashFlow.objects.filter(
+                order=OuterRef('pk'),
+                type='E'  # Solo entradas (pagos)
+            ).values('order').annotate(
+                total_paid=Sum('total')
+            ).values('total_paid')
+            
+            # Anotar las órdenes pendientes con el saldo pendiente
+            pending_orders_annotated = pending_orders.annotate(
+                total_paid=Coalesce(Subquery(payments_subquery), Decimal('0'), output_field=DecimalField()),
+                pending_balance=F('total') - Coalesce(Subquery(payments_subquery), Decimal('0'), output_field=DecimalField())
+            )
+            
+            # Calcular el total de saldos pendientes
+            pending_orders_balance_total = pending_orders_annotated.aggregate(
+                total=Sum('pending_balance')
+            )['total'] or Decimal('0')
+            
             # 3. Productos más solicitados (solo órdenes tipo 'O', no cotizaciones)
-            from django.db.models import Sum, Count
+            from django.db.models import Count
             top_products = OrderDetail.objects.filter(
                 order__register_date__gte=start_date,
                 order__register_date__lt=end_date,
@@ -1074,13 +1145,35 @@ def weekly_report(request):
                 **orders_filter
             ).select_related('subsidiary', 'client')
             
-            # 5. Ingresos semanales (CashFlow tipo 'E')
+            # 5. COBROS DE LA SEMANA (Todo el dinero que ENTRÓ a caja en la semana)
+            # Son los pagos registrados en CashFlow tipo 'E' durante la semana
             weekly_income = CashFlow.objects.filter(
                 transaction_date__gte=start_date,
                 transaction_date__lt=end_date,
                 type='E',
                 **cashflows_filter
-            ).select_related('cash', 'cash__subsidiary')
+            ).select_related('cash', 'cash__subsidiary', 'order')
+            
+            # 5.1. Separar cobros según el ORIGEN de la orden:
+            # 
+            # COBROS DE ÓRDENES DE LA SEMANA = Pagos recibidos de órdenes CREADAS en esta semana
+            # Ejemplo: Orden creada el Lunes, pago recibido el Miércoles -> cuenta aquí
+            income_current_week = weekly_income.filter(
+                order__register_date__gte=start_date,
+                order__register_date__lt=end_date
+            )
+            income_current_week_total = income_current_week.aggregate(Sum('total'))['total__sum'] or 0
+            
+            # COBROS DE ÓRDENES ANTERIORES = Pagos recibidos de órdenes CREADAS en semanas anteriores
+            # Ejemplo: Orden creada hace 2 semanas, pago del saldo recibido esta semana -> cuenta aquí
+            income_previous_weeks = weekly_income.filter(
+                order__register_date__lt=start_date
+            )
+            income_previous_weeks_total = income_previous_weeks.aggregate(Sum('total'))['total__sum'] or 0
+            
+            # Ingresos sin orden asociada (aperturas de caja, otros ingresos)
+            income_no_order = weekly_income.filter(order__isnull=True)
+            income_no_order_total = income_no_order.aggregate(Sum('total'))['total__sum'] or 0
             
             # 6. Gastos por sucursal
             weekly_expenses = CashFlow.objects.filter(
@@ -1098,12 +1191,26 @@ def weekly_report(request):
                 'completed_orders_count': completed_orders.count(),
                 'completed_orders_total': completed_orders.aggregate(Sum('total'))['total__sum'] or 0,
                 'pending_orders_count': pending_orders.count(),
-                'pending_orders_total': pending_orders.aggregate(Sum('total'))['total__sum'] or 0,
+                'pending_orders_balance': float(pending_orders_balance_total),  # Saldo pendiente de cobro
                 'pending_delivery_count': pending_delivery.count(),
-                'weekly_income_total': weekly_income_total,
+                'income_current_period': float(income_current_week_total),  # Ingresos de órdenes de la semana
+                'income_previous_periods': float(income_previous_weeks_total),  # Ingresos de órdenes anteriores
+                'income_no_order': float(income_no_order_total),  # Otros ingresos sin orden
+                'weekly_income_total': weekly_income_total,  # Total de ingresos
                 'weekly_expenses_total': weekly_expenses_total,
-                'weekly_profit_total': weekly_income_total - weekly_expenses_total,  # Nueva métrica: diferencia ingresos - gastos
+                'weekly_profit_total': weekly_income_total - weekly_expenses_total,  # Diferencia ingresos - gastos
             }
+            
+            # Calcular saldos pendientes por sucursal para el gráfico
+            pending_orders_by_subsidiary_with_balance = list(
+                pending_orders_annotated.values('subsidiary__name')
+                .annotate(
+                    count=Count('id'), 
+                    total=Sum('total'),
+                    balance=Sum('pending_balance')
+                )
+                .order_by('-count')
+            )
             
             # Datos para gráficos
             chart_data = {
@@ -1112,11 +1219,7 @@ def weekly_report(request):
                     .annotate(count=Count('id'), total=Sum('total'))
                     .order_by('-count')
                 ),
-                'pending_orders_by_subsidiary': list(
-                    pending_orders.values('subsidiary__name')
-                    .annotate(count=Count('id'), total=Sum('total'))
-                    .order_by('-count')
-                ),
+                'pending_orders_by_subsidiary': pending_orders_by_subsidiary_with_balance,
                 'top_products': list(top_products),
                 'income_by_subsidiary': list(
                     weekly_income.values('cash__subsidiary__name')

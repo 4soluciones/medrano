@@ -84,7 +84,7 @@
 
     <!-- Estadísticas Principales -->
     <div class="row mb-4" id="stats-section" style="display: none;">
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-4 col-md-6 mb-3">
             <div class="card bg-gradient-success text-white shadow-lg">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -103,7 +103,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-4 col-md-6 mb-3">
             <div class="card bg-gradient-warning text-white shadow-lg">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -111,8 +111,8 @@
                             <h3 class="mb-0" id="pending-orders-count">0</h3>
                             <p class="mb-0">Órdenes Pendientes</p>
                             <small class="opacity-75">
-                                <i class="fas fa-clock mr-1"></i>
-                                <span id="pending-orders-total">S/ 0.00</span>
+                                <i class="fas fa-money-bill-wave mr-1"></i>
+                                Saldo: <span id="pending-orders-balance">S/ 0.00</span>
                             </small>
                         </div>
                         <div class="align-self-center">
@@ -122,26 +122,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-gradient-primary text-white shadow-lg">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="mb-0" id="weekly-income">S/ 0.00</h3>
-                            <p class="mb-0">Ingresos Totales</p>
-                            <small class="opacity-75">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                Entradas de caja
-                            </small>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-lg-4 col-md-6 mb-3">
             <div class="card bg-gradient-danger text-white shadow-lg">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -155,6 +136,73 @@
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-receipt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COBROS DE LA SEMANA (Dinero que entró a caja) -->
+    <div class="row mb-4" id="income-section" style="display: none;">
+        <div class="col-12 mb-2">
+            <h5 class="text-muted">
+                <i class="fas fa-cash-register mr-2"></i>
+                Cobros de la Semana (Dinero que entró a caja)
+            </h5>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card bg-gradient-info text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="income-current-period">S/ 0.00</h3>
+                            <p class="mb-0">De Órdenes de la Semana</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-calendar-check mr-1"></i>
+                                Pagos de órdenes creadas esta semana
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hand-holding-usd fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card bg-gradient-secondary text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="income-previous-periods">S/ 0.00</h3>
+                            <p class="mb-0">De Órdenes Anteriores</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-history mr-1"></i>
+                                Pagos de órdenes de semanas pasadas
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-undo-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card bg-gradient-success text-white shadow-lg">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0" id="weekly-income">S/ 0.00</h3>
+                            <p class="mb-0">Total Cobrado</p>
+                            <small class="opacity-75">
+                                <i class="fas fa-plus-circle mr-1"></i>
+                                Todo lo que entró a caja
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -312,8 +360,8 @@
                                 <tr>
                                     <td><i class="fas fa-clock text-warning mr-2"></i>Órdenes Pendientes</td>
                                     <td class="text-center" id="summary-pending-count">0</td>
-                                    <td class="text-right" id="summary-pending-total">S/ 0.00</td>
-                                    <td class="text-center"><span class="badge badge-warning">Pendiente</span></td>
+                                    <td class="text-right font-weight-bold" id="summary-pending-balance">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-warning">Por Cobrar</span></td>
                                 </tr>
                                 <tr>
                                     <td><i class="fas fa-truck text-info mr-2"></i>Pendientes de Entrega</td>
@@ -321,11 +369,23 @@
                                     <td class="text-right">-</td>
                                     <td class="text-center"><span class="badge badge-info">En Proceso</span></td>
                                 </tr>
+                                <tr class="table-info">
+                                    <td><i class="fas fa-calendar-check text-info mr-2"></i>Cobros de Órdenes de la Semana</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right font-weight-bold" id="summary-income-current">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-info">Cobrado</span></td>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <td><i class="fas fa-history text-secondary mr-2"></i>Cobros de Órdenes Anteriores</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right font-weight-bold" id="summary-income-previous">S/ 0.00</td>
+                                    <td class="text-center"><span class="badge badge-secondary">Cobrado</span></td>
+                                </tr>
                                 <tr class="table-success">
-                                    <td><i class="fas fa-arrow-up text-success mr-2"></i>Ingresos Totales</td>
+                                    <td><i class="fas fa-cash-register text-success mr-2"></i>Total Cobrado en la Semana</td>
                                     <td class="text-center">-</td>
                                     <td class="text-right font-weight-bold" id="summary-income-total">S/ 0.00</td>
-                                    <td class="text-center"><span class="badge badge-success">Ingreso</span></td>
+                                    <td class="text-center"><span class="badge badge-success">Cobrado</span></td>
                                 </tr>
                                 <tr class="table-danger">
                                     <td><i class="fas fa-arrow-down text-danger mr-2"></i>Gastos Totales</td>
@@ -333,11 +393,11 @@
                                     <td class="text-right font-weight-bold" id="summary-expenses-total">S/ 0.00</td>
                                     <td class="text-center"><span class="badge badge-danger">Gasto</span></td>
                                 </tr>
-                                <tr class="table-info">
-                                    <td><i class="fas fa-balance-scale text-info mr-2"></i>Diferencia (Ingresos - Gastos)</td>
+                                <tr class="table-primary">
+                                    <td><i class="fas fa-balance-scale text-primary mr-2"></i>Diferencia (Ingresos - Gastos)</td>
                                     <td class="text-center">-</td>
                                     <td class="text-right font-weight-bold" id="summary-profit-total">S/ 0.00</td>
-                                    <td class="text-center"><span class="badge badge-info">Resultado</span></td>
+                                    <td class="text-center"><span class="badge badge-primary">Resultado</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -394,7 +454,7 @@ $(document).ready(function() {
     function generateReport() {
         // Mostrar loading
         $('#loading-section').show();
-        $('#stats-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').hide();
+        $('#stats-section, #income-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').hide();
 
         const formData = {
             'report_week': $('#report_week').val(),
@@ -417,7 +477,7 @@ $(document).ready(function() {
                     
                     // Mostrar secciones
                     $('#loading-section').hide();
-                    $('#stats-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').show();
+                    $('#stats-section, #income-section, #profit-section, #charts-section, #secondary-charts-section, #summary-section').show();
                 } else {
                     showError('Error: ' + response.message);
                     $('#loading-section').hide();
@@ -434,7 +494,9 @@ $(document).ready(function() {
         $('#completed-orders-count').text(stats.completed_orders_count);
         $('#completed-orders-total').text('S/ ' + parseFloat(stats.completed_orders_total).toFixed(2));
         $('#pending-orders-count').text(stats.pending_orders_count);
-        $('#pending-orders-total').text('S/ ' + parseFloat(stats.pending_orders_total).toFixed(2));
+        $('#pending-orders-balance').text('S/ ' + parseFloat(stats.pending_orders_balance || 0).toFixed(2));
+        $('#income-current-period').text('S/ ' + parseFloat(stats.income_current_period || 0).toFixed(2));
+        $('#income-previous-periods').text('S/ ' + parseFloat(stats.income_previous_periods || 0).toFixed(2));
         $('#weekly-income').text('S/ ' + parseFloat(stats.weekly_income_total).toFixed(2));
         $('#weekly-expenses').text('S/ ' + parseFloat(stats.weekly_expenses_total).toFixed(2));
         $('#weekly-profit').text('S/ ' + parseFloat(stats.weekly_profit_total).toFixed(2));
@@ -721,8 +783,10 @@ $(document).ready(function() {
         $('#summary-completed-count').text(stats.completed_orders_count);
         $('#summary-completed-total').text('S/ ' + parseFloat(stats.completed_orders_total).toFixed(2));
         $('#summary-pending-count').text(stats.pending_orders_count);
-        $('#summary-pending-total').text('S/ ' + parseFloat(stats.pending_orders_total).toFixed(2));
+        $('#summary-pending-balance').text('S/ ' + parseFloat(stats.pending_orders_balance || 0).toFixed(2));
         $('#summary-delivery-count').text(stats.pending_delivery_count);
+        $('#summary-income-current').text('S/ ' + parseFloat(stats.income_current_period || 0).toFixed(2));
+        $('#summary-income-previous').text('S/ ' + parseFloat(stats.income_previous_periods || 0).toFixed(2));
         $('#summary-income-total').text('S/ ' + parseFloat(stats.weekly_income_total).toFixed(2));
         $('#summary-expenses-total').text('S/ ' + parseFloat(stats.weekly_expenses_total).toFixed(2));
         $('#summary-profit-total').text('S/ ' + parseFloat(stats.weekly_profit_total).toFixed(2));

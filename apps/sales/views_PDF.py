@@ -867,6 +867,377 @@ def generate_ticket_pdf(order_id):
         return None
 
 
+def generate_bill_pdf(order_id):
+    """
+    Genera un PDF del comprobante electrónico (Factura o Boleta) emitido
+    Similar a generate_ticket_pdf pero muestra los datos de facturación
+    """
+    try:
+        from .models import Order, OrderDetail
+        from ..hrm.models import Subsidiary
+        from ..users.models import CustomUser
+
+        # Obtener la orden y sus detalles
+        order = Order.objects.select_related('client', 'bill_client', 'subsidiary', 'user').get(id=order_id)
+        order_details = OrderDetail.objects.filter(order=order)
+
+        # Verificar que la orden tenga comprobante emitido
+        if not order.bill_serial or not order.bill_number:
+            return None
+
+        # Usar bill_client si existe, sino usar client
+        if order.bill_client:
+            client_obj = order.bill_client
+        elif order.client:
+            client_obj = order.client
+        else:
+            return None
+
+        # Crear el buffer para el PDF
+        buffer = io.BytesIO()
+
+        # Configurar el documento con el ancho especificado para tickets
+        details = order.orderdetail_set.all()
+        _counter = details.count()
+        _wt = 2.93 * inch - 4 * 0.05 * inch
+
+        pz_thermal = (2.93 * inch, (11.6 * inch + (_counter * 0.13 * inch)))
+
+        ml = 0.01 * inch
+        mr = 0.05 * inch
+        ms = 0.039 * inch
+        mi = 0.039 * inch
+
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=pz_thermal,
+            rightMargin=mr,
+            leftMargin=ml,
+            topMargin=ms,
+            bottomMargin=mi,
+            title='COMPROBANTE ELECTRÓNICO'
+        )
+
+        # Lista de elementos del PDF
+        elements = []
+
+        # Reutilizar los mismos estilos del ticket
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Center_10',
+            alignment=TA_CENTER,
+            leading=11,
+            fontName='Helvetica-Bold',
+            fontSize=10
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Center_8',
+            alignment=TA_CENTER,
+            leading=8,
+            fontName='Helvetica-Bold',
+            fontSize=7
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Left_8',
+            alignment=TA_LEFT,
+            leading=9,
+            fontName='Helvetica-Bold',
+            fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Left_8',
+            alignment=TA_LEFT,
+            leading=9,
+            fontName='Helvetica',
+            fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Right_8',
+            alignment=TA_RIGHT,
+            leading=9,
+            fontName='Helvetica',
+            fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Right_8',
+            alignment=TA_RIGHT,
+            leading=9,
+            fontName='Helvetica-Bold',
+            fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='TicketHeader',
+            alignment=TA_CENTER,
+            leading=12,
+            fontName='Helvetica-Bold',
+            fontSize=12
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Center_8',
+            alignment=TA_CENTER,
+            leading=8,
+            fontName='Helvetica',
+            fontSize=8
+        ))
+
+        # Encabezado del comprobante
+        try:
+            if order.subsidiary and order.subsidiary.photo:
+                logo_path = order.subsidiary.photo.path
+            else:
+                logo_path = "static/assets/img/log_medrano_no_bg.png"
+            logo_img = Image(logo_path)
+            logo_img.drawHeight = 0.9 * inch
+            logo_img.drawWidth = 2.6 * inch
+            elements.append(logo_img)
+            elements.append(Spacer(3, 3))
+        except:
+            elements.append(Paragraph("MEDRANO", styles['TicketHeader']))
+            elements.append(Spacer(3, 3))
+
+        # Información de la empresa
+        if order.subsidiary.text_description:
+            elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=2, spaceAfter=2))
+            elements.append(Paragraph(order.subsidiary.text_description, styles['Helvetica_Bold_Center_8']))
+            elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=2, spaceAfter=2))
+
+        if order.subsidiary and order.subsidiary.name:
+            elements.append(Paragraph(order.subsidiary.representative_name.upper(), styles['Helvetica_Bold_Center_8']))
+        elements.append(Spacer(1, 1))
+
+        if order.subsidiary and order.subsidiary.ruc:
+            elements.append(Paragraph(f"RUC: {order.subsidiary.ruc}", styles['Helvetica_Bold_Center_8']))
+        elements.append(Spacer(1, 1))
+
+        if order.subsidiary and order.subsidiary.address:
+            elements.append(Paragraph(order.subsidiary.address.title(), styles['Helvetica_Bold_Center_8']))
+        elements.append(Spacer(2, 2))
+
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=3, spaceAfter=3))
+
+        # Título del comprobante según el tipo
+        if order.bill_type == '1':
+            doc_type = "FACTURA ELECTRÓNICA"
+        elif order.bill_type == '2':
+            doc_type = "BOLETA DE VENTA ELECTRÓNICA"
+        else:
+            doc_type = "COMPROBANTE ELECTRÓNICO"
+
+        elements.append(Paragraph(doc_type, styles['TicketHeader']))
+        elements.append(Spacer(3, 2))
+
+        # Número del comprobante (serie-número)
+        bill_number_str = str(order.bill_number).zfill(8) if order.bill_number else ""
+        elements.append(Paragraph(f"{order.bill_serial}-{bill_number_str}", styles['TicketHeader']))
+        elements.append(Spacer(0, 0))
+
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=5, spaceAfter=3))
+
+        # Información del cliente y fechas
+        client_data = []
+
+        # Fila del cliente
+        client_data.append([
+            Paragraph("CLIENTE", styles['Helvetica_Bold_Left_8']),
+            Paragraph(":", styles['Helvetica_Left_8']),
+            Paragraph(client_obj.full_name.upper() if client_obj else "SIN CLIENTE", styles['Helvetica_Left_8'])
+        ])
+
+        # Fila del documento (DNI/RUC)
+        if client_obj and client_obj.number and client_obj.number.strip():
+            if client_obj.document == '01':
+                client_data.append([
+                    Paragraph("DNI", styles['Helvetica_Bold_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(client_obj.number, styles['Helvetica_Left_8'])
+                ])
+            else:
+                client_data.append([
+                    Paragraph("RUC", styles['Helvetica_Bold_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(client_obj.number, styles['Helvetica_Left_8'])
+                ])
+
+        # Dirección del cliente
+        if client_obj and client_obj.address:
+            client_data.append([
+                Paragraph("DIRECCIÓN", styles['Helvetica_Bold_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(client_obj.address.upper(), styles['Helvetica_Left_8'])
+            ])
+
+        # Fecha de emisión del comprobante
+        if order.bill_date:
+            bill_date_local = utc_to_local(order.bill_date) if hasattr(order.bill_date, 'tzinfo') and order.bill_date.tzinfo else order.bill_date
+            client_data.append([
+                Paragraph("FECHA EMISIÓN", styles['Helvetica_Bold_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(bill_date_local.strftime('%d/%m/%Y'), styles['Helvetica_Left_8'])
+            ])
+            client_data.append([
+                Paragraph("HORA", styles['Helvetica_Bold_Left_8']),
+                Paragraph(":", styles['Helvetica_Left_8']),
+                Paragraph(bill_date_local.strftime('%I:%M %p'), styles['Helvetica_Left_8'])
+            ])
+
+        # Crear tabla de información del cliente
+        client_table = Table(client_data, colWidths=[_wt * 38 / 100, _wt * 3 / 100, _wt * 59 / 100])
+        client_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTNAME', (2, 0), (2, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+
+        elements.append(client_table)
+        elements.append(Spacer(1, 1))
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=1, spaceAfter=0))
+
+        # Encabezados de la tabla de productos
+        table_data = []
+        table_data_title = [[
+            Paragraph("Cant", styles['Helvetica_Bold_Left_8']),
+            Paragraph("Und", styles['Helvetica_Bold_Left_8']),
+            Paragraph("Descripción", styles['Helvetica_Bold_Left_8']),
+            Paragraph("P.U.", styles['Helvetica_Bold_Right_8']),
+            Paragraph("Total", styles['Helvetica_Bold_Right_8'])
+        ]]
+        m_left = 0.00 * inch
+        m_right = 0.15 * inch
+
+        _wt2 = 2.93 * inch - m_left - m_right
+        table_title = Table(table_data_title,
+                            colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100, _wt2 * 18 / 100,
+                                       _wt2 * 16 / 100])
+        table_title.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+            ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+            ('ALIGN', (4, 0), (4, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+        ]))
+        elements.append(table_title)
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=0, spaceAfter=1))
+
+        # Agregar productos/servicios
+        for detail in order_details:
+            unit_name = ""
+            if detail.product:
+                product_detail = detail.product.productdetail_set.last()
+                if product_detail and product_detail.unit:
+                    unit_name = product_detail.unit.name
+
+            table_data.append([
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Left_8']),
+                Paragraph(unit_name, styles['Helvetica_Left_8']),
+                Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
+                Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
+                Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_8'])
+            ])
+
+        table = Table(table_data,
+                      colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100, _wt2 * 18 / 100, _wt2 * 16 / 100])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+            ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+            ('ALIGN', (4, 0), (4, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+        ]))
+
+        elements.append(table)
+        elements.append(Spacer(2, -5))
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=6, spaceAfter=3))
+
+        # Resumen de totales
+        totales_data = []
+        totales_data.append([
+            Paragraph("SUBTOTAL:", styles['Helvetica_Bold_Right_8']),
+            Paragraph(f"S/ {order.subtotal:.2f}", styles['Helvetica_Right_8'])
+        ])
+        totales_data.append([
+            Paragraph("IGV (18%):", styles['Helvetica_Bold_Right_8']),
+            Paragraph(f"S/ {order.igv:.2f}", styles['Helvetica_Right_8'])
+        ])
+        totales_data.append([
+            Paragraph("TOTAL:", styles['Helvetica_Bold_Right_8']),
+            Paragraph(f"S/ {order.total:.2f}", styles['Helvetica_Bold_Right_8'])
+        ])
+
+        # Crear tabla de totales
+        totales_table = Table(totales_data, colWidths=[_wt * 0.70, _wt * 0.30])
+        totales_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('RIGHTPADDING', (1, 0), (-1, -1), 2),
+        ]))
+
+        elements.append(totales_table)
+        elements.append(Spacer(2, 1))
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=2, spaceAfter=2))
+
+        # Código QR si existe
+        if order.bill_qr:
+            try:
+                # Crear código QR
+                qr_code = qr.QrCodeWidget(order.bill_qr)
+                bounds = qr_code.getBounds()
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+                drawing = Drawing(1.0 * inch, 1.0 * inch, transform=[1.0 * inch / width, 0, 0, 1.0 * inch / height, 0, 0])
+                drawing.add(qr_code)
+                elements.append(drawing)
+                elements.append(Spacer(1, 1))
+            except:
+                pass
+
+        # Enlace del PDF de SUNAT
+        if order.bill_enlace_pdf:
+            elements.append(Paragraph("Ver comprobante en SUNAT:", styles['Helvetica_Bold_Center_8']))
+            elements.append(Paragraph(order.bill_enlace_pdf, styles['Helvetica_Center_8']))
+            elements.append(Spacer(1, 1))
+
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=3, spaceAfter=3))
+
+        # Pie de página
+        elements.append(Paragraph("Representación impresa del comprobante electrónico", styles['Helvetica_Bold_Center_8']))
+        elements.append(Paragraph("Válido para efectos tributarios", styles['Helvetica_Center_8']))
+
+        # Construir el PDF
+        doc.build(elements)
+
+        # Obtener el valor del buffer
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        return pdf
+
+    except Exception as e:
+        print(f"Error generando PDF de comprobante: {str(e)}")
+        return None
+
+
 def download_ticket_pdf(request, order_id):
     """
     Vista para descargar el PDF del ticket
@@ -893,6 +1264,49 @@ def download_ticket_pdf(request, order_id):
             return response
         else:
             return HttpResponse("Error generando el PDF", status=500)
+
+    except Order.DoesNotExist:
+        return HttpResponse("Orden no encontrada", status=404)
+    except Exception as e:
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
+
+def download_bill_pdf(request, order_id):
+    """
+    Vista para descargar el PDF del comprobante electrónico (Factura o Boleta)
+    """
+    try:
+        from .models import Order
+        from django.http import HttpResponse
+
+        # Verificar que la orden existe
+        order = Order.objects.get(id=order_id)
+
+        # Verificar que la orden tenga comprobante emitido
+        if not order.bill_serial or not order.bill_number:
+            return HttpResponse("La orden no tiene comprobante electrónico emitido", status=400)
+
+        # Generar el PDF
+        pdf_content = generate_bill_pdf(order_id)
+
+        if pdf_content:
+            # Crear respuesta HTTP con el PDF
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            
+            # Nombre del archivo según el tipo de comprobante
+            if order.bill_type == '1':
+                doc_type = 'Factura'
+            elif order.bill_type == '2':
+                doc_type = 'Boleta'
+            else:
+                doc_type = 'Comprobante'
+            
+            bill_number_str = str(order.bill_number).zfill(8) if order.bill_number else ""
+            filename = f"{doc_type}_{order.bill_serial}-{bill_number_str}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            return HttpResponse("Error generando el PDF del comprobante", status=500)
 
     except Order.DoesNotExist:
         return HttpResponse("Orden no encontrada", status=404)
