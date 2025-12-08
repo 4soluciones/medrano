@@ -191,7 +191,7 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
         }}
     }}
     """
-    print(graphql_query)
+    # print(graphql_query)
     
     token = tokens.get("10471315198", "ID no encontrado")
     
@@ -377,7 +377,7 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
         }}
         """
     
-    print(graphql_query)
+    # print(graphql_query)
     
     token = tokens.get("10471315198", "ID no encontrado")
     
