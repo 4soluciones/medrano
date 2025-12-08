@@ -55,6 +55,13 @@
                         <span class="badge badge-success">
                             {{ order.serial }}-{{ order.correlative|stringformat:"04d" }}
                         </span>
+                        {% if order.has_bill and order.bill_serial and order.bill_number %}
+                            <br>
+                            <span class="badge badge-info mt-1">
+                                <i class="fas fa-file-invoice mr-1"></i>
+                                {{ order.bill_serial }}-{{ order.bill_number|stringformat:"04d" }}
+                            </span>
+                        {% endif %}
                     </td>
                     <td>
                         <strong>{{ order.client }}</strong>
@@ -230,7 +237,7 @@
                                     <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
                                     <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>
                                     {% if order.status == 'C' %}
-                                    <option value="E">EMITIR COMPR.</option>
+                                    <option value="E">CPE (SUNAT)</option>
                                     {% endif %}
                                 </select>
                                 {% if order.status == 'C' and order.completed_by and order.completed_at %}

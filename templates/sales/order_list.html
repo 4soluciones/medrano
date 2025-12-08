@@ -5854,8 +5854,13 @@
                         
                         $('#emitDocumentModal').modal('hide');
                         
-                        // Recargar órdenes para actualizar la vista
-                        loadOrders();
+                        // Actualizar la fila específica con el comprobante emitido
+                        if (response.bill_serial && response.bill_number) {
+                            updateOrderRowWithBill(orderId, response.bill_serial, response.bill_number);
+                        } else {
+                            // Si no vienen los datos, recargar todas las órdenes
+                            loadOrders();
+                        }
                     } else {
                         toastr.error(response.message, 'Error');
                     }
@@ -5873,6 +5878,74 @@
                     confirmButton.prop('disabled', false);
                 }
             });
+        }
+
+        // Función para actualizar la fila de la orden con el comprobante emitido
+        function updateOrderRowWithBill(orderId, billSerial, billNumber) {
+            // Buscar la fila de la orden
+            const row = $(`tr[order="${orderId}"]`);
+            
+            if (row.length === 0) {
+                // Si no se encuentra la fila, recargar todas las órdenes
+                loadOrders();
+                return;
+            }
+            
+            // Formatear el número del comprobante con 4 dígitos
+            const formattedBillNumber = String(billNumber).padStart(4, '0');
+            
+            // Buscar la celda del comprobante (tercera columna, índice 2)
+            const comprobanteCell = row.find('td').eq(2);
+            
+            if (comprobanteCell.length > 0) {
+                // Obtener el contenido actual
+                let currentContent = comprobanteCell.html();
+                
+                // Verificar si ya tiene el comprobante mostrado
+                if (currentContent.indexOf('badge-info') === -1 && billSerial && billNumber) {
+                    // Agregar el comprobante debajo del badge de la orden
+                    const billHtml = `
+                        <br>
+                        <span class="badge badge-info mt-1 bill-badge">
+                            <i class="fas fa-file-invoice mr-1"></i>
+                            ${billSerial}-${formattedBillNumber}
+                        </span>
+                    `;
+                    comprobanteCell.append(billHtml);
+                } else if (billSerial && billNumber) {
+                    // Actualizar el comprobante existente
+                    const billBadge = comprobanteCell.find('.bill-badge');
+                    if (billBadge.length > 0) {
+                        billBadge.html(`<i class="fas fa-file-invoice mr-1"></i>${billSerial}-${formattedBillNumber}`);
+                    } else {
+                        // Si no existe, agregarlo
+                        const billHtml = `
+                            <br>
+                            <span class="badge badge-info mt-1 bill-badge">
+                                <i class="fas fa-file-invoice mr-1"></i>
+                                ${billSerial}-${formattedBillNumber}
+                            </span>
+                        `;
+                        comprobanteCell.append(billHtml);
+                    }
+                }
+                
+                // Actualizar el botón de descarga de comprobante si existe
+                const actionCell = row.find('td').last();
+                const billButton = actionCell.find('.btn-bill');
+                
+                if (billButton.length === 0 && billSerial && billNumber) {
+                    // Agregar el botón de descarga de comprobante
+                    const downloadButton = `
+                        <button type="button" class="btn btn-action btn-bill"
+                                onclick="downloadBillPDF(${orderId})"
+                                title="Descargar Comprobante Electrónico PDF">
+                            <i class="fas fa-file-invoice"></i>
+                        </button>
+                    `;
+                    actionCell.find('.action-buttons-container').append(downloadButton);
+                }
+            }
         }
 
         // Función para abrir modal de anular orden

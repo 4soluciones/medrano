@@ -2465,7 +2465,7 @@ def emit_electronic_document(request):
                         # order.bill_enlace_pdf = f'http://192.168.1.80:9050/operations/print_invoice/{operation_id}/'
                     elif document_type == 'B':
                         # Para boleta
-                        order.bill_enlace_pdf = f'https://ng.tuf4ctur4.net.pe/operations/print_receipt/{operation_id}/'
+                        order.bill_enlace_pdf = f'https://ng.tuf4ctur4.net.pe/operations/print_invoice/{operation_id}/'
                         # order.bill_enlace_pdf = f'http://192.168.1.80:9050/operations/print_receipt/{operation_id}/'
                 
                 # El QR generalmente se genera en el PDF, pero si viene en la respuesta se guarda
