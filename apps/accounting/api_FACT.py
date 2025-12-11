@@ -34,7 +34,7 @@ def get_new_correlative(serial, document_type):
         return 1
 
 
-def send_bill_4_fact(order_id):  # FACTURA 4 FACT
+def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -67,16 +67,16 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
     else:
         return {"error": "El cliente debe tener RUC para generar una factura"}
     
-    # Obtener fecha de registro
-    if order_obj.creation_date:
-        register_date = order_obj.creation_date
-    elif order_obj.register_date:
-        register_date = datetime.combine(order_obj.register_date, datetime.min.time())
+    # Obtener fecha de registro - siempre usar fecha actual del día
+    # Revisar bill_date si existe, sino usar fecha/hora actual
+    if order_obj.bill_date:
+        register_date = order_obj.bill_date
+        formatdate = register_date.strftime("%Y-%m-%d")
+        hour_date = register_date.strftime("%H:%M:%S")
     else:
-        register_date = datetime.now()
-    
-    formatdate = register_date.strftime("%Y-%m-%d")
-    hour_date = register_date.strftime("%H:%M:%S")
+        # Siempre usar la fecha actual del día
+        formatdate = date.today().strftime("%Y-%m-%d")
+        hour_date = datetime.now().strftime("%H:%M:%S")
     
     # Obtener total de detracción
     total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
@@ -119,8 +119,8 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
         igv_total = igv_total + decimal.Decimal(igv)
         _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
         
-        # Unidad siempre será NIU
-        _unit = 'NIU'
+        # Unidad según tipo de producto: NIU para bien, ZZ para servicio
+        _unit = 'ZZ' if product_type == 'servicio' else 'NIU'
         
         item = {
             "index": str(index),
@@ -230,7 +230,7 @@ def send_bill_4_fact(order_id):  # FACTURA 4 FACT
         return {"error": "La respuesta no es un JSON válido"}
 
 
-def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
+def send_receipt_4_fact(order_id, product_type='bien'):  # BOLETA 4 FACT
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -264,16 +264,16 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
         # Si no es DNI, intentar usar el número de documento que tenga
         client_document_number = client_obj.number or ""
     
-    # Obtener fecha de registro
-    if order_obj.creation_date:
-        register_date = utc_to_local(order_obj.creation_date)
-    elif order_obj.register_date:
-        register_date = datetime.combine(order_obj.register_date, datetime.min.time())
+    # Obtener fecha de registro - siempre usar fecha actual del día
+    # Revisar bill_date si existe, sino usar fecha/hora actual
+    if order_obj.bill_date:
+        register_date = utc_to_local(order_obj.bill_date) if hasattr(order_obj.bill_date, 'tzinfo') and order_obj.bill_date.tzinfo else order_obj.bill_date
+        formatdate = register_date.strftime("%Y-%m-%d")
+        hour_date = register_date.strftime("%H:%M:%S")
     else:
-        register_date = datetime.now()
-    
-    formatdate = register_date.strftime("%Y-%m-%d")
-    hour_date = register_date.strftime("%H:%M:%S")
+        # Siempre usar la fecha actual del día
+        formatdate = date.today().strftime("%Y-%m-%d")
+        hour_date = datetime.now().strftime("%H:%M:%S")
     
     # Obtener total de detracción
     total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
@@ -305,8 +305,8 @@ def send_receipt_4_fact(order_id):  # BOLETA 4 FACT
         igv_total = igv_total + decimal.Decimal(igv)
         _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
         
-        # Unidad siempre será NIU
-        _unit = 'NIU'
+        # Unidad según tipo de producto: NIU para bien, ZZ para servicio
+        _unit = 'ZZ' if product_type == 'servicio' else 'NIU'
         
         item = {
             "index": str(index),
@@ -499,8 +499,15 @@ def send_credit_note_fact(pk, details, motive):
     total_invoice = total_engraved * decimal.Decimal(1.1800)
     total_igv = total_invoice - total_engraved
     
-    formatdate = datetime.now().strftime("%Y-%m-%d")
-    hour_date = datetime.now().strftime("%H:%M:%S")
+    # Siempre usar la fecha actual del día
+    # Revisar bill_date si existe, sino usar fecha/hora actual
+    if order_obj.bill_date:
+        register_date = utc_to_local(order_obj.bill_date) if hasattr(order_obj.bill_date, 'tzinfo') and order_obj.bill_date.tzinfo else order_obj.bill_date
+        formatdate = register_date.strftime("%Y-%m-%d")
+        hour_date = register_date.strftime("%H:%M:%S")
+    else:
+        formatdate = date.today().strftime("%Y-%m-%d")
+        hour_date = datetime.now().strftime("%H:%M:%S")
     
     type_document_code = ''
     

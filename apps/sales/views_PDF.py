@@ -867,6 +867,19 @@ def generate_ticket_pdf(order_id):
         return None
 
 
+def qr_code(table):
+    # generate and rescale QR
+    qr_widget = qr.QrCodeWidget(table)
+    bounds = qr_widget.getBounds()
+    width = bounds[2] - bounds[0]
+    height = bounds[3] - bounds[1]
+    drawing = Drawing(
+        3.5 * cm, 3.5 * cm, transform=[3.5 * cm / width, 0, 0, 3.5 * cm / height, 0, 0])
+    drawing.add(qr_widget)
+
+    return drawing
+
+
 def generate_bill_pdf(order_id):
     """
     Genera un PDF del comprobante electrónico (Factura o Boleta) emitido
@@ -978,6 +991,13 @@ def generate_bill_pdf(order_id):
             leading=8,
             fontName='Helvetica',
             fontSize=8
+        ))
+        styles.add(ParagraphStyle(
+            name='Helvetica_Bold_Center_6',
+            alignment=TA_CENTER,
+            leading=7,
+            fontName='Helvetica-Bold',
+            fontSize=6
         ))
 
         # Encabezado del comprobante
@@ -1104,8 +1124,8 @@ def generate_bill_pdf(order_id):
         # Encabezados de la tabla de productos
         table_data = []
         table_data_title = [[
-            Paragraph("Cant", styles['Helvetica_Bold_Left_8']),
-            Paragraph("Und", styles['Helvetica_Bold_Left_8']),
+            Paragraph("Cant", styles['Helvetica_Bold_Center_6']),
+            Paragraph("Und", styles['Helvetica_Bold_Center_6']),
             Paragraph("Descripción", styles['Helvetica_Bold_Left_8']),
             Paragraph("P.U.", styles['Helvetica_Bold_Right_8']),
             Paragraph("Total", styles['Helvetica_Bold_Right_8'])
@@ -1115,19 +1135,25 @@ def generate_bill_pdf(order_id):
 
         _wt2 = 2.93 * inch - m_left - m_right
         table_title = Table(table_data_title,
-                            colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100, _wt2 * 18 / 100,
+                            colWidths=[_wt2 * 8 / 100, _wt2 * 8 / 100, _wt2 * 50 / 100, _wt2 * 18 / 100,
                                        _wt2 * 16 / 100])
         table_title.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
             ('ALIGN', (2, 0), (2, -1), 'LEFT'),
             ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
             ('ALIGN', (4, 0), (4, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 7.4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 1),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ('FONTSIZE', (0, 0), (1, 0), 6),  # Cant y Und con tamaño 6
+            ('FONTSIZE', (2, 0), (-1, 0), 7.4),  # Resto con tamaño 7.4
+            ('LEFTPADDING', (0, 0), (0, 0), 0),  # Sin padding izquierdo para Cant
+            ('RIGHTPADDING', (0, 0), (0, 0), 0),  # Sin padding derecho para Cant
+            ('LEFTPADDING', (1, 0), (1, 0), 0),  # Sin padding izquierdo para Und (pegar más)
+            ('RIGHTPADDING', (1, 0), (1, 0), 0),  # Sin padding derecho para Und
+            ('LEFTPADDING', (2, 0), (-1, -1), 1),  # Padding normal para el resto
+            ('RIGHTPADDING', (2, 0), (-1, -1), 1),  # Padding normal para el resto
+            # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ]))
         elements.append(table_title)
         elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=0, spaceAfter=1))
@@ -1141,7 +1167,7 @@ def generate_bill_pdf(order_id):
                     unit_name = product_detail.unit.name
 
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Left_8']),
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_8']),
                 Paragraph(unit_name, styles['Helvetica_Left_8']),
                 Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
@@ -1149,17 +1175,19 @@ def generate_bill_pdf(order_id):
             ])
 
         table = Table(table_data,
-                      colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100, _wt2 * 18 / 100, _wt2 * 16 / 100])
+                      colWidths=[_wt2 * 8 / 100, _wt2 * 8 / 100, _wt2 * 50 / 100, _wt2 * 18 / 100, _wt2 * 16 / 100])
         table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cant centrado
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),
             ('ALIGN', (2, 0), (2, -1), 'LEFT'),
             ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
             ('ALIGN', (4, 0), (4, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTSIZE', (0, 0), (-1, -1), 7.4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 1),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ('LEFTPADDING', (0, 0), (0, -1), 0),  # Sin padding para Cant
+            ('RIGHTPADDING', (0, 0), (0, -1), 0),  # Sin padding para Cant
+            ('LEFTPADDING', (1, 0), (-1, -1), 1),  # Padding normal para el resto
+            ('RIGHTPADDING', (1, 0), (-1, -1), 1),  # Padding normal para el resto
         ]))
 
         elements.append(table)
@@ -1197,32 +1225,37 @@ def generate_bill_pdf(order_id):
         elements.append(Spacer(2, 1))
         elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=2, spaceAfter=2))
 
-        # Código QR si existe
-        if order.bill_qr:
-            try:
-                # Crear código QR
-                qr_code = qr.QrCodeWidget(order.bill_qr)
-                bounds = qr_code.getBounds()
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-                drawing = Drawing(1.0 * inch, 1.0 * inch, transform=[1.0 * inch / width, 0, 0, 1.0 * inch / height, 0, 0])
-                drawing.add(qr_code)
-                elements.append(drawing)
-                elements.append(Spacer(1, 1))
-            except:
-                pass
+        # Código QR - siempre mostrar con enlace a tuf4ct.com/cpe (centrado)
+        elements.append(Spacer(1, 1))  # Espacio antes del QR
+        try:
+            # Crear código QR con enlace a tuf4ct.com/cpe usando la función qr_code
+            qr_url = "https://www.tuf4ct.com/cpe"
+            drawing = qr_code(qr_url)
+            
+            # Centrar el QR usando una tabla simple
+            qr_table_data = [[drawing]]
+            qr_table = Table(qr_table_data, colWidths=[_wt2])
+            qr_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (0, 0), 0),
+                ('RIGHTPADDING', (0, 0), (0, 0), 0),
+                ('TOPPADDING', (0, 0), (0, 0), 0),
+                ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+            ]))
+            elements.append(qr_table)
+            elements.append(Spacer(1, 1))  # Espacio después del QR
+        except Exception as e:
+            print(f"Error generando QR: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            pass
 
-        # Enlace del PDF de SUNAT
-        if order.bill_enlace_pdf:
-            elements.append(Paragraph("Ver comprobante en SUNAT:", styles['Helvetica_Bold_Center_8']))
-            elements.append(Paragraph(order.bill_enlace_pdf, styles['Helvetica_Center_8']))
-            elements.append(Spacer(1, 1))
+        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=2, spaceAfter=2))
 
-        elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=3, spaceAfter=3))
-
-        # Pie de página
-        elements.append(Paragraph("Representación impresa del comprobante electrónico", styles['Helvetica_Bold_Center_8']))
-        elements.append(Paragraph("Válido para efectos tributarios", styles['Helvetica_Center_8']))
+        # Texto informativo sobre el comprobante
+        elements.append(Paragraph("Representación impresa de la FACTURA ELECTRÓNICA, para ver el documento visita https://www.tuf4ct.com/cpe", styles['Helvetica_Bold_Center_8']))
+        elements.append(Paragraph("Emitido mediante un PROVEEDOR Autorizado por la SUNAT", styles['Helvetica_Center_8']))
 
         # Construir el PDF
         doc.build(elements)

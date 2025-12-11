@@ -2430,17 +2430,22 @@ def emit_electronic_document(request):
                         'message': 'Cliente del comprobante no encontrado'
                     }, status=HTTPStatus.BAD_REQUEST)
             
+            # Obtener el tipo de producto (bien o servicio)
+            product_type = request.POST.get('product_type', 'bien')  # Por defecto 'bien'
+            if product_type not in ['bien', 'servicio']:
+                product_type = 'bien'  # Valor por defecto si no es válido
+            
             # Importar las funciones de emisión
             from apps.accounting.api_FACT import send_bill_4_fact, send_receipt_4_fact
             from datetime import datetime
             
             # Determinar qué función llamar según el tipo de documento
             if document_type == 'F':  # Factura
-                result = send_bill_4_fact(order_id)
+                result = send_bill_4_fact(order_id, product_type=product_type)
                 bill_type = '1'
                 doc_type_name = 'Factura'
             elif document_type == 'B':  # Boleta
-                result = send_receipt_4_fact(order_id)
+                result = send_receipt_4_fact(order_id, product_type=product_type)
                 bill_type = '2'
                 doc_type_name = 'Boleta'
             else:

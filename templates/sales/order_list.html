@@ -1426,6 +1426,20 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
+                                            <label for="emit_product_type" class="form-label">
+                                                <i class="fas fa-box mr-1"></i>Tipo de Producto <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="emit_product_type" name="product_type" required>
+                                                <option value="servicio" selected>SERVICIO</option>
+                                                <option value="bien">BIEN</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Seleccione si es un bien o servicio
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
                                             <label for="emit_document_type" class="form-label">
                                                 <i class="fas fa-tag mr-1"></i>Tipo de Comprobante <span class="text-danger">*</span>
                                             </label>
@@ -1436,6 +1450,9 @@
                                             </select>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="emit_document_number" class="form-label">
@@ -1454,9 +1471,6 @@
                                             </small>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="emit_client_full_name" class="form-label">
@@ -1465,7 +1479,10 @@
                                             <input type="text" class="form-control" id="emit_client_full_name" name="client_full_name" placeholder="Nombre completo o razón social">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
                                         <div class="form-group">
                                             <label for="emit_client_address" class="form-label">
                                                 <i class="fas fa-map-marker-alt mr-1"></i>Dirección
@@ -5340,9 +5357,11 @@
             $('#emit_client_full_name').val('');
             $('#emit_client_address').val('');
             $('#emit_bill_client_id').val('');
+            $('#emit_product_type').val('servicio'); // Establecer servicio por defecto
             $('#emit_document_type').removeClass('is-invalid');
             $('#emit_document_number').removeClass('is-invalid');
             $('#emit_client_full_name').removeClass('is-invalid');
+            $('#emit_product_type').removeClass('is-invalid');
             
             // Ocultar panel de comprobante emitido inicialmente
             $('#emit_bill_info_panel').hide();
@@ -5392,9 +5411,14 @@
                         calculateEmitOrderTotals();
 
                         // Mostrar información de la orden
+                        let documentInfo = '';
+                        if (order.client.document && order.client.number) {
+                            const docType = order.client.document === '01' ? 'DNI' : (order.client.document === '06' ? 'RUC' : 'DOC');
+                            documentInfo = `<br><strong>Documento:</strong> ${docType} ${order.client.number}`;
+                        }
                         const orderInfo = `
                             <strong>Orden:</strong> ${order.serial}-${order.correlative.toString().padStart(3, '0')}<br>
-                            <strong>Cliente:</strong> ${order.client.full_name}<br>
+                            <strong>Cliente:</strong> ${order.client.full_name}${documentInfo}<br>
                             <strong>Total:</strong> S/ ${order.total}
                         `;
                         $('#emit-order-info').html(orderInfo);
@@ -5481,6 +5505,7 @@
                             $('#emit_document_number').prop('disabled', true);
                             $('#emit_client_full_name').prop('disabled', true);
                             $('#emit_client_address').prop('disabled', true);
+                            $('#emit_product_type').prop('disabled', true);
                             $('button[onclick="searchClientInEmitDocument()"]').prop('disabled', true);
                         } else {
                             // Si no tiene comprobante, habilitar campos
@@ -5488,6 +5513,7 @@
                             $('#emit_document_number').prop('disabled', false);
                             $('#emit_client_full_name').prop('disabled', false);
                             $('#emit_client_address').prop('disabled', false);
+                            $('#emit_product_type').prop('disabled', false);
                             $('button[onclick="searchClientInEmitDocument()"]').prop('disabled', false);
                         }
 
@@ -5822,6 +5848,15 @@
                 return;
             }
 
+            // Validar tipo de producto
+            const productType = $('#emit_product_type').val();
+            if (!productType) {
+                toastr.error('Debe seleccionar el tipo de producto (Bien o Servicio)', 'Error de validación');
+                $('#emit_product_type').focus();
+                $('#emit_product_type').addClass('is-invalid');
+                return;
+            }
+
             // Mostrar loading
             const confirmButton = $('#emitDocumentModal .btn-primary');
             const originalText = confirmButton.html();
@@ -5838,7 +5873,8 @@
                 data: {
                     'order_id': orderId,
                     'document_type': documentType,
-                    'bill_client_id': billClientId || ''
+                    'bill_client_id': billClientId || '',
+                    'product_type': productType
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
