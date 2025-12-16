@@ -457,6 +457,11 @@ def generate_ticket_pdf(order_id):
 
         elements.append(phone_table)
 
+        # Horario de atención
+        elements.append(
+            Paragraph("HORARIO DE ATENCIÓN DE LUNES A SABADO: 8:30AM - 06:30PM", styles['Helvetica_Center_Bold_6']))
+        elements.append(Spacer(1, 1))
+
         elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=3, spaceAfter=3))
 
         # elements.append(Paragraph(order.subsidiary.address.capitalize(), styles['TicketHeaderAddress']))
@@ -843,15 +848,23 @@ def generate_ticket_pdf(order_id):
 
         elements.append(HRFlowable(width="100%", thickness=0.3, color="black", spaceBefore=3, spaceAfter=3))
 
-        elements.append(
-            Paragraph("**Este ticket no tiene validez fiscal, puede ser cambiada por una boleta o factura durante el mes**",
-                      styles['Helvetica_Bold_Justify_6']))
-        # elements.append(Paragraph("•Canjee por factura Y/O boleta dentro del mes", styles['Helvetica_Bold_Justify_6']))
-        elements.append(
-            Paragraph("•Todo trabajo sera como mínimo el 50% de adelanto, caso contrario no se realizará el trabajo",
-                      styles['Helvetica_Bold_Justify_6']))
-        elements.append(Paragraph("•Tiene un plazo de un mes para recoger su trabajo, caso contrario será desechado",
-                                  styles['Helvetica_Bold_Justify_6']))
+        # Texto del footer desde el modelo Subsidiary
+        if order.subsidiary and order.subsidiary.text_description_footer:
+            # Dividir el texto por saltos de línea y crear párrafos
+            footer_lines = order.subsidiary.text_description_footer.split('\n')
+            for line in footer_lines:
+                if line.strip():  # Solo agregar líneas no vacías
+                    elements.append(Paragraph(line.strip(), styles['Helvetica_Bold_Justify_6']))
+        else:
+            # Texto por defecto si no hay texto personalizado
+            elements.append(
+                Paragraph("**Este ticket no tiene validez fiscal, puede ser cambiada por una boleta o factura durante el mes**",
+                          styles['Helvetica_Bold_Justify_6']))
+            elements.append(
+                Paragraph("•Todo trabajo sera como mínimo el 50% de adelanto, caso contrario no se realizará el trabajo",
+                          styles['Helvetica_Bold_Justify_6']))
+            elements.append(Paragraph("•Tiene un plazo de un mes para recoger su trabajo, caso contrario será desechado",
+                                      styles['Helvetica_Bold_Justify_6']))
 
         # Construir el PDF
         doc.build(elements)

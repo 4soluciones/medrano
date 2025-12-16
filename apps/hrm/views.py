@@ -83,6 +83,7 @@ def create_subsidiary(request):
             
             # Obtener descripción textual
             _text_description = request.POST.get('text-description', '')
+            _text_description_footer = request.POST.get('text-description-footer', '')
             
             # Crear objeto Subsidiary con los campos del modelo
             subsidiary_obj = Subsidiary(
@@ -97,6 +98,7 @@ def create_subsidiary(request):
                 representative_name=_representative_name,
                 observation=_observation,
                 text_description=_text_description,
+                text_description_footer=_text_description_footer,
             )
             
             # Manejar la foto si se subió una
@@ -150,6 +152,7 @@ def update_subsidiary(request):
         _representative_name = request.POST.get('representative-name', '')
         _observation_input = request.POST.get('observation-input', '')
         _text_description = request.POST.get('text-description', '')
+        _text_description_footer = request.POST.get('text-description-footer', '')
         if subsidiary_obj is not None:
             # Validar campos requeridos
             if not _name or not _ruc or not _business:
@@ -157,7 +160,7 @@ def update_subsidiary(request):
                     'success': False,
                     'message': 'Los campos Nombre, RUC y Razón Social son obligatorios'
                 }, status=HTTPStatus.BAD_REQUEST)
-            
+
             # Actualizar objeto Subsidiary
             subsidiary_obj.serial = _serial
             subsidiary_obj.name = _name
@@ -170,22 +173,23 @@ def update_subsidiary(request):
             subsidiary_obj.representative_name = _representative_name
             subsidiary_obj.observation = _observation_input  # Usar el campo correcto del modelo
             subsidiary_obj.text_description = _text_description
-            
-            # Manejar la foto si se subió una nueva
-            if 'photo' in request.FILES:
-                subsidiary_obj.photo = request.FILES['photo']
-            
-            subsidiary_obj.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Sucursal actualizada con éxito'
-            }, status=HTTPStatus.OK)
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'No se identificó la sucursal'
-            }, status=HTTPStatus.BAD_REQUEST)
+            subsidiary_obj.text_description_footer = _text_description_footer
+
+        # Manejar la foto si se subió una nueva
+        if 'photo' in request.FILES:
+            subsidiary_obj.photo = request.FILES['photo']
+
+        subsidiary_obj.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Sucursal actualizada con éxito'
+        }, status=HTTPStatus.OK)
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se identificó la sucursal'
+        }, status=HTTPStatus.BAD_REQUEST)
 
 
 def get_employee_list(request):
