@@ -1011,6 +1011,7 @@ def order_list(request):
                     'client_document': order.client.document,
                     'client_number': order.client.number,
                     'user': order.user.first_name,
+                    'observation': order.observation,
                     'details': [],
                     'balance': str(round(balance, 2)),
                     'cash_pay': str(round(order.cash_pay, 2)),
@@ -1036,12 +1037,16 @@ def order_list(request):
                 for detail in order.orderdetail_set.all():
                     product_id = ''
                     product_name = ''
+                    unit_name = None
                     if detail.product:
                         product_id = detail.product.id
                         product_name = detail.product.name
+                        if detail.product.productdetail_set.exists():
+                            unit_name = detail.product.productdetail_set.last().unit.name
                     detail_data = {
                         'id': detail.id,
                         'product': product_id,
+                        'unit': unit_name,
                         'quantity': str(round(detail.quantity, 0)),
                         'product_name': product_name,
                         'description': detail.product_name,

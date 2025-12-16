@@ -160,7 +160,7 @@ class ProductDetail(models.Model):
 
 class Unit(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField('Nombre', max_length=5, unique=True)
+    name = models.CharField('Nombre', max_length=10, unique=True)
     description = models.CharField('Descripcion', max_length=50, null=True, blank=True)
     is_enabled = models.BooleanField(default=True)
 

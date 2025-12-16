@@ -6,16 +6,17 @@
             <thead class="thead-light">
             <tr>
                 <th style="width: 2%; font-size: 10px">#</th>
-                <th style="width: 6%; font-size: 10px">Fechas</th>
+                <th style="width: 5%; font-size: 10px">Fechas</th>
 {#                <th style="width: 6%; font-size: 10px">Fecha Entrega</th>#}
-                <th style="width: 6%; font-size: 10px">Comprobante</th>
-                <th style="width: 17%; font-size: 10px">Cliente</th>
+                <th style="width: 5%; font-size: 10px">Comprobante</th>
+                <th style="width: 15%; font-size: 10px">Cliente</th>
 {#                <th style="width: 5%; font-size: 10px">Cantidad</th>#}
-                <th style="width: 25%; font-size: 10px">Descripción</th>
-                <th class="text-right" style="width: 6%; font-size: 10px">Adelanto</th>
-                <th class="text-right" style="width: 6%; font-size: 10px">Saldo Pendiente</th>
-                <th class="text-right" style="width: 6%; font-size: 10px">Saldo Pagado</th>
-                <th class="text-right" style="width: 6%; font-size: 10px">Total Orden</th>
+                <th style="width: 20%; font-size: 10px">Descripción</th>
+                <th style="width: 15%; font-size: 10px">Observación</th>
+                <th class="text-right" style="width: 5%; font-size: 10px">Adelanto</th>
+                <th class="text-right" style="width: 5%; font-size: 10px">Pendiente</th>
+                <th class="text-right" style="width: 5%; font-size: 10px">Saldo Pagado</th>
+                <th class="text-right" style="width: 5%; font-size: 10px">Total Orden</th>
                 <th class="text-center" style="width: 5%; font-size: 10px">Vendedor</th>
                 <th class="text-center" style="width: 5%; font-size: 10px">Estado Pago</th>
                 <th class="text-center" style="width: 5%; font-size: 10px">Estado Entrega</th>
@@ -28,12 +29,12 @@
                     <td class="text-center align-items-center">{{ forloop.counter }}</td>
                     <td class="text-center">
                         <small class="text-muted">
-                            <div class="d-flex align-items-center mb-1">
-                                <span class="text-left mr-1">Creación:</span>
+                            <div class="d-flex align-items-center mb-1" >
+                                <span class="text-left mr-1" style="font-size: 9px">Creación:</span>
                                 <span> {{ order.register_date|date:"d/m/Y" }}</span><br>
                             </div>
                             <div class="d-flex align-items-center mb-1">
-                                <span class="text-left mr-1">Hora:</span>
+                                <span class="text-left mr-1" style="font-size: 9px">Hora:</span>
                                 {{ order.hour_date }}
                             </div>
                         </small>
@@ -77,15 +78,19 @@
                     </td>
                     <td>
                         {% for detail in order.details %}
-                            <div class="d-flex align-items-center mb-1">
-                                <span class="badge badge-info mr-2" style="font-size: 13px">
-                                    {{ detail.quantity }}
-                                </span>
+                            <div class="">
+                                <small class="text-primary font-weight-bold" style="font-size: 14px">{{ detail.quantity }}</small>&nbsp;
+                                {% if detail.unit %}
+                                    <small class="text-primary font-weight-bold">({{ detail.unit }})</small>&nbsp;
+                                {% endif %}
                                 <small class="text-primary font-weight-bold">
                                     {{ detail.description }}
                                 </small>
                             </div>
                         {% endfor %}
+                    </td>
+                    <td>
+                        <small class="text-secondary font-weight-bold">{{ order.observation }}</small>
                     </td>
 
                     <td class="text-right">
@@ -105,7 +110,7 @@
                                                 {% if payment.way_to_pay == 'E' %}
                                                     <img src="/media/cash_icon.png" alt="Efectivo" style="width: 20px; height: 20px; margin-right: 4px;">
                                                 {% elif payment.way_to_pay == 'Y' %}
-                                                    <img src="/media/icono_yape.png" alt="Yape" style="width: 36px; height: 22px; margin-right: 0px; ">
+                                                    <img src="/media/icono_yape2.png" alt="Yape" style="width: 15px; height: 15px; margin-right: 4px; ">
                                                 {% elif payment.way_to_pay == 'D' %}
                                                     <span class="badge badge-outline-info mr-1" style="font-size: 9px; padding: 1px 3px;">
                                                         Dep
@@ -138,7 +143,7 @@
                                                     {% if payment.way_to_pay == 'E' %}
                                                         <img src="/media/cash_icon.png" alt="Efectivo" style="width: 20px; height: 20px; margin-right: 4px;">
                                                     {% elif payment.way_to_pay == 'Y' %}
-                                                        <img src="/media/icono_yape.png" alt="Yape" style="width: 36px; height: 22px; margin-right: 0px; ">
+                                                        <img src="/media/icono_yape2.png" alt="Yape" style="width: 15px; height: 15px; margin-right: 4px; ">
                                                     {% elif payment.way_to_pay == 'D' %}
                                                         <span class="badge badge-outline-info mr-1" style="font-size: 9px; padding: 1px 3px;">
                                                             Dep
@@ -189,7 +194,7 @@
                                                 {% if payment.way_to_pay == 'E' %}
                                                     <img src="/media/cash_icon.png" alt="Efectivo" style="width: 20px; height: 20px; margin-right: 4px;">
                                                 {% elif payment.way_to_pay == 'Y' %}
-                                                    <img src="/media/icono_yape.png" alt="Yape" style="width: 36px; height: 22px; margin-right: 0px; ">
+                                                    <img src="/media/icono_yape2.png" alt="Yape" style="width: 15px; height: 15px; margin-right: 4px; ">
                                                 {% elif payment.way_to_pay == 'D' %}
                                                     <span class="badge badge-outline-info mr-1" style="font-size: 9px; padding: 1px 3px;">
                                                         Dep

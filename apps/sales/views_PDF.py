@@ -675,7 +675,7 @@ def generate_ticket_pdf(order_id):
         # Encabezados de la tabla de productos
         table_data = []
         table_data_title = [[
-            Paragraph("Cant", styles['Helvetica_Bold_Left_6']),
+            Paragraph("Cant", styles['Helvetica_Bold_Center_6']),
             Paragraph("Und", styles['Helvetica_Bold_Left_6']),
             Paragraph("Descripción", styles['Helvetica_Bold_Left_7']),
             Paragraph("P.U.", styles['Helvetica_Bold_Right_7']),
@@ -721,8 +721,8 @@ def generate_ticket_pdf(order_id):
                     unit_name = product_detail.unit.name
 
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Left_9']),
-                Paragraph(unit_name, styles['Helvetica_Left_6']),
+                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_9']),
+                Paragraph(unit_name, styles['Helvetica_Center_6']),
                 Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
                 Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_8'])
@@ -745,6 +745,9 @@ def generate_ticket_pdf(order_id):
             # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             # ('BACKGROUND', (1, 0), (1, -1), colors.green),
             ('RIGHTPADDING', (3, -1), (3, -1), 3),
+
+            ('LEFTPADDING', (1, 0), (1, -1), 0),
+            ('RIGHTPADDING', (1, 0), (1, -1), 0),
 
 
         ]))
