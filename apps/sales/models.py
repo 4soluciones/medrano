@@ -8,7 +8,7 @@ class Person(models.Model):
     TYPE_CHOICES = (
         ('C', 'Cliente'), ('P', 'Proveedor'))
     DOCUMENT_CHOICES = (
-        ('01', 'DNI'), ('06', 'RUC'))
+        ('01', 'DNI'), ('06', 'RUC'), ('0', 'OTROS'))
     id = models.AutoField(primary_key=True)
     type = models.CharField('Cliente - Proveedor', max_length=1, choices=TYPE_CHOICES, default='C')
     document = models.CharField('Tipo Documento', max_length=2, choices=DOCUMENT_CHOICES, default='01')
@@ -100,6 +100,7 @@ class OrderDetail(models.Model):
     quantity = models.DecimalField('Cantidad', max_digits=10, decimal_places=3, default=0)
     price_unit = models.DecimalField('Precio unitario', max_digits=10, decimal_places=2, default=0)
     observation = models.CharField('Observacion producto', max_length=200, null=True, blank=True)
+    product_bill_name = models.CharField('Nombre del Producto/Servicio para sunat', max_length=500, null=True, blank=True)
 
     def __str__(self):
         return str(self.id)

@@ -34,7 +34,7 @@ def get_new_correlative(serial, document_type):
         return 1
 
 
-def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
+def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # FACTURA 4 FACT
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -61,11 +61,11 @@ def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
     # Obtener dirección del cliente
     client_address = str(client_obj.address or "").replace('"', "'")
     
-    # Obtener documento del cliente (RUC para factura)
-    if client_obj.document == '06':
-        client_document_number = client_obj.number or ""
-    else:
-        return {"error": "El cliente debe tener RUC para generar una factura"}
+    # Obtener documento del cliente
+    # Ya no validamos que sea RUC, ya que ahora puede ser DNI, RUC u otros
+    client_document_number = client_obj.number or ""
+    if not client_document_number:
+        return {"error": "El cliente no tiene número de documento"}
     
     # Obtener fecha de registro - siempre usar fecha actual del día
     # Revisar bill_date si existe, sino usar fecha/hora actual
@@ -100,7 +100,10 @@ def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
     
     # Procesar detalles de la orden
     for d in details:
-        if not d.product:
+        # Priorizar product_bill_name si existe (nombre editado en el modal), sino usar el nombre original
+        if d.product_bill_name:
+            product_name = str(d.product_bill_name or "").replace('"', "'")
+        elif not d.product:
             # Si no hay producto, usar product_name
             product_name = str(d.product_name or "").replace('"', "'")
         else:
@@ -159,7 +162,7 @@ def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
             cliente: {{
                 razonSocialNombres: "{client_name}",
                 numeroDocumento: "{client_document_number}",
-                codigoTipoEntidad: 6,
+                codigoTipoEntidad: {codigo_tipo_entidad},
                 clienteDireccion: "{client_address}"
             }},
             venta: {{
@@ -230,7 +233,7 @@ def send_bill_4_fact(order_id, product_type='bien'):  # FACTURA 4 FACT
         return {"error": "La respuesta no es un JSON válido"}
 
 
-def send_receipt_4_fact(order_id, product_type='bien'):  # BOLETA 4 FACT
+def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  # BOLETA 4 FACT
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -257,12 +260,11 @@ def send_receipt_4_fact(order_id, product_type='bien'):  # BOLETA 4 FACT
     # Obtener dirección del cliente
     client_address = str(client_obj.address or "").replace('"', "'")
     
-    # Obtener documento del cliente (DNI para boleta)
-    if client_obj.document == '01':
-        client_document_number = client_obj.number or ""
-    else:
-        # Si no es DNI, intentar usar el número de documento que tenga
-        client_document_number = client_obj.number or ""
+    # Obtener documento del cliente
+    # Ya no validamos que sea DNI, ya que ahora puede ser DNI, RUC u otros
+    client_document_number = client_obj.number or ""
+    if not client_document_number:
+        return {"error": "El cliente no tiene número de documento"}
     
     # Obtener fecha de registro - siempre usar fecha actual del día
     # Revisar bill_date si existe, sino usar fecha/hora actual
@@ -286,7 +288,10 @@ def send_receipt_4_fact(order_id, product_type='bien'):  # BOLETA 4 FACT
     
     # Procesar detalles de la orden
     for d in details:
-        if not d.product:
+        # Priorizar product_bill_name si existe (nombre editado en el modal), sino usar el nombre original
+        if d.product_bill_name:
+            product_name = str(d.product_bill_name or "").replace('"', "'")
+        elif not d.product:
             # Si no hay producto, usar product_name
             product_name = str(d.product_name or "").replace('"', "'")
         else:
@@ -345,7 +350,7 @@ def send_receipt_4_fact(order_id, product_type='bien'):  # BOLETA 4 FACT
                 cliente: {{
                     razonSocialNombres: "{client_name}",
                     numeroDocumento: "{client_document_number}",
-                    codigoTipoEntidad: 1,
+                    codigoTipoEntidad: {codigo_tipo_entidad},
                     clienteDireccion: "{client_address}"
                 }},
                 venta: {{

@@ -1079,7 +1079,7 @@ def generate_bill_pdf(order_id):
             Paragraph(client_obj.full_name.upper() if client_obj else "SIN CLIENTE", styles['Helvetica_Left_8'])
         ])
 
-        # Fila del documento (DNI/RUC)
+        # Fila del documento (DNI/RUC/Otros)
         if client_obj and client_obj.number and client_obj.number.strip():
             if client_obj.document == '01':
                 client_data.append([
@@ -1087,9 +1087,22 @@ def generate_bill_pdf(order_id):
                     Paragraph(":", styles['Helvetica_Left_8']),
                     Paragraph(client_obj.number, styles['Helvetica_Left_8'])
                 ])
-            else:
+            elif client_obj.document == '06':
                 client_data.append([
                     Paragraph("RUC", styles['Helvetica_Bold_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(client_obj.number, styles['Helvetica_Left_8'])
+                ])
+            elif client_obj.document == '0':
+                client_data.append([
+                    Paragraph("OTROS", styles['Helvetica_Bold_Left_8']),
+                    Paragraph(":", styles['Helvetica_Left_8']),
+                    Paragraph(client_obj.number, styles['Helvetica_Left_8'])
+                ])
+            else:
+                # Para cualquier otro tipo de documento
+                client_data.append([
+                    Paragraph("DOC", styles['Helvetica_Bold_Left_8']),
                     Paragraph(":", styles['Helvetica_Left_8']),
                     Paragraph(client_obj.number, styles['Helvetica_Left_8'])
                 ])
@@ -1182,10 +1195,13 @@ def generate_bill_pdf(order_id):
                 if product_detail and product_detail.unit:
                     unit_name = product_detail.unit.name
 
+            # Usar product_bill_name si existe (nombre editado para el comprobante), sino usar product_name
+            product_name_display = detail.product_bill_name if detail.product_bill_name else (detail.product_name or "")
+            
             table_data.append([
                 Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_8']),
                 Paragraph(unit_name, styles['Helvetica_Left_8']),
-                Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
+                Paragraph(product_name_display, styles['Helvetica_Left_8']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
                 Paragraph(f"{detail.multiply():.2f}", styles['Helvetica_Right_8'])
             ])

@@ -1453,13 +1453,29 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="emit_client_document_type" class="form-label">
+                                                <i class="fas fa-id-card mr-1"></i>Tipo de Documento <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="emit_client_document_type" name="client_document_type">
+                                                <option value="">Seleccione tipo</option>
+                                                <option value="01">DNI</option>
+                                                <option value="06">RUC</option>
+                                                <option value="0">OTROS</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Tipo de documento del cliente
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="emit_document_number" class="form-label">
                                                 <i class="fas fa-hashtag mr-1"></i>Número de Documento <span class="text-danger">*</span>
                                             </label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="emit_document_number" name="document_number" autocomplete="off" placeholder="DNI o RUC del cliente">
+                                                <input type="text" class="form-control" id="emit_document_number" name="emit_document_number" autocomplete="off" placeholder="DNI o RUC del cliente">
                                                 <div class="input-group-append">
                                                     <button type="button" class="btn btn-primary btn-sm" onclick="searchClientInEmitDocument()">
                                                         <i class="fas fa-search"></i>
@@ -1471,12 +1487,12 @@
                                             </small>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="emit_client_full_name" class="form-label">
                                                 <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="emit_client_full_name" name="client_full_name" placeholder="Nombre completo o razón social">
+                                            <input type="text" class="form-control" id="emit_client_full_name" name="emit_client_full_name" placeholder="Nombre completo o razón social">
                                         </div>
                                     </div>
                                 </div>
@@ -1487,7 +1503,7 @@
                                             <label for="emit_client_address" class="form-label">
                                                 <i class="fas fa-map-marker-alt mr-1"></i>Dirección
                                             </label>
-                                            <input type="text" class="form-control" id="emit_client_address" name="client_address" placeholder="Dirección del cliente">
+                                            <input type="text" class="form-control" id="emit_client_address" name="emit_client_address" placeholder="Dirección del cliente">
                                         </div>
                                     </div>
                                 </div>
@@ -5353,6 +5369,7 @@
         function openEmitDocumentModal(orderId) {
             // Limpiar campos del comprobante electrónico primero (pero no los detalles)
             $('#emit_document_type').val('');
+            $('#emit_client_document_type').val('');
             $('#emit_document_number').val('');
             $('#emit_client_full_name').val('');
             $('#emit_client_address').val('');
@@ -5392,6 +5409,7 @@
                                 emitOrderDetails.push({
                                     id: detail.id,
                                     product_name: detail.product_name || '',
+                                    product_bill_name: detail.product_bill_name || detail.product_name || '', // Inicializar con product_bill_name si existe, sino con product_name
                                     quantity: parseFloat(detail.quantity) || 0,
                                     price_unit: parseFloat(detail.price_unit) || 0,
                                     subtotal: parseFloat(detail.subtotal) || 0,
@@ -5448,16 +5466,23 @@
                                 $('#emit_bill_client_id').val(order.bill_client_id);
                             }
                             
-                            if (order.client.number) {
-                                $('#emit_document_number').val(order.client.number);
+                            // Determinar qué cliente usar (bill_client si existe, sino client)
+                            const clientData = order.bill_client || order.client;
+                            
+                            if (clientData && clientData.document) {
+                                $('#emit_client_document_type').val(clientData.document);
                             }
                             
-                            if (order.client.full_name) {
-                                $('#emit_client_full_name').val(order.client.full_name);
+                            if (clientData && clientData.number) {
+                                $('#emit_document_number').val(clientData.number);
                             }
                             
-                            if (order.client.address) {
-                                $('#emit_client_address').val(order.client.address);
+                            if (clientData && clientData.full_name) {
+                                $('#emit_client_full_name').val(clientData.full_name);
+                            }
+                            
+                            if (clientData && clientData.address) {
+                                $('#emit_client_address').val(clientData.address);
                             }
                             
                             // Mostrar información del comprobante emitido
@@ -5502,6 +5527,7 @@
                             
                             // Deshabilitar campos del formulario
                             $('#emit_document_type').prop('disabled', true);
+                            $('#emit_client_document_type').prop('disabled', true);
                             $('#emit_document_number').prop('disabled', true);
                             $('#emit_client_full_name').prop('disabled', true);
                             $('#emit_client_address').prop('disabled', true);
@@ -5627,8 +5653,10 @@
             } else if (field === 'product_name') {
                 // Remover "ELABORACION" si existe al inicio para guardar solo el texto del usuario
                 let cleanValue = value.trim().replace(/^ELABORACION\s*/i, '');
-                // Guardar el valor sin "ELABORACION"
+                // Guardar el valor sin "ELABORACION" en product_name
                 detail[field] = cleanValue;
+                // Guardar también en product_bill_name para enviar a la API
+                detail.product_bill_name = cleanValue;
                 // Actualizar el campo visual asegurando que siempre tenga "ELABORACION" al inicio
                 const displayValue = cleanValue ? `ELABORACION ${cleanValue}` : 'ELABORACION';
                 $(`.emit-detail-description[data-detail-id="${detailId}"]`).val(displayValue);
@@ -5691,6 +5719,7 @@
         // Función para resetear campos del comprobante electrónico en modal de emitir
         function resetEmitDocumentFields() {
             $('#emit_document_type').val('');
+            $('#emit_client_document_type').val('');
             $('#emit_document_number').val('');
             $('#emit_client_full_name').val('');
             $('#emit_client_address').val('');
@@ -5700,6 +5729,7 @@
 
             // Limpiar validaciones
             $('#emit_document_type').removeClass('is-invalid');
+            $('#emit_client_document_type').removeClass('is-invalid');
             $('#emit_document_number').removeClass('is-invalid');
             $('#emit_client_full_name').removeClass('is-invalid');
             
@@ -5718,25 +5748,56 @@
 
         // Función para buscar cliente en el modal de emitir comprobante
         function searchClientInEmitDocument() {
-            const documentType = $('#emit_document_type').val();
+            const clientDocumentType = $('#emit_client_document_type').val();
             const documentNumber = $('#emit_document_number').val();
 
-            if (!documentType || !documentNumber) {
-                toastr.error('Debe seleccionar el tipo de comprobante y escribir el número de documento', 'Error de validación');
+            if (!clientDocumentType || !documentNumber) {
+                toastr.error('Debe seleccionar el tipo de documento y escribir el número de documento', 'Error de validación');
                 return;
             }
 
-            // Determinar el tipo de documento según el tipo de comprobante
-            let apiDocumentType = '';
-            if (documentType === 'B') {
-                // Para boleta, usar DNI (tipo 01)
-                apiDocumentType = '01';
-            } else if (documentType === 'F') {
-                // Para factura, usar RUC (tipo 06)
-                apiDocumentType = '06';
+            // Si es "otros" (0), no se puede buscar en la API, solo en la BD
+            if (clientDocumentType === '0') {
+                toastr.info('Para documentos "Otros", complete los datos manualmente o busque el cliente si ya existe en la base de datos', 'Información');
+                
+                // Intentar buscar solo en la BD
+                $.ajax({
+                    url: '{% url "apps.sales:get_api_person" %}',
+                    type: 'GET',
+                    data: {
+                        'nro_document': documentNumber,
+                        'type': clientDocumentType
+                    },
+                    success: function (response) {
+                        if (response.pk) {
+                            toastr.success('Cliente encontrado en la base de datos', 'Cliente encontrado');
+                            $('#emit_bill_client_id').val(response.pk);
+                            
+                            const clientName = response.names || response.full_name || response.name || '';
+                            const clientAddress = response.address || response.direccion || '';
+                            
+                            $('#emit_client_full_name').val(clientName);
+                            $('#emit_client_address').val(clientAddress);
+                            
+                            $('#emit_document_number').addClass('is-valid');
+                            $('#emit_document_number').removeClass('is-invalid');
+                        } else {
+                            toastr.warning('Cliente no encontrado. Complete los datos manualmente.', 'Cliente no encontrado');
+                            $('#emit_bill_client_id').val('');
+                        }
+                    },
+                    error: function () {
+                        toastr.warning('Complete los datos manualmente para este tipo de documento', 'Información');
+                        $('#emit_bill_client_id').val('');
+                    }
+                });
+                return;
             }
 
-            // Validar formato del documento antes de consultar
+            // Usar el tipo de documento seleccionado directamente
+            let apiDocumentType = clientDocumentType;
+
+            // Validar formato del documento antes de consultar (solo para DNI y RUC)
             if (apiDocumentType === '01' && documentNumber.length !== 8) {
                 toastr.error('El DNI debe tener exactamente 8 dígitos', 'Error de validación');
                 return;
@@ -5834,6 +5895,7 @@
         function confirmEmitDocument() {
             // Validar campos obligatorios
             const documentType = $('#emit_document_type').val();
+            const clientDocumentType = $('#emit_client_document_type').val();
             const orderId = $('#emit_order_id').val();
 
             if (!orderId) {
@@ -5845,6 +5907,13 @@
                 toastr.error('Debe seleccionar el tipo de comprobante', 'Error de validación');
                 $('#emit_document_type').focus();
                 $('#emit_document_type').addClass('is-invalid');
+                return;
+            }
+
+            if (!clientDocumentType) {
+                toastr.error('Debe seleccionar el tipo de documento del cliente', 'Error de validación');
+                $('#emit_client_document_type').focus();
+                $('#emit_client_document_type').addClass('is-invalid');
                 return;
             }
 
@@ -5866,6 +5935,21 @@
             // Obtener el ID del cliente del comprobante (si se buscó)
             const billClientId = $('#emit_bill_client_id').val();
             
+            // Recorrer el tbody para obtener los nombres editados directamente del DOM
+            const detailsData = [];
+            $('#emit_order_details_body tr').each(function() {
+                const detailId = $(this).find('.emit-detail-description').data('detail-id');
+                const productBillName = $(this).find('.emit-detail-description').val() || '';
+                
+                if (detailId) {
+                    // Enviar el nombre exactamente como el usuario lo escribió
+                    detailsData.push({
+                        'id': detailId,
+                        'product_bill_name': productBillName.trim()
+                    });
+                }
+            });
+            
             // Enviar solicitud para emitir comprobante
             $.ajax({
                 url: '{% url "apps.sales:emit_electronic_document" %}',
@@ -5873,8 +5957,13 @@
                 data: {
                     'order_id': orderId,
                     'document_type': documentType,
+                    'client_document_type': clientDocumentType,
+                    'emit_client_full_name': $('#emit_client_full_name').val(),
+                    'emit_document_number': $('#emit_document_number').val(),
+                    'emit_client_address': $('#emit_client_address').val(),
                     'bill_client_id': billClientId || '',
-                    'product_type': productType
+                    'product_type': productType,
+                    'details_data': JSON.stringify(detailsData)
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'

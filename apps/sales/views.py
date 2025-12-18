@@ -177,16 +177,32 @@ def get_api_person(request):
                     response = JsonResponse(data)
                     response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
                     return response
+            
+            # Si el tipo de documento es '0' (otros) u otro tipo no soportado por la API
+            # y el cliente no existe en la BD, retornar error indicando que debe registrarse manualmente
+            else:
+                data = {'error': 'Para este tipo de documento, complete los datos manualmente. El cliente no existe en la base de datos.'}
+                response = JsonResponse(data)
+                response.status_code = HTTPStatus.NOT_FOUND
+                return response
 
-        return JsonResponse({
-            'pk': client_obj.id,
-            'names': result,
-            'firstName': first_name,
-            'secondName': second_name,
-            'surname': paternal_name,
-            'secondSurname': maternal_name,
-            'address': address},
-            status=HTTPStatus.OK)
+        # Si encontramos el cliente en la BD o se creó desde la API, retornar sus datos
+        if client_obj:
+            return JsonResponse({
+                'pk': client_obj.id,
+                'names': result,
+                'firstName': first_name,
+                'secondName': second_name,
+                'surname': paternal_name,
+                'secondSurname': maternal_name,
+                'address': address},
+                status=HTTPStatus.OK)
+        else:
+            # Este caso no debería llegar aquí, pero por seguridad
+            data = {'error': 'No se pudo procesar la consulta'}
+            response = JsonResponse(data)
+            response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+            return response
 
     return JsonResponse({'message': 'Error de peticion.'}, status=HTTPStatus.BAD_REQUEST)
 
@@ -2421,24 +2437,113 @@ def emit_electronic_document(request):
                     'message': 'No se puede emitir comprobante para una orden anulada'
                 }, status=HTTPStatus.BAD_REQUEST)
             
+            # Obtener el tipo de documento del cliente ANTES de obtener el bill_client
+            client_document_type = request.POST.get('client_document_type', '')
+            
             # Obtener el ID del cliente del comprobante (si se proporcionó)
             bill_client_id = request.POST.get('bill_client_id', '')
+            bill_client = None
+            
             if bill_client_id:
+                # Si hay bill_client_id, obtener el cliente existente
                 try:
                     bill_client = Person.objects.get(id=int(bill_client_id))
-                    # Guardar el cliente del comprobante en la orden
-                    order.bill_client = bill_client
-                    order.save()
+                    
+                    # Si se proporciona client_document_type (especialmente si es '0'), actualizar el documento del cliente
+                    if client_document_type:
+                        # Guardar el tipo de documento en el cliente (incluso si es '-')
+                        bill_client.document = client_document_type
+                        bill_client.save()
                 except Person.DoesNotExist:
                     return JsonResponse({
                         'success': False,
                         'message': 'Cliente del comprobante no encontrado'
                     }, status=HTTPStatus.BAD_REQUEST)
+            else:
+                # Si NO hay bill_client_id, pero hay datos del cliente (caso "otros" o ingreso manual)
+                # Obtener los datos del formulario
+                client_full_name = request.POST.get('emit_client_full_name', '').strip()
+                document_number = request.POST.get('emit_document_number', '').strip()
+                client_address = request.POST.get('emit_client_address', '').strip()
+                
+                # Si hay datos del cliente, crear o buscar el cliente
+                if client_full_name and document_number and client_document_type:
+                    # Buscar si ya existe un cliente con ese documento y tipo
+                    bill_client = Person.objects.filter(
+                        document=client_document_type,
+                        number=document_number,
+                        type='C'
+                    ).first()
+                    
+                    if bill_client:
+                        # Si existe, actualizar sus datos
+                        bill_client.full_name = client_full_name.upper()
+                        if client_address:
+                            bill_client.address = client_address.upper()
+                        bill_client.document = client_document_type  # Asegurar que el tipo de documento esté guardado
+                        bill_client.save()
+                    else:
+                        # Si no existe, crear nuevo cliente
+                        bill_client = Person(
+                            type='C',
+                            document=client_document_type,  # Puede ser '01', '06', o '0'
+                            number=document_number,
+                            full_name=client_full_name.upper(),
+                            address=client_address.upper() if client_address else ''
+                        )
+                        bill_client.save()
+            
+            # Si se obtuvo o creó el cliente, asignarlo a la orden
+            if bill_client:
+                order.bill_client = bill_client
+                order.save()
+            
+            # Si no se proporcionó client_document_type, intentar inferirlo del cliente
+            if not client_document_type:
+                if order.bill_client:
+                    client_document_type = order.bill_client.document or '01'
+                elif order.client:
+                    client_document_type = order.client.document or '01'
+                else:
+                    client_document_type = '01'  # Por defecto DNI
             
             # Obtener el tipo de producto (bien o servicio)
             product_type = request.POST.get('product_type', 'bien')  # Por defecto 'bien'
             if product_type not in ['bien', 'servicio']:
                 product_type = 'bien'  # Valor por defecto si no es válido
+            
+            # Mapear el tipo de documento del cliente al código de la API
+            # '01' = DNI -> codigoTipoEntidad = 1
+            # '06' = RUC -> codigoTipoEntidad = 6
+            # '0' = Otros -> codigoTipoEntidad = 0 (entero)
+            if client_document_type == '0':
+                codigo_tipo_entidad = 0
+            else:
+                document_type_map = {
+                    '01': 1,  # DNI
+                    '06': 6,  # RUC
+                }
+                codigo_tipo_entidad = document_type_map.get(client_document_type, 1)  # Por defecto 1 (DNI)
+            
+            # Procesar los detalles editados para guardar product_bill_name
+            details_data = request.POST.get('details_data', '')
+            if details_data:
+                try:
+                    details_json = json.loads(details_data)
+                    for detail_data in details_json:
+                        detail_id = detail_data.get('id')
+                        product_bill_name = detail_data.get('product_bill_name', '').strip()
+                        
+                        if detail_id and product_bill_name:
+                            try:
+                                order_detail = OrderDetail.objects.get(id=int(detail_id), order=order)
+                                order_detail.product_bill_name = product_bill_name.upper()
+                                order_detail.save()
+                            except OrderDetail.DoesNotExist:
+                                pass  # Si no existe el detalle, continuar
+                except (json.JSONDecodeError, ValueError) as e:
+                    # Si hay error al parsear, continuar sin guardar los nombres editados
+                    pass
             
             # Importar las funciones de emisión
             from apps.accounting.api_FACT import send_bill_4_fact, send_receipt_4_fact
@@ -2446,11 +2551,11 @@ def emit_electronic_document(request):
             
             # Determinar qué función llamar según el tipo de documento
             if document_type == 'F':  # Factura
-                result = send_bill_4_fact(order_id, product_type=product_type)
+                result = send_bill_4_fact(order_id, product_type=product_type, codigo_tipo_entidad=codigo_tipo_entidad)
                 bill_type = '1'
                 doc_type_name = 'Factura'
             elif document_type == 'B':  # Boleta
-                result = send_receipt_4_fact(order_id, product_type=product_type)
+                result = send_receipt_4_fact(order_id, product_type=product_type, codigo_tipo_entidad=codigo_tipo_entidad)
                 bill_type = '2'
                 doc_type_name = 'Boleta'
             else:
