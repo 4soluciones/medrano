@@ -1453,7 +1453,7 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="emit_client_document_type" class="form-label">
                                                 <i class="fas fa-id-card mr-1"></i>Tipo de Documento <span class="text-danger">*</span>
@@ -1487,7 +1487,7 @@
                                             </small>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-5">
                                         <div class="form-group">
                                             <label for="emit_client_full_name" class="form-label">
                                                 <i class="fas fa-user mr-1"></i>Nombre/Razón Social <span class="text-danger">*</span>
@@ -5651,34 +5651,20 @@
                 // Actualizar subtotal en la tabla
                 $(`.emit-detail-subtotal[data-detail-id="${detailId}"]`).text(detail.subtotal.toFixed(2));
             } else if (field === 'product_name') {
-                // Remover "ELABORACION" si existe al inicio para guardar solo el texto del usuario
-                let cleanValue = value.trim().replace(/^ELABORACION\s*/i, '');
-                // Guardar el valor sin "ELABORACION" en product_name
-                detail[field] = cleanValue;
+                // Guardar exactamente lo que el usuario escribió, sin modificar
+                const userValue = value.trim();
+                detail[field] = userValue;
                 // Guardar también en product_bill_name para enviar a la API
-                detail.product_bill_name = cleanValue;
-                // Actualizar el campo visual asegurando que siempre tenga "ELABORACION" al inicio
-                const displayValue = cleanValue ? `ELABORACION ${cleanValue}` : 'ELABORACION';
-                $(`.emit-detail-description[data-detail-id="${detailId}"]`).val(displayValue);
+                detail.product_bill_name = userValue;
+                // NO modificar el campo visual - dejar que el usuario edite libremente
             }
 
             // Recalcular totales
             calculateEmitOrderTotals();
         }
 
-        // Función para asegurar que "ELABORACION" esté al inicio cuando se pierde el foco
-        $(document).on('blur', '.emit-detail-description', function() {
-            const detailId = $(this).data('detail-id');
-            let currentValue = $(this).val().trim();
-            
-            // Si no empieza con "ELABORACION", añadirlo
-            if (!currentValue.toUpperCase().startsWith('ELABORACION')) {
-                currentValue = 'ELABORACION ' + currentValue;
-                $(this).val(currentValue);
-                // Actualizar el detalle
-                updateEmitDetailField(detailId, 'product_name', currentValue);
-            }
-        });
+        // Evento blur eliminado para permitir que el usuario edite libremente el texto
+        // El usuario puede cambiar o eliminar "ELABORACION" si lo desea
 
         // Función para calcular totales en el modal de emitir comprobante
         function calculateEmitOrderTotals() {

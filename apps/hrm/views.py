@@ -805,10 +805,10 @@ def update_daily_payment_status(request):
                     hours_worked_decimal = decimal.Decimal(hours_worked)
                     working_hours_decimal = decimal.Decimal(working_hours_per_day)
                     
-                    if hours_worked_decimal <= 0 or hours_worked_decimal > working_hours_decimal:
+                    if hours_worked_decimal <= 0:
                         return JsonResponse({
                             'success': False,
-                            'message': f'Las horas trabajadas deben ser entre 0 y {working_hours_per_day} horas'
+                            'message': 'Las horas trabajadas deben ser mayores a 0'
                         }, status=HTTPStatus.BAD_REQUEST)
                 except:
                     return JsonResponse({
