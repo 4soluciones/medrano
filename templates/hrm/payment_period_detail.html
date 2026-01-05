@@ -106,17 +106,18 @@
                                                         {% elif daily.status == 'POR_HORAS' %}
                                                             <i class="fas fa-hourglass-half mr-1"></i>Por Horas
                                                             {% if daily.hours_worked %}
-                                                                <br><small class="text-muted">({{ daily.hours_worked|floatformat:2 }}h de {{ daily.working_hours_per_day|floatformat:2 }}h)</small>
+                                                                <br>
+                                                                <small class="text-muted">({{ daily.hours_worked|floatformat:2 }}h de {{ daily.working_hours_per_day|floatformat:2 }}h)</small>
                                                             {% endif %}
                                                         {% elif daily.status == 'PERMISO' %}
                                                             <i class="fas fa-clock mr-1"></i>Permiso
                                                         {% elif daily.status == 'FALTA' %}
                                                             <i class="fas fa-times-circle mr-1"></i>Falta
-                                        {% elif daily.status == 'VACACIONES' %}
-                                            <i class="fas fa-umbrella-beach mr-1"></i>Vacaciones
-                                        {% elif daily.status == 'DIA_LIBRE' %}
-                                            <i class="fas fa-calendar-times mr-1"></i>Día Libre
-                                        {% endif %}
+                                                        {% elif daily.status == 'VACACIONES' %}
+                                                            <i class="fas fa-umbrella-beach mr-1"></i>Vacaciones
+                                                        {% elif daily.status == 'DIA_LIBRE' %}
+                                                            <i class="fas fa-calendar-times mr-1"></i>Día Libre
+                                                        {% endif %}
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
@@ -338,8 +339,8 @@
                                     <i class="fas fa-clock mr-2"></i>Horas Trabajadas <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" class="form-control" id="edit_hours_worked" name="hours_worked" 
-                                       step="0.5" min="0.5" max="24" placeholder="Ej: 4.5">
-                                <small class="text-muted">Puede usar decimales: 4.5, 6.0, etc.</small>
+                                       step="0.1" min="0.1" max="24" placeholder="Ej: 4.3">
+                                <small class="text-muted">Puede usar decimales: 4.3, 4.2, 3.7, etc.</small>
                             </div>
                             
                             <div class="col-md-6 mb-3">

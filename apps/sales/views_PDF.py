@@ -1108,11 +1108,11 @@ def generate_bill_pdf(order_id):
                 ])
 
         # Dirección del cliente
-        if client_obj and client_obj.address:
+        if client_obj and client_obj.address and client_obj.address.strip():
             client_data.append([
                 Paragraph("DIRECCIÓN", styles['Helvetica_Bold_Left_8']),
                 Paragraph(":", styles['Helvetica_Left_8']),
-                Paragraph(client_obj.address.upper(), styles['Helvetica_Left_8'])
+                Paragraph(client_obj.address.strip().upper(), styles['Helvetica_Left_8'])
             ])
 
         # Fecha de emisión del comprobante

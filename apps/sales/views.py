@@ -1483,7 +1483,9 @@ def get_order_for_edit(request):
                         'way_to_pay': cashflow.way_to_pay,
                         'amount': float(cashflow.total),
                         'transaction_date': cashflow.transaction_date.strftime('%Y-%m-%d') if cashflow.transaction_date else None,
-                        'cash_account_id': cashflow.cash.id if cashflow.cash else None
+                        'cash_account_id': cashflow.cash.id if cashflow.cash else None,
+                        'user_id': cashflow.user.id if cashflow.user else None,
+                        'user_name': cashflow.user.first_name if cashflow.user else 'N/A'
                     }
                     order_data['advance_payments'].append(advance_data)
                 
@@ -1568,8 +1570,31 @@ def order_update(request):
                         from apps.accounting.models import Cash, CashFlow
                         from datetime import datetime
                         
-                        # Eliminar registros de CashFlow existentes para esta orden
-                        CashFlow.objects.filter(order=order_obj, type='E').delete()
+                        # Obtener IDs de pagos existentes que se están enviando
+                        existing_payment_ids = set()
+                        for advance in advance_payments:
+                            cashflow_id = advance.get('id')
+                            if cashflow_id:
+                                existing_payment_ids.add(int(cashflow_id))
+                        
+                        # Eliminar pagos que ya no están en la lista
+                        CashFlow.objects.filter(
+                            order=order_obj, 
+                            type='E'
+                        ).exclude(id__in=existing_payment_ids).delete()
+                        
+                        # Determinar si es adelanto o pago completo ANTES de cambiar el status
+                        is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
+                        
+                        if is_full_payment:
+                            description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                            order_type_entry = 'T'
+                            order_obj.status = 'C'
+                        else:
+                            description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                            order_type_entry = 'A'
+                            order_obj.status = 'P'
+                        order_obj.save()
                         
                         # Registrar cada adelanto en CashFlow
                         for advance in advance_payments:
@@ -1577,6 +1602,7 @@ def order_update(request):
                             way_to_pay_advance = advance.get('way_to_pay', 'E')
                             advance_cash_account_id = advance.get('cash_account_id', '')
                             advance_transaction_date = advance.get('transaction_date', order_obj.register_date)
+                            cashflow_id = advance.get('id')
                             
                             if advance_amount > 0 and advance_cash_account_id:
                                 try:
@@ -1584,37 +1610,60 @@ def order_update(request):
                                 except Cash.DoesNotExist:
                                     advance_cash_account = Cash.objects.first()
 
-                                is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
-
-                                if is_full_payment:
-                                    description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
-                                    order_type_entry = 'T'
-                                    order_obj.status = 'C'
-                                else:
-                                    description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
-                                    order_type_entry = 'A'
-                                    order_obj.status = 'P'
-                                order_obj.save()
-
                                 if advance_cash_account:
-                                    cashflow_entry = CashFlow.objects.create(
-                                        transaction_date=advance_transaction_date,
-                                        description=description,
-                                        serial=order_obj.serial,
-                                        n_receipt=order_obj.correlative,
-                                        document_type_attached='O',
-                                        type='E',
-                                        subtotal=decimal.Decimal('0.00'),
-                                        total=advance_amount,
-                                        igv=decimal.Decimal('0.00'),
-                                        cash=advance_cash_account,
-                                        order=order_obj,
-                                        user=user_obj,
-                                        type_expense='O',
-                                        way_to_pay=way_to_pay_advance,
-                                        subsidiary=order_obj.subsidiary,
-                                        order_type_entry=order_type_entry
-                                    )
+                                    # Verificar si es un pago existente o nuevo
+                                    if cashflow_id:
+                                        try:
+                                            # Actualizar pago existente preservando el usuario original
+                                            existing_cashflow = CashFlow.objects.get(id=int(cashflow_id), order=order_obj)
+                                            existing_cashflow.transaction_date = advance_transaction_date
+                                            existing_cashflow.description = description
+                                            existing_cashflow.total = advance_amount
+                                            existing_cashflow.way_to_pay = way_to_pay_advance
+                                            existing_cashflow.cash = advance_cash_account
+                                            existing_cashflow.order_type_entry = order_type_entry
+                                            # NO modificar el usuario - mantener el original
+                                            existing_cashflow.save()
+                                        except CashFlow.DoesNotExist:
+                                            # Si no existe, crear como nuevo pago
+                                            CashFlow.objects.create(
+                                                transaction_date=advance_transaction_date,
+                                                description=description,
+                                                serial=order_obj.serial,
+                                                n_receipt=order_obj.correlative,
+                                                document_type_attached='O',
+                                                type='E',
+                                                subtotal=decimal.Decimal('0.00'),
+                                                total=advance_amount,
+                                                igv=decimal.Decimal('0.00'),
+                                                cash=advance_cash_account,
+                                                order=order_obj,
+                                                user=request.user,  # Usuario actual para pagos nuevos
+                                                type_expense='O',
+                                                way_to_pay=way_to_pay_advance,
+                                                subsidiary=order_obj.subsidiary,
+                                                order_type_entry=order_type_entry
+                                            )
+                                    else:
+                                        # Pago nuevo - crear con usuario actual
+                                        CashFlow.objects.create(
+                                            transaction_date=advance_transaction_date,
+                                            description=description,
+                                            serial=order_obj.serial,
+                                            n_receipt=order_obj.correlative,
+                                            document_type_attached='O',
+                                            type='E',
+                                            subtotal=decimal.Decimal('0.00'),
+                                            total=advance_amount,
+                                            igv=decimal.Decimal('0.00'),
+                                            cash=advance_cash_account,
+                                            order=order_obj,
+                                            user=request.user,  # Usuario actual para pagos nuevos
+                                            type_expense='O',
+                                            way_to_pay=way_to_pay_advance,
+                                            subsidiary=order_obj.subsidiary,
+                                            order_type_entry=order_type_entry
+                                        )
                         
                         # Verificar si el total de adelantos cubre el total de la orden
                         if order_obj.cash_advance >= order_obj.total and order_obj.total > 0:
@@ -1713,8 +1762,31 @@ def order_update(request):
                     from apps.accounting.models import Cash, CashFlow
                     from datetime import datetime
                     
-                    # Eliminar registros de CashFlow existentes para esta orden
-                    CashFlow.objects.filter(order=order_obj, type='E').delete()
+                    # Obtener IDs de pagos existentes que se están enviando
+                    existing_payment_ids = set()
+                    for advance in advance_payments:
+                        cashflow_id = advance.get('id')
+                        if cashflow_id:
+                            existing_payment_ids.add(int(cashflow_id))
+                    
+                    # Eliminar pagos que ya no están en la lista
+                    CashFlow.objects.filter(
+                        order=order_obj, 
+                        type='E'
+                    ).exclude(id__in=existing_payment_ids).delete()
+                    
+                    # Determinar si es adelanto o pago completo ANTES de cambiar el status
+                    is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
+                    
+                    if is_full_payment:
+                        description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                        order_type_entry = 'T'
+                        order_obj.status = 'C'
+                    else:
+                        description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
+                        order_type_entry = 'A'
+                        order_obj.status = 'P'
+                    order_obj.save()
                     
                     # Los adelantos ahora tienen su propia cuenta de caja
                     # Registrar cada adelanto en CashFlow
@@ -1723,6 +1795,7 @@ def order_update(request):
                         way_to_pay_advance = advance.get('way_to_pay', 'E')
                         advance_cash_account_id = advance.get('cash_account_id', '')
                         advance_transaction_date = advance.get('transaction_date', request.POST.get('register_date'))
+                        cashflow_id = advance.get('id')
                         
                         if advance_amount > 0 and advance_cash_account_id:
                             # Obtener la cuenta de caja específica para este adelanto
@@ -1732,39 +1805,60 @@ def order_update(request):
                                 # Si no se encuentra la cuenta, usar la primera disponible como fallback
                                 advance_cash_account = Cash.objects.first()
 
-                            is_full_payment = (cash_advance_decimal == order_obj.total and order_obj.total > 0)
-
-                            if is_full_payment:
-                                description = f"PAGO COMPLETO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
-                                order_type_entry = 'T'
-                                order_obj.status = 'C'
-                            else:
-                                description = f"ADELANTO DE LA ORDEN {order_obj.serial}-{order_obj.correlative:03d} {order_obj.client.full_name}"
-                                order_type_entry = 'A'
-                                order_obj.status = 'P'
-                            order_obj.save()
-
                             if advance_cash_account:
-                                # Crear entrada en CashFlow para cada adelanto
-                                cashflow_entry = CashFlow.objects.create(
-                                    transaction_date=advance_transaction_date,
-                                    # created_at=datetime.now(),
-                                    description=description,
-                                    serial=order_obj.serial,
-                                    n_receipt=order_obj.correlative,
-                                    document_type_attached='O',  # Otro
-                                    type='E',  # Entrada
-                                    subtotal=decimal.Decimal('0.00'),
-                                    total=advance_amount,
-                                    igv=decimal.Decimal('0.00'),
-                                    cash=advance_cash_account,
-                                    order=order_obj,
-                                    user=user_obj,
-                                    type_expense='O',  # Otros
-                                    way_to_pay=way_to_pay_advance,  # Forma de pago específica
-                                    subsidiary=order_obj.subsidiary,
-                                    order_type_entry=order_type_entry
-                                )
+                                # Verificar si es un pago existente o nuevo
+                                if cashflow_id:
+                                    try:
+                                        # Actualizar pago existente preservando el usuario original
+                                        existing_cashflow = CashFlow.objects.get(id=int(cashflow_id), order=order_obj)
+                                        existing_cashflow.transaction_date = advance_transaction_date
+                                        existing_cashflow.description = description
+                                        existing_cashflow.total = advance_amount
+                                        existing_cashflow.way_to_pay = way_to_pay_advance
+                                        existing_cashflow.cash = advance_cash_account
+                                        existing_cashflow.order_type_entry = order_type_entry
+                                        # NO modificar el usuario - mantener el original
+                                        existing_cashflow.save()
+                                    except CashFlow.DoesNotExist:
+                                        # Si no existe, crear como nuevo pago
+                                        CashFlow.objects.create(
+                                            transaction_date=advance_transaction_date,
+                                            description=description,
+                                            serial=order_obj.serial,
+                                            n_receipt=order_obj.correlative,
+                                            document_type_attached='O',  # Otro
+                                            type='E',  # Entrada
+                                            subtotal=decimal.Decimal('0.00'),
+                                            total=advance_amount,
+                                            igv=decimal.Decimal('0.00'),
+                                            cash=advance_cash_account,
+                                            order=order_obj,
+                                            user=request.user,  # Usuario actual para pagos nuevos
+                                            type_expense='O',  # Otros
+                                            way_to_pay=way_to_pay_advance,  # Forma de pago específica
+                                            subsidiary=order_obj.subsidiary,
+                                            order_type_entry=order_type_entry
+                                        )
+                                else:
+                                    # Pago nuevo - crear con usuario actual
+                                    CashFlow.objects.create(
+                                        transaction_date=advance_transaction_date,
+                                        description=description,
+                                        serial=order_obj.serial,
+                                        n_receipt=order_obj.correlative,
+                                        document_type_attached='O',  # Otro
+                                        type='E',  # Entrada
+                                        subtotal=decimal.Decimal('0.00'),
+                                        total=advance_amount,
+                                        igv=decimal.Decimal('0.00'),
+                                        cash=advance_cash_account,
+                                        order=order_obj,
+                                        user=request.user,  # Usuario actual para pagos nuevos
+                                        type_expense='O',  # Otros
+                                        way_to_pay=way_to_pay_advance,  # Forma de pago específica
+                                        subsidiary=order_obj.subsidiary,
+                                        order_type_entry=order_type_entry
+                                    )
                     
                     # Verificar si el total de adelantos cubre el total de la orden
                     if order_obj.cash_advance >= order_obj.total and order_obj.total > 0:
@@ -2453,7 +2547,14 @@ def emit_electronic_document(request):
                     if client_document_type:
                         # Guardar el tipo de documento en el cliente (incluso si es '-')
                         bill_client.document = client_document_type
-                        bill_client.save()
+                    
+                    # Actualizar la dirección si se proporciona en el formulario
+                    client_address = request.POST.get('emit_client_address', '').strip()
+                    if client_address:
+                        bill_client.address = client_address.upper()
+                    
+                    # Guardar los cambios
+                    bill_client.save()
                 except Person.DoesNotExist:
                     return JsonResponse({
                         'success': False,

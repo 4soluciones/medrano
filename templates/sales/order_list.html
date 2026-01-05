@@ -1019,6 +1019,7 @@
                                                     <th style="padding: 0.3rem;">Monto</th>
                                                     <th style="padding: 0.3rem;">Fecha</th>
                                                     <th style="padding: 0.3rem;">Cuenta Destino</th>
+                                                    <th style="padding: 0.3rem;">Usuario</th>
                                                     <th style="padding: 0.3rem; width: 60px;">Acciones</th>
                                                 </tr>
                                                 </thead>
@@ -1027,7 +1028,7 @@
                                                 </tbody>
                                                 <tfoot>
                                                 <tr class="table-info">
-                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="3">Total:</td>
+                                                    <td class="text-right font-weight-bold" style="padding: 0.3rem;" colspan="4">Total:</td>
                                                     <td class="text-right font-weight-bold" id="edit_total_advances" style="padding: 0.3rem;">S/ 0.00</td>
                                                     <td style="padding: 0.3rem;"></td>
                                                 </tr>
@@ -3654,7 +3655,9 @@
                 way_to_pay: 'E', // Efectivo por defecto
                 amount: 0,
                 transaction_date: today,
-                cash_account_id: ''
+                cash_account_id: '',
+                user_id: null,
+                user_name: currentUserName // Asignar el nombre del usuario logueado
             };
 
             editAdvancePayments.push(advancePayment);
@@ -3706,6 +3709,9 @@
                             <option value="">Seleccionar cuenta</option>
                             ${generateCashAccountOptions(advance.cash_account_id)}
                         </select>
+                    </td>
+                    <td style="padding: 0.3rem;">
+                        <span class="badge badge-info" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;" title="Usuario que registró el pago">${advance.user_name || currentUserName}</span>
                     </td>
                     <td class="text-center" style="padding: 0.3rem;">
                         <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAdvancePayment(${advance.id})" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">
@@ -3760,6 +3766,12 @@
                                     <option value="">Seleccionar cuenta</option>
                                     ${generateCashAccountOptions(advance.cash_account_id)}
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-2">
+                                <label class="form-label mb-1" style="font-size: 0.75rem; font-weight: 600;">Usuario:</label>
+                                <span class="badge badge-info" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">${advance.user_name || currentUserName}</span>
                             </div>
                         </div>
                     </div>
@@ -4675,6 +4687,7 @@
         let editDetailCounter = 0;
         let editAdvancePayments = [];
         let editAdvanceCounter = 0;
+        const currentUserName = '{{ request.user.first_name }}'; // Nombre del usuario logueado
 
         function loadOrderForEdit(orderId) {
             // Mostrar loading
@@ -4788,13 +4801,16 @@
                 // Cargar adelantos múltiples desde el backend
                 if (orderData.advance_payments && orderData.advance_payments.length > 0) {
                     orderData.advance_payments.forEach(advance => {
-                        const advanceId = ++editAdvanceCounter;
+                        // Usar el ID real del cashflow si existe, sino generar uno nuevo
+                        const advanceId = advance.id || ++editAdvanceCounter;
                         const advancePayment = {
                             id: advanceId,
                             way_to_pay: advance.way_to_pay || 'E',
                             amount: advance.amount || 0,
                             transaction_date: advance.transaction_date || new Date().toISOString().split('T')[0],
-                            cash_account_id: advance.cash_account_id || ''
+                            cash_account_id: advance.cash_account_id || '',
+                            user_id: advance.user_id || null,
+                            user_name: advance.user_name || currentUserName // Usar nombre del usuario logueado si no hay user_name
                         };
                         editAdvancePayments.push(advancePayment);
                         addEditAdvancePaymentRow(advancePayment);
@@ -4807,7 +4823,9 @@
                         way_to_pay: 'E', // Efectivo por defecto
                         amount: orderData.cash_advance,
                         transaction_date: new Date().toISOString().split('T')[0],
-                        cash_account_id: ''
+                        cash_account_id: '',
+                        user_id: null,
+                        user_name: currentUserName // Usar nombre del usuario logueado
                     };
                     editAdvancePayments.push(advancePayment);
                     addEditAdvancePaymentRow(advancePayment);
