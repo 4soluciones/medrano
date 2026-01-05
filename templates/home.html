@@ -962,10 +962,81 @@
             color: #e0e0e0;
         }
 
+        /* Estilos base para card-header en dark mode - máxima especificidad */
+        body.dark-mode .card .card-header,
         body.dark-mode .card-header {
-            background-color: #3a3a3a;
-            border-bottom: 1px solid #404040;
-            color: #e0e0e0;
+            background-color: #3a3a3a !important;
+            background-image: none !important;
+            border-bottom: 1px solid #404040 !important;
+            color: #e0e0e0 !important;
+        }
+
+        /* Sobrescribir el background transparent de AdminLTE */
+        body.dark-mode .card-header[style*="background"],
+        body.dark-mode .card-header {
+            background-color: #3a3a3a !important;
+        }
+
+        /* Card-header con gradientes - mantener gradientes pero asegurar texto blanco */
+        body.dark-mode .card .card-header.bg-gradient-primary,
+        body.dark-mode .card-header.bg-gradient-primary,
+        body.dark-mode .card .card-header.bg-gradient-success,
+        body.dark-mode .card-header.bg-gradient-success,
+        body.dark-mode .card .card-header.bg-gradient-info,
+        body.dark-mode .card-header.bg-gradient-info,
+        body.dark-mode .card .card-header.bg-gradient-warning,
+        body.dark-mode .card-header.bg-gradient-warning,
+        body.dark-mode .card .card-header.bg-gradient-danger,
+        body.dark-mode .card-header.bg-gradient-danger {
+            color: #fff !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Asegurar que card-header sin gradientes tengan fondo oscuro */
+        body.dark-mode .card .card-header:not(.bg-gradient-primary):not(.bg-gradient-success):not(.bg-gradient-info):not(.bg-gradient-warning):not(.bg-gradient-danger),
+        body.dark-mode .card-header:not(.bg-gradient-primary):not(.bg-gradient-success):not(.bg-gradient-info):not(.bg-gradient-warning):not(.bg-gradient-danger) {
+            background-color: #3a3a3a !important;
+            background-image: none !important;
+        }
+
+        /* Sobrescribir estilos de AdminLTE para card-header */
+        body.dark-mode .card-header[class*="card-"] {
+            background-color: #3a3a3a !important;
+        }
+
+        /* Estilos para card-title dentro de card-header en dark mode */
+        body.dark-mode .card-header .card-title,
+        body.dark-mode .card-header h1.card-title,
+        body.dark-mode .card-header h2.card-title,
+        body.dark-mode .card-header h3.card-title,
+        body.dark-mode .card-header h4.card-title,
+        body.dark-mode .card-header h5.card-title,
+        body.dark-mode .card-header h6.card-title {
+            color: #e0e0e0 !important;
+        }
+
+        /* Card-title en card-header con gradientes debe ser blanco */
+        body.dark-mode .card-header.bg-gradient-primary .card-title,
+        body.dark-mode .card-header.bg-gradient-success .card-title,
+        body.dark-mode .card-header.bg-gradient-info .card-title,
+        body.dark-mode .card-header.bg-gradient-warning .card-title,
+        body.dark-mode .card-header.bg-gradient-danger .card-title,
+        body.dark-mode .card-header.bg-gradient-primary h1.card-title,
+        body.dark-mode .card-header.bg-gradient-primary h2.card-title,
+        body.dark-mode .card-header.bg-gradient-primary h3.card-title,
+        body.dark-mode .card-header.bg-gradient-success h1.card-title,
+        body.dark-mode .card-header.bg-gradient-success h2.card-title,
+        body.dark-mode .card-header.bg-gradient-success h3.card-title,
+        body.dark-mode .card-header.bg-gradient-info h1.card-title,
+        body.dark-mode .card-header.bg-gradient-info h2.card-title,
+        body.dark-mode .card-header.bg-gradient-info h3.card-title,
+        body.dark-mode .card-header.bg-gradient-warning h1.card-title,
+        body.dark-mode .card-header.bg-gradient-warning h2.card-title,
+        body.dark-mode .card-header.bg-gradient-warning h3.card-title,
+        body.dark-mode .card-header.bg-gradient-danger h1.card-title,
+        body.dark-mode .card-header.bg-gradient-danger h2.card-title,
+        body.dark-mode .card-header.bg-gradient-danger h3.card-title {
+            color: #fff !important;
         }
 
         body.dark-mode .dropdown-menu {
@@ -1073,6 +1144,13 @@
             color: #e0e0e0;
         }
 
+        /* Sobrescribir el estilo general cuando hay thead-light */
+        body.dark-mode .table thead.thead-light th {
+            background-color: #3a3a3a !important;
+            border-color: #404040 !important;
+            color: #fff !important;
+        }
+
         body.dark-mode .table tbody tr {
             border-color: #404040;
         }
@@ -1084,6 +1162,114 @@
         body.dark-mode .table td,
         body.dark-mode .table th {
             border-color: #404040;
+        }
+
+        /* Estilos para thead-light en dark mode - misma especificidad que Bootstrap */
+        body.dark-mode .table .thead-light th,
+        body.dark-mode .table thead.thead-light th,
+        body.dark-mode .table thead.thead-light td {
+            background-color: #3a3a3a !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        /* Estilos adicionales para asegurar cobertura completa */
+        body.dark-mode thead.thead-light th,
+        body.dark-mode thead.thead-light td,
+        body.dark-mode .thead-light th,
+        body.dark-mode .thead-light td {
+            background-color: #3a3a3a !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        /* Estilos para tfoot en dark mode */
+        body.dark-mode .table tfoot,
+        body.dark-mode .table tfoot th,
+        body.dark-mode .table tfoot td,
+        body.dark-mode tfoot th,
+        body.dark-mode tfoot td {
+            background-color: #2d2d2d !important;
+            color: #e0e0e0 !important;
+            border-color: #404040 !important;
+        }
+
+        /* Estilos para tfoot con thead-light en dark mode */
+        body.dark-mode .table tfoot.thead-light th,
+        body.dark-mode .table tfoot.thead-light td,
+        body.dark-mode tfoot.thead-light th,
+        body.dark-mode tfoot.thead-light td {
+            background-color: #3a3a3a !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        /* Sobrescribir estilos de order_list.css para tfoot */
+        body.dark-mode #edit_order_details_table tfoot,
+        body.dark-mode #edit_order_details_table tfoot th,
+        body.dark-mode #edit_order_details_table tfoot td,
+        body.dark-mode #order_details_table tfoot,
+        body.dark-mode #order_details_table tfoot th,
+        body.dark-mode #order_details_table tfoot td {
+            background-color: #2d2d2d !important;
+            background-image: none !important;
+            color: #e0e0e0 !important;
+            border-color: #404040 !important;
+        }
+
+        /* Sobrescribir cualquier estilo inline o más específico */
+        body.dark-mode table .thead-light th,
+        body.dark-mode table thead.thead-light th,
+        body.dark-mode table thead.thead-light td {
+            background-color: #3a3a3a !important;
+            background-image: none !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        /* Sobrescribir estilos de order_list.css que usan gradientes en thead */
+        body.dark-mode .table thead th,
+        body.dark-mode .table thead.thead-light th {
+            background: #3a3a3a !important;
+            background-image: none !important;
+            background-color: #3a3a3a !important;
+            color: #fff !important;
+        }
+
+        /* Asegurar que thead-light sobrescriba cualquier estilo de order_list.css */
+        body.dark-mode .table thead.thead-light th,
+        body.dark-mode .table thead.thead-light td {
+            background: #3a3a3a !important;
+            background-image: none !important;
+            background-color: #3a3a3a !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        /* Estilos específicos para table-striped en dark mode */
+        body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #353535 !important;
+        }
+
+        body.dark-mode .table-striped tbody tr:nth-of-type(even) {
+            background-color: #2d2d2d !important;
+        }
+
+        /* Estilos específicos para table-hover en dark mode */
+        body.dark-mode .table-hover tbody tr:hover {
+            background-color: #4a4a4a !important;
+            color: #fff !important;
+        }
+
+        /* Combinación de table-striped y table-hover en dark mode */
+        body.dark-mode .table-striped.table-hover tbody tr:nth-of-type(odd):hover {
+            background-color: #4a4a4a !important;
+            color: #fff !important;
+        }
+
+        body.dark-mode .table-striped.table-hover tbody tr:nth-of-type(even):hover {
+            background-color: #4a4a4a !important;
+            color: #fff !important;
         }
 
         body.dark-mode .form-control {
@@ -1102,7 +1288,44 @@
             color: #9e9e9e;
         }
 
-        body.dark-mode .form-group label {
+        body.dark-mode .form-group label,
+        body.dark-mode .form-label,
+        body.dark-mode label {
+            color: #e0e0e0 !important;
+        }
+
+        /* Estilos específicos para labels en modales */
+        body.dark-mode .modal .form-label,
+        body.dark-mode .modal label,
+        body.dark-mode .modal .form-group label {
+            color: #e0e0e0 !important;
+        }
+
+        /* Estilos específicos para el modal de editar orden */
+        body.dark-mode #editOrderModal .form-label,
+        body.dark-mode #editOrderModal label,
+        body.dark-mode #editOrderModal .form-group label {
+            color: #e0e0e0 !important;
+        }
+
+        /* Sobrescribir estilos inline de edit_subsidiary_id y edit_user_id */
+        body.dark-mode #edit_subsidiary_id,
+        body.dark-mode #edit_user_id {
+            background-color: #3a3a3a !important;
+            color: #e0e0e0 !important;
+            border-color: #404040 !important;
+        }
+
+        body.dark-mode #edit_subsidiary_id:disabled,
+        body.dark-mode #edit_user_id[readonly] {
+            background-color: #2d2d2d !important;
+            color: #b0b0b0 !important;
+            cursor: not-allowed;
+        }
+
+        /* Estilos para opciones de select en dark mode */
+        body.dark-mode #edit_subsidiary_id option {
+            background-color: #3a3a3a;
             color: #e0e0e0;
         }
 
@@ -1161,6 +1384,14 @@
             color: #e3f2fd;
         }
 
+        /* Estilos específicos para alert-info en modales */
+        body.dark-mode .modal .alert-info,
+        body.dark-mode #editOrderModal .alert-info {
+            background-color: #1a237e !important;
+            border-color: #283593 !important;
+            color: #e3f2fd !important;
+        }
+
         body.dark-mode .alert-success {
             background-color: #1b5e20;
             border-color: #2e7d32;
@@ -1177,6 +1408,55 @@
             background-color: #b71c1c;
             border-color: #c62828;
             color: #ffcdd2;
+        }
+
+        /* Estilos para payment-methods-container en dark mode */
+        body.dark-mode .payment-methods-container {
+            background-color: transparent;
+        }
+
+        body.dark-mode .payment-method-item {
+            background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%) !important;
+            background-color: #3a3a3a !important;
+            border-color: #404040 !important;
+            color: #e0e0e0 !important;
+        }
+
+        body.dark-mode .payment-method-item:hover {
+            background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%) !important;
+            background-color: #4a4a4a !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        body.dark-mode .no-payment-method {
+            background-color: #2d2d2d !important;
+            border-color: #404040 !important;
+            color: #b0b0b0 !important;
+        }
+
+        body.dark-mode .no-payment-method i {
+            color: #9e9e9e !important;
+        }
+
+        body.dark-mode .payment-header {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .payment-details {
+            color: #b0b0b0;
+        }
+
+        /* Estilos para payment-amount en dark mode */
+        body.dark-mode .payment-amount {
+            color: #fff !important;
+        }
+
+        body.dark-mode .payment-amount strong {
+            color: #fff !important;
+        }
+
+        body.dark-mode .payment-amount i {
+            color: #4caf50 !important;
         }
 
         body.dark-mode .breadcrumb {
