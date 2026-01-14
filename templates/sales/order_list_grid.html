@@ -236,13 +236,27 @@
                                         data-order-status="{{ order.status }}"
                                         onchange="updateOrderStatus({{ order.id }}, this.value)"
                                         {% if not request.user.is_superuser and not request.user.has_access_to_all %}
-                                            {% if order.status == 'C' or order.status == 'A' %}disabled{% endif %}
+                                            {% if order.status == 'A' %}disabled{% endif %}
                                         {% endif %}>
-                                    <option value="P" {% if order.status == 'P' %}selected{% endif %}>PENDIENTE</option>
-                                    <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
-                                    <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>
-                                    {% if order.status == 'C' %}
-                                    <option value="E">CPE (SUNAT)</option>
+                                    {% if request.user.is_superuser or request.user.has_access_to_all %}
+                                        <option value="P" {% if order.status == 'P' %}selected{% endif %}>PENDIENTE</option>
+                                        <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
+                                        <option value="A" {% if order.status == 'A' %}selected{% endif %}>ANULADO</option>
+                                        {% if order.status == 'C' %}
+                                        <option value="E">CPE (SUNAT)</option>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if order.status == 'P' %}
+                                        <option value="P" selected>PENDIENTE</option>
+                                        <option value="C">COMPLETADO</option>
+                                        <option value="A">ANULADO</option>
+                                        {% elif order.status == 'C' %}
+                                        <option value="C" selected>COMPLETADO</option>
+                                        <option value="E">CPE (SUNAT)</option>
+                                        {% else %}
+                                        <option value="P" {% if order.status == 'P' %}selected{% endif %}>PENDIENTE</option>
+                                        <option value="C" {% if order.status == 'C' %}selected{% endif %}>COMPLETADO</option>
+                                        {% endif %}
                                     {% endif %}
                                 </select>
                                 {% if order.status == 'C' and order.completed_by and order.completed_at %}
