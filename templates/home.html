@@ -1386,10 +1386,35 @@
 
         /* Estilos específicos para alert-info en modales */
         body.dark-mode .modal .alert-info,
-        body.dark-mode #editOrderModal .alert-info {
+        body.dark-mode #editOrderModal .alert-info,
+        body.dark-mode #emitDocumentModal .alert-info,
+        body.dark-mode .alert.alert-info {
             background-color: #1a237e !important;
             border-color: #283593 !important;
             color: #e3f2fd !important;
+        }
+
+        /* Estilos específicos para alert-info con clases adicionales */
+        body.dark-mode .alert.alert-info.mb-0,
+        body.dark-mode .alert.alert-info.py-2,
+        body.dark-mode .alert.alert-info.mb-0.py-2 {
+            background-color: #1a237e !important;
+            border-color: #283593 !important;
+            color: #e3f2fd !important;
+        }
+
+        /* Asegurar que el contenido dentro de alert-info también sea visible */
+        body.dark-mode .alert.alert-info strong,
+        body.dark-mode .alert.alert-info .small,
+        body.dark-mode .alert.alert-info small,
+        body.dark-mode .alert.alert-info div {
+            color: #e3f2fd !important;
+        }
+
+        /* Estilos para iconos dentro de alert-info */
+        body.dark-mode .alert.alert-info .text-primary,
+        body.dark-mode .alert.alert-info i.text-primary {
+            color: #90caf9 !important;
         }
 
         body.dark-mode .alert-success {

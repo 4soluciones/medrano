@@ -5704,13 +5704,13 @@
                 detraction = totalAmount * 0.12;
             }
             
-            const totalWithDetraction = totalAmount + detraction;
+            //const totalWithDetraction = totalAmount + detraction;
 
             // Mostrar totales en el modal
             $('#emit_subtotal').val(subtotal.toFixed(2));
             $('#emit_igv').val(igv.toFixed(2));
             $('#emit_detraction').val(detraction.toFixed(2));
-            $('#emit_total').val(totalWithDetraction.toFixed(2));
+            $('#emit_total').val(totalAmount.toFixed(2));
             
             // Actualizar ayuda de detracción
             if (detraction > 0) {
