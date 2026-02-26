@@ -37,7 +37,7 @@ class CashFlow(models.Model):
     TYPE_ENTRY_ORDER_CHOICES = (('A', 'ADELANTO'), ('T', 'PAGO TOTAL'),)
     transaction_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
-    description = models.CharField('Descripcion', max_length=100, null=True, blank=True)
+    description = models.CharField('Descripcion', max_length=500, null=True, blank=True)
     serial = models.CharField('Serie', max_length=5, null=True, blank=True)
     n_receipt = models.IntegerField('Numero de Comprobante', default=0, null=True, blank=True)
     document_type_attached = models.CharField('Tipo documento', max_length=1, choices=DOCUMENT_TYPE_ATTACHED_CHOICES,
