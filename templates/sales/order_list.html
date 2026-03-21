@@ -5411,8 +5411,8 @@
                 success: function (response) {
                     if (response.success) {
                         const order = response.order;
-                        console.log('Orden recibida:', order);
-                        console.log('Detalles recibidos:', order.details);
+                        //console.log('Orden recibida:', order);
+                        //console.log('Detalles recibidos:', order.details);
 
                         // Llenar información del modal
                         $('#emit_order_id').val(orderId);
@@ -5421,9 +5421,9 @@
                         // Cargar detalles de la orden
                         emitOrderDetails = [];
                         if (order.details && order.details.length > 0) {
-                            console.log('Procesando', order.details.length, 'detalles');
+                            //console.log('Procesando', order.details.length, 'detalles');
                             order.details.forEach(function(detail, index) {
-                                console.log('Detalle', index, ':', detail);
+                                //console.log('Detalle', index, ':', detail);
                                 emitOrderDetails.push({
                                     id: detail.id,
                                     product_name: detail.product_name || '',
@@ -5438,7 +5438,7 @@
                             console.log('No hay detalles en la orden');
                         }
 
-                        console.log('emitOrderDetails después de cargar:', emitOrderDetails);
+                        //console.log('emitOrderDetails después de cargar:', emitOrderDetails);
 
                         // Renderizar detalles en la tabla
                         renderEmitOrderDetails();
@@ -5585,8 +5585,8 @@
             
             tbody.empty();
 
-            console.log('renderEmitOrderDetails - emitOrderDetails.length:', emitOrderDetails.length);
-            console.log('renderEmitOrderDetails - emitOrderDetails:', emitOrderDetails);
+            //console.log('renderEmitOrderDetails - emitOrderDetails.length:', emitOrderDetails.length);
+            //console.log('renderEmitOrderDetails - emitOrderDetails:', emitOrderDetails);
 
             if (!emitOrderDetails || emitOrderDetails.length === 0) {
                 tbody.append('<tr><td colspan="5" class="text-center text-muted">No hay detalles</td></tr>');
@@ -5594,15 +5594,15 @@
             }
 
             emitOrderDetails.forEach(function(detail, index) {
-                console.log('Renderizando detalle', index, ':', detail);
+                //console.log('Renderizando detalle', index, ':', detail);
                 
                 // Añadir "ELABORACION" al inicio de la descripción si no lo tiene
                 let description = detail.product_name || '';
                 // Remover "ELABORACION" si ya existe para evitar duplicados
-                description = description.trim().replace(/^ELABORACION\s*/i, '');
+                //description = description.trim().replace(/^ELABORACION\s*/i, '');
                 // Añadir "ELABORACION" al inicio
-                description = description ? `ELABORACION ${description}` : 'ELABORACION';
-                console.log('Descripción final:', description);
+                //description = description ? `ELABORACION ${description}` : 'ELABORACION';
+                //console.log('Descripción final:', description);
                 
                 // Escapar caracteres especiales para evitar problemas con comillas
                 const escapedDescription = description.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -5654,7 +5654,7 @@
                 tbody.append(row);
             });
             
-            console.log('Detalles renderizados. Filas en tbody:', tbody.find('tr').length);
+            //console.log('Detalles renderizados. Filas en tbody:', tbody.find('tr').length);
         }
 
         // Función para actualizar un campo de detalle en el modal de emitir
@@ -6200,9 +6200,9 @@
                 // Añadir "ELABORACION" al inicio de la descripción si no lo tiene
                 let description = detail.product_name || '';
                 // Remover "ELABORACION" si ya existe para evitar duplicados
-                description = description.trim().replace(/^ELABORACION\s*/i, '');
+                //description = description.trim().replace(/^ELABORACION\s*/i, '');
                 // Añadir "ELABORACION" al inicio
-                description = description ? `ELABORACION ${description}` : 'ELABORACION';
+                //description = description ? `ELABORACION ${description}` : 'ELABORACION';
                 
                 // Crear la fila usando jQuery
                 const row = $('<tr>');
