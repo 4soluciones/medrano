@@ -1357,13 +1357,15 @@
                                             <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label class="form-label-sm text-muted">Detracción (12%)</label>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text">S/</span>
+                                                    <div class="emit-detraction-host w-100">
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text emit-detraction-prepend">S/</span>
+                                                            </div>
+                                                            <input type="text"
+                                                                   class="form-control text-right font-weight-bold"
+                                                                   id="emit_detraction" readonly>
                                                         </div>
-                                                        <input type="text"
-                                                               class="form-control text-right font-weight-bold"
-                                                               id="emit_detraction" readonly>
                                                     </div>
                                                     <small class="form-text text-muted" id="emit_detraction_help">
                                                         Se aplica automáticamente si el total supera S/ 700.00
@@ -2963,6 +2965,14 @@
             // Event listener para resetear campos cuando se cierra el modal de emitir comprobante
             $('#emitDocumentModal').on('hidden.bs.modal', function () {
                 resetEmitDocumentFields();
+            });
+
+            // Al abrir el modal (CPE): recalcular totales y resaltar detracción cuando el cuerpo ya es visible
+            // (evita que estilos previos al show queden mal y refuerza highlight tras animación del modal)
+            $('#emitDocumentModal').on('shown.bs.modal', function () {
+                if (typeof calculateEmitOrderTotals === 'function') {
+                    calculateEmitOrderTotals();
+                }
             });
 
             $('#cancelOrderModal').on('hidden.bs.modal', function () {
@@ -5712,11 +5722,17 @@
             $('#emit_detraction').val(detraction.toFixed(2));
             $('#emit_total').val(totalAmount.toFixed(2));
             
-            // Actualizar ayuda de detracción
+            // Actualizar ayuda de detracción y resaltar monto si aplica
+            const $detHost = $('#emit_detraction').closest('.emit-detraction-host');
+            const $detInput = $('#emit_detraction');
             if (detraction > 0) {
                 $('#emit_detraction_help').html('<i class="fas fa-info-circle text-info mr-1"></i>Detracción aplicada (12% del total)');
+                $detHost.addClass('emit-detraction-highlight');
+                $detInput.addClass('emit-detraction-input-active');
             } else {
                 $('#emit_detraction_help').html('Se aplica automáticamente si el total supera S/ 700.00');
+                $detHost.removeClass('emit-detraction-highlight');
+                $detInput.removeClass('emit-detraction-input-active');
             }
         }
 
@@ -5736,6 +5752,8 @@
             $('#emit_client_document_type').removeClass('is-invalid');
             $('#emit_document_number').removeClass('is-invalid');
             $('#emit_client_full_name').removeClass('is-invalid');
+            $('#emit_detraction').closest('.emit-detraction-host').removeClass('emit-detraction-highlight');
+            $('#emit_detraction').removeClass('emit-detraction-input-active');
             
             // Ocultar panel de comprobante emitido
             $('#emit_bill_info_panel').hide();
@@ -5967,7 +5985,8 @@
                     'emit_client_address': $('#emit_client_address').val(),
                     'bill_client_id': billClientId || '',
                     'product_type': productType,
-                    'details_data': JSON.stringify(detailsData)
+                    'details_data': JSON.stringify(detailsData),
+                    'total_detraction': $('#emit_detraction').val() || '0'
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
