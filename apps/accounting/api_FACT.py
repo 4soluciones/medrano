@@ -277,8 +277,8 @@ def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  
         formatdate = date.today().strftime("%Y-%m-%d")
         hour_date = datetime.now().strftime("%H:%M:%S")
     
-    # Obtener total de detracción
-    total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
+    # Obtener total de detracción solo para boletas
+    # total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
     
     items = []
     index = 1
@@ -369,7 +369,7 @@ def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  
                     totalInafecta: 0,
                     totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
                     totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
-                    totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},
+                    totalDetraction: 0,
                     tipoDocumentoCodigo: "03",
                     nota: " "
                 }},
