@@ -8,8 +8,8 @@ from .models import *
 from ..sales.models import Order, OrderDetail, Product
 from datetime import datetime, date
 
-GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
-# GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
+# GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
+GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
 
 tokens = {
     "10471315198": "gAAAAABpNGSrdx4rldIqTvwIF3OXemYIfqzx9My1YT9hNVKW9ruOLVfzAeL0MsUUKOqh6XPA1HFX7tu-MmvFu7JojTEM8PGizg==",
@@ -181,6 +181,9 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
                 totalInafecta: 0,
                 totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
                 totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
+                detractionPaymentMethod: 1,
+                detractionPercentage: 12,
+                detractionType: 20,
                 totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},
                 tipoDocumentoCodigo: "01",
                 nota: " "
@@ -202,7 +205,7 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
         "Content-Type": "application/json",
         "token": token
     }
-    
+    # print(HEADERS)
     try:
         response = requests.post(GRAPHQL_URL, json={"query": graphql_query}, headers=HEADERS)
         response.raise_for_status()
