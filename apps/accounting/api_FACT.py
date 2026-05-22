@@ -8,8 +8,8 @@ from .models import *
 from ..sales.models import Order, OrderDetail, Product
 from datetime import datetime, date
 
-# GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
-GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
+GRAPHQL_URL = "https://ng.tuf4ctur4.net.pe/graphql"
+# GRAPHQL_URL = "http://192.168.1.80:9050/graphql"
 
 tokens = {
     "10471315198": "gAAAAABpNGSrdx4rldIqTvwIF3OXemYIfqzx9My1YT9hNVKW9ruOLVfzAeL0MsUUKOqh6XPA1HFX7tu-MmvFu7JojTEM8PGizg==",
