@@ -372,7 +372,6 @@ def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  
                     totalInafecta: 0,
                     totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
                     totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
-                    totalDetraction: 0,
                     tipoDocumentoCodigo: "03",
                     nota: " "
                 }},
