@@ -1593,15 +1593,113 @@
             color: #b0b0b0;
         }
 
+        /* ====== REPORTES MENSUAL/SEMANAL - métricas y resumen ====== */
+        body.dark-mode .bg-gradient-secondary {
+            background: linear-gradient(45deg, #546e7a 10%, #37474f 100%) !important;
+        }
+
+        body.dark-mode .bg-gradient-dark {
+            background: linear-gradient(45deg, #424242 10%, #212121 100%) !important;
+        }
+
+        body.dark-mode .card.bg-gradient-primary .card-body,
+        body.dark-mode .card.bg-gradient-success .card-body,
+        body.dark-mode .card.bg-gradient-info .card-body,
+        body.dark-mode .card.bg-gradient-warning .card-body,
+        body.dark-mode .card.bg-gradient-danger .card-body,
+        body.dark-mode .card.bg-gradient-secondary .card-body,
+        body.dark-mode .card.text-white .card-body,
+        body.dark-mode .card.text-white .card-body h3,
+        body.dark-mode .card.text-white .card-body p,
+        body.dark-mode .card.text-white .card-body small,
+        body.dark-mode .card.text-white .card-body span {
+            color: #fff !important;
+        }
+
+        body.dark-mode .card[style*="linear-gradient"] .card-body,
+        body.dark-mode .card[style*="linear-gradient"] .card-body h2,
+        body.dark-mode .card[style*="linear-gradient"] .card-body h4,
+        body.dark-mode .card[style*="linear-gradient"] .card-body p,
+        body.dark-mode .card[style*="linear-gradient"] .card-body small {
+            color: #fff !important;
+        }
+
+        body.dark-mode .table tbody tr.table-info,
+        body.dark-mode .table tbody tr.table-info td,
+        body.dark-mode .table tbody tr.table-info th {
+            background-color: #1a3a52 !important;
+            color: #90caf9 !important;
+        }
+
+        body.dark-mode .table tbody tr.table-secondary,
+        body.dark-mode .table tbody tr.table-secondary td,
+        body.dark-mode .table tbody tr.table-secondary th {
+            background-color: #3d3d3d !important;
+            color: #e0e0e0 !important;
+        }
+
+        body.dark-mode .table tbody tr.table-success,
+        body.dark-mode .table tbody tr.table-success td,
+        body.dark-mode .table tbody tr.table-success th {
+            background-color: #1b4332 !important;
+            color: #a5d6a7 !important;
+        }
+
+        body.dark-mode .table tbody tr.table-danger,
+        body.dark-mode .table tbody tr.table-danger td,
+        body.dark-mode .table tbody tr.table-danger th {
+            background-color: #4a1c1c !important;
+            color: #ef9a9a !important;
+        }
+
+        body.dark-mode .table tbody tr.table-primary,
+        body.dark-mode .table tbody tr.table-primary td,
+        body.dark-mode .table tbody tr.table-primary th {
+            background-color: #1a237e !important;
+            color: #9fa8da !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-success {
+            color: #81c784 !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-warning {
+            color: #ffb74d !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-info {
+            color: #4fc3f7 !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-secondary {
+            color: #b0bec5 !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-danger {
+            color: #e57373 !important;
+        }
+
+        body.dark-mode .table tbody tr td .text-primary {
+            color: #7986cb !important;
+        }
+
+        body.dark-mode .table thead.thead-dark th {
+            background-color: #1a1a1a !important;
+            color: #fff !important;
+            border-color: #404040 !important;
+        }
+
+        body.dark-mode #income-section > .col-12 > h5.text-muted {
+            color: #e0e0e0 !important;
+        }
+
     </style>
 
-    <!-- Dark Mode Script Inline - Se ejecuta antes del renderizado para evitar flash -->
+    <!-- Dark Mode Script Inline - evita flash; solo html (body aún no existe aquí) -->
     <script>
         (function() {
-            const darkMode = localStorage.getItem('darkMode') === 'true';
-            if (darkMode) {
+            if (localStorage.getItem('darkMode') === 'true') {
                 document.documentElement.classList.add('dark-mode');
-                document.body.classList.add('dark-mode');
             }
         })();
     </script>
@@ -2403,52 +2501,45 @@
 <!-- Dark Mode Script - Se ejecuta siempre en todas las páginas -->
 <script type="text/javascript">
     // ====== DARK MODE FUNCTIONALITY ======
-    // Esta función se ejecuta inmediatamente para aplicar el tema antes de que se renderice la página
+    // AdminLTE usa .dark-mode en un ancestro (html/body); html y body deben sincronizarse.
+    function setDarkMode(enabled) {
+        const root = document.documentElement;
+        const body = document.body;
+
+        if (enabled) {
+            root.classList.add('dark-mode');
+            body.classList.add('dark-mode');
+            $('#darkModeToggle').addClass('active');
+            localStorage.setItem('darkMode', 'true');
+        } else {
+            root.classList.remove('dark-mode');
+            body.classList.remove('dark-mode');
+            $('#darkModeToggle').removeClass('active');
+            localStorage.setItem('darkMode', 'false');
+        }
+
+        updateDarkModeIcons(enabled);
+    }
+
     (function() {
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
+        if (localStorage.getItem('darkMode') === 'true') {
+            setDarkMode(true);
         }
     })();
 
-    // Inicializar dark mode cuando el DOM esté listo
     $(document).ready(function () {
-        // Verificar si hay una preferencia guardada
         const darkMode = localStorage.getItem('darkMode') === 'true';
-        
-        // Aplicar el tema guardado
-        if (darkMode) {
-            $('body').addClass('dark-mode');
-            $('#darkModeToggle').addClass('active');
-            updateDarkModeIcons(true);
-        } else {
-            updateDarkModeIcons(false);
-        }
+        setDarkMode(darkMode);
 
-        // Manejar el click en el toggle
         $('#darkModeToggle').on('click', function() {
-            const isDark = $('body').hasClass('dark-mode');
-            
-            if (isDark) {
-                // Cambiar a modo claro
-                $('body').removeClass('dark-mode');
-                $(this).removeClass('active');
-                localStorage.setItem('darkMode', 'false');
-                updateDarkModeIcons(false);
-            } else {
-                // Cambiar a modo oscuro
-                $('body').addClass('dark-mode');
-                $(this).addClass('active');
-                localStorage.setItem('darkMode', 'true');
-                updateDarkModeIcons(true);
-            }
+            setDarkMode(!document.documentElement.classList.contains('dark-mode'));
         });
     });
 
     function updateDarkModeIcons(isDark) {
         const moonIcon = $('#darkModeToggle .fa-moon');
         const sunIcon = $('#darkModeToggle .fa-sun');
-        
+
         if (isDark) {
             moonIcon.css('opacity', '0');
             sunIcon.css('opacity', '1');

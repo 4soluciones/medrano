@@ -257,6 +257,29 @@
         transform: translateY(-3px) !important;
         box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
     }
+
+    /* Modo oscuro */
+    body.dark-mode .card-body.bg-light {
+        background-color: #2d2d2d !important;
+    }
+
+    body.dark-mode .card-header {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%) !important;
+        border-bottom-color: #404040 !important;
+    }
+
+    body.dark-mode .card-header .card-title {
+        color: #e0e0e0 !important;
+    }
+
+    body.dark-mode #export_buttons {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%) !important;
+        border-color: #404040 !important;
+    }
+
+    body.dark-mode #export_buttons h6 {
+        color: #e0e0e0 !important;
+    }
 </style>
 
 <script>
@@ -320,7 +343,6 @@ $(document).ready(function() {
                     $('#export_buttons').show().addClass('show');
                     // Actualizar resumen en el sidebar si existe
                     updateSummary(response.summary);
-                    toastr.success('Reporte generado exitosamente');
                 } else {
                     toastr.error(response.message || 'Error al generar el reporte');
                 }

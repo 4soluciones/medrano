@@ -794,20 +794,43 @@
         }
     }
     
-    /* Mejorar el contraste en modo oscuro */
-    @media (prefers-color-scheme: dark) {
-        .payment-full-row {
-            background-color: #d2d4e5 !important;
-            border-left-color: #3f51b5 !important;
+    /* Modo oscuro (switch AdminLTE: body.dark-mode) */
+    body.dark-mode .payment-full-row {
+        background-color: #1a4d7a !important;
+        border-left: 4px solid #42a5f5 !important;
+        animation: fadeInHighlightDark 0.5s ease-in;
+    }
+
+    body.dark-mode .payment-full-row td {
+        color: #e3f2fd !important;
+    }
+
+    body.dark-mode .payment-full-row:hover {
+        background-color: #2569a8 !important;
+    }
+
+    body.dark-mode .payment-separator {
+        background: linear-gradient(90deg, transparent 0%, #42a5f5 50%, transparent 100%);
+    }
+
+    body.dark-mode .badge-payment-full {
+        background-color: #1976d2 !important;
+        border-color: #42a5f5 !important;
+    }
+
+    body.dark-mode .saldo-completo {
+        background-color: #1b5e20 !important;
+        color: #a5d6a7 !important;
+    }
+
+    @keyframes fadeInHighlightDark {
+        from {
+            background-color: transparent;
+            border-left-color: transparent;
         }
-        
-        .payment-full-row:hover {
-            background-color: #d2d4e5 !important;
-        }
-        
-        .saldo-completo {
-            background-color: #1b5e20 !important;
-            color: #81c784 !important;
+        to {
+            background-color: #1a4d7a;
+            border-left-color: #42a5f5;
         }
     }
 
