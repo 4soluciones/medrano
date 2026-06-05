@@ -977,6 +977,81 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
+    /* Modo oscuro: conservar colores de estado (AdminLTE sobrescribe form-control/select) */
+    .dark-mode .status-select,
+    .dark-mode .delivery-select {
+        color-scheme: light;
+    }
+
+    .dark-mode .status-select[data-status="P"],
+    .dark-mode .delivery-select[data-delivery-status="P"] {
+        border-color: #ffc107 !important;
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+    }
+
+    .dark-mode .status-select[data-status="C"],
+    .dark-mode .delivery-select[data-delivery-status="E"] {
+        border-color: #28a745 !important;
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    }
+
+    .dark-mode .status-select[data-status="A"],
+    .dark-mode .delivery-select[data-delivery-status="C"] {
+        border-color: #dc3545 !important;
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+    }
+
+    .dark-mode .status-select option[value="P"],
+    .dark-mode .delivery-select option[value="P"] {
+        color: #856404 !important;
+        background-color: #fff3cd !important;
+    }
+
+    .dark-mode .status-select option[value="C"],
+    .dark-mode .delivery-select option[value="E"] {
+        color: #155724 !important;
+        background-color: #d4edda !important;
+    }
+
+    .dark-mode .status-select option[value="A"],
+    .dark-mode .delivery-select option[value="C"] {
+        color: #721c24 !important;
+        background-color: #f8d7da !important;
+    }
+
+    .dark-mode .delivery-select.delivery-select-pending {
+        border-color: #ffc107 !important;
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+    }
+
+    .dark-mode .delivery-select.delivery-select-delivered {
+        border-color: #28a745 !important;
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    }
+
+    .dark-mode .delivery-select.delivery-select-cancelled {
+        border-color: #dc3545 !important;
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+    }
+
+    .dark-mode .delivery-select:disabled.delivery-select-delivered {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+        border-color: #28a745 !important;
+    }
+
+    .dark-mode .delivery-select:disabled.delivery-select-cancelled {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #dc3545 !important;
+    }
+
     /* Responsive para el select de estado */
     @media (max-width: 768px) {
         .status-select, .delivery-select {
