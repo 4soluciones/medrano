@@ -1086,7 +1086,7 @@ def order_list(request):
                         'id': detail.id,
                         'product': product_id,
                         'unit': unit_name,
-                        'quantity': str(round(detail.quantity, 0)),
+                        'quantity': str(detail.quantity).rstrip('0').rstrip('.'),
                         'product_name': product_name,
                         'description': detail.product_name,
                         'observation': detail.observation,

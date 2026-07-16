@@ -686,7 +686,7 @@ def generate_ticket_pdf(order_id):
 
         _wt2 = 2.93 * inch - m_left - m_right  # 2.73 inch usable
         table_title = Table(table_data_title,
-                            colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100,  _wt2 * 18 / 100,
+                            colWidths=[_wt2 * 8 / 100, _wt2 * 7 / 100, _wt2 * 51 / 100,  _wt2 * 18 / 100,
                                        _wt2 * 16 / 100])
         table_title.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Cantidad centrada
@@ -721,7 +721,7 @@ def generate_ticket_pdf(order_id):
                     unit_name = product_detail.unit.name
 
             table_data.append([
-                Paragraph(f"{detail.quantity:.0f}", styles['Helvetica_Center_9']),
+                Paragraph(str(detail.quantity).rstrip('0').rstrip('.'), styles['Helvetica_Center_9']),
                 Paragraph(unit_name, styles['Helvetica_Center_6']),
                 Paragraph(detail.product_name or "", styles['Helvetica_Left_8']),
                 Paragraph(f"{detail.price_unit:.2f}", styles['Helvetica_Right_8']),
@@ -731,7 +731,7 @@ def generate_ticket_pdf(order_id):
         # Crear tabla con 4 columnas
 
         table = Table(table_data,
-                      colWidths=[_wt2 * 7 / 100, _wt2 * 7 / 100, _wt2 * 52 / 100,  _wt2 * 18 / 100, _wt2 * 16 / 100])
+                      colWidths=[_wt2 * 8 / 100, _wt2 * 7 / 100, _wt2 * 51 / 100,  _wt2 * 18 / 100, _wt2 * 16 / 100])
         table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'LEFT'),  # Cantidad centrada
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),  # Descripción a la izquierda
