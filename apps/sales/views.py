@@ -2669,15 +2669,19 @@ def emit_electronic_document(request):
                     # Si hay error al parsear, continuar sin guardar los nombres editados
                     pass
             
-            # Total de detracción calculado en el modal (debe coincidir con api_FACT)
-            total_detraction_raw = (request.POST.get('total_detraction') or '').strip().replace(',', '.')
-            try:
-                td_val = Decimal(total_detraction_raw or '0')
-                if td_val < 0:
-                    td_val = Decimal('0')
-                order.total_detraction = td_val.quantize(Decimal('0.01'))
-            except InvalidOperation:
+            # La detracción solo aplica a servicios. Forzar cero para bienes
+            # evita que una petición manipulada envíe detracción a FACT.
+            if product_type == 'bien':
                 order.total_detraction = Decimal('0.00')
+            else:
+                total_detraction_raw = (request.POST.get('total_detraction') or '').strip().replace(',', '.')
+                try:
+                    td_val = Decimal(total_detraction_raw or '0')
+                    if td_val < 0:
+                        td_val = Decimal('0')
+                    order.total_detraction = td_val.quantize(Decimal('0.01'))
+                except InvalidOperation:
+                    order.total_detraction = Decimal('0.00')
             order.save(update_fields=['total_detraction'])
             
             # Importar las funciones de emisión

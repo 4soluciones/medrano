@@ -2975,6 +2975,11 @@
                 }
             });
 
+            // La detracción se recalcula al cambiar entre bien y servicio.
+            $('#emit_product_type').on('change', function () {
+                calculateEmitOrderTotals();
+            });
+
             $('#cancelOrderModal').on('hidden.bs.modal', function () {
                 $('#cancel-order-form')[0].reset();
                 $('#cancel_order_id').val('');
@@ -5708,9 +5713,10 @@
             const subtotal = totalAmount / 1.18; // Calcular subtotal sin IGV
             const igv = totalAmount - subtotal; // Calcular IGV
             
-            // Calcular detracción (12% del total si supera S/ 700.00)
+            // La detracción solo aplica a servicios cuyo total supera S/ 700.00.
+            const productType = $('#emit_product_type').val();
             let detraction = 0;
-            if (totalAmount > 700) {
+            if (productType === 'servicio' && totalAmount > 700) {
                 detraction = totalAmount * 0.12;
             }
             
@@ -5725,7 +5731,11 @@
             // Actualizar ayuda de detracción y resaltar monto si aplica
             const $detHost = $('#emit_detraction').closest('.emit-detraction-host');
             const $detInput = $('#emit_detraction');
-            if (detraction > 0) {
+            if (productType === 'bien') {
+                $('#emit_detraction_help').html('No aplica detracción para bienes');
+                $detHost.removeClass('emit-detraction-highlight');
+                $detInput.removeClass('emit-detraction-input-active');
+            } else if (detraction > 0) {
                 $('#emit_detraction_help').html('<i class="fas fa-info-circle text-info mr-1"></i>Detracción aplicada (12% del total)');
                 $detHost.addClass('emit-detraction-highlight');
                 $detInput.addClass('emit-detraction-input-active');
@@ -5986,7 +5996,9 @@
                     'bill_client_id': billClientId || '',
                     'product_type': productType,
                     'details_data': JSON.stringify(detailsData),
-                    'total_detraction': $('#emit_detraction').val() || '0'
+                    'total_detraction': productType === 'servicio'
+                        ? ($('#emit_detraction').val() || '0')
+                        : '0'
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'

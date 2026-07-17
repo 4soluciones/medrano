@@ -78,8 +78,16 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
         formatdate = date.today().strftime("%Y-%m-%d")
         hour_date = datetime.now().strftime("%H:%M:%S")
     
-    # Obtener total de detracción
+    # La detracción solo corresponde a servicios. Para bienes no se incluyen
+    # campos de detracción en el payload enviado a FACT.
     total_detraction = decimal.Decimal(order_obj.total_detraction or 0)
+    detraction_fields = ""
+    if product_type == 'servicio':
+        detraction_fields = f"""
+                detractionPaymentMethod: 1,
+                detractionPercentage: 12,
+                detractionType: 20,
+                totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},"""
     
     items = []
     items_credit_graphql = []
@@ -181,10 +189,7 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
                 totalInafecta: 0,
                 totalImporte: {float(total.quantize(decimal.Decimal('0.01')))},
                 totalAPagar: {float(total.quantize(decimal.Decimal('0.01')))},
-                detractionPaymentMethod: 1,
-                detractionPercentage: 12,
-                detractionType: 20,
-                totalDetraction: {float(total_detraction.quantize(decimal.Decimal('0.01')))},
+                {detraction_fields}
                 tipoDocumentoCodigo: "01",
                 nota: " "
             }},
