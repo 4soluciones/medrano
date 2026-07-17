@@ -35,6 +35,12 @@ def get_new_correlative(serial, document_type):
 
 
 def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # FACTURA 4 FACT
+    # Normalizar el tipo de producto: solo 'servicio' habilita detracción y
+    # unidad ZZ; cualquier otro valor (incluido 'bien') se trata como bien.
+    product_type = (product_type or '').strip().lower()
+    if product_type != 'servicio':
+        product_type = 'bien'
+
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -130,8 +136,12 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
         igv_total = igv_total + decimal.Decimal(igv)
         _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
         
-        # Unidad según tipo de producto: NIU para bien, ZZ para servicio
-        _unit = 'ZZ' if product_type == 'servicio' else 'NIU'
+        # Unidad según tipo de producto: un bien siempre va con NIU;
+        # solo un servicio usa ZZ.
+        if product_type == 'bien':
+            _unit = 'NIU'
+        else:
+            _unit = 'ZZ'
         
         item = {
             "index": str(index),
@@ -242,6 +252,12 @@ def send_bill_4_fact(order_id, product_type='bien', codigo_tipo_entidad=6):  # F
 
 
 def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  # BOLETA 4 FACT
+    # Normalizar el tipo de producto: solo 'servicio' usa unidad ZZ;
+    # cualquier otro valor (incluido 'bien') se trata como bien.
+    product_type = (product_type or '').strip().lower()
+    if product_type != 'servicio':
+        product_type = 'bien'
+
     order_obj = Order.objects.select_related('client', 'bill_client', 'subsidiary').get(id=int(order_id))
     
     # Obtener serial de la sucursal
@@ -318,8 +334,12 @@ def send_receipt_4_fact(order_id, product_type='bien', codigo_tipo_entidad=1):  
         igv_total = igv_total + decimal.Decimal(igv)
         _base_amount_v = (base_amount / quantity).quantize(decimal.Decimal('0.000001'))
         
-        # Unidad según tipo de producto: NIU para bien, ZZ para servicio
-        _unit = 'ZZ' if product_type == 'servicio' else 'NIU'
+        # Unidad según tipo de producto: un bien siempre va con NIU;
+        # solo un servicio usa ZZ.
+        if product_type == 'bien':
+            _unit = 'NIU'
+        else:
+            _unit = 'ZZ'
         
         item = {
             "index": str(index),
