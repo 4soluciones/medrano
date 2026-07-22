@@ -1923,12 +1923,28 @@ def order_detail_modal(request):
                 order_obj = Order.objects.select_related(
                     'client', 'user', 'subsidiary'
                 ).prefetch_related(
-                    'orderdetail_set__product',
-                    'cashflow_set__cash'
+                    'orderdetail_set__product__productdetail_set__unit',
+                    'cashflow_set__cash',
+                    'cashflow_set__user',
                 ).get(id=int(order_id))
+
+                order_details = []
+                for detail in order_obj.orderdetail_set.all():
+                    unit_name = None
+                    if detail.product_id:
+                        product_details = list(detail.product.productdetail_set.all())
+                        if product_details and product_details[-1].unit_id:
+                            unit_name = product_details[-1].unit.name
+                    order_details.append({
+                        'detail': detail,
+                        'unit_name': unit_name,
+                    })
                 
                 t = loader.get_template('sales/order_detail_modal.html')
-                context = {'order': order_obj}
+                context = {
+                    'order': order_obj,
+                    'order_details': order_details,
+                }
                 
                 return JsonResponse({
                     'success': True,
@@ -2650,6 +2666,9 @@ def emit_electronic_document(request):
                 codigo_tipo_entidad = document_type_map.get(client_document_type, 1)  # Por defecto 1 (DNI)
             
             # Procesar los detalles editados para guardar product_bill_name
+            # (y precio/cantidad solo si el usuario es administrador)
+            user_is_admin = hasattr(request.user, 'has_access_to_all') and request.user.has_access_to_all
+            details_prices_updated = False
             details_data = request.POST.get('details_data', '')
             if details_data:
                 try:
@@ -2658,16 +2677,41 @@ def emit_electronic_document(request):
                         detail_id = detail_data.get('id')
                         product_bill_name = detail_data.get('product_bill_name', '').strip()
                         
-                        if detail_id and product_bill_name:
-                            try:
-                                order_detail = OrderDetail.objects.get(id=int(detail_id), order=order)
+                        if not detail_id:
+                            continue
+                        try:
+                            order_detail = OrderDetail.objects.get(id=int(detail_id), order=order)
+                            if product_bill_name:
                                 order_detail.product_bill_name = product_bill_name.upper()
-                                order_detail.save()
-                            except OrderDetail.DoesNotExist:
-                                pass  # Si no existe el detalle, continuar
+                            if user_is_admin and 'price_unit' in detail_data:
+                                try:
+                                    price_unit = Decimal(str(detail_data.get('price_unit', 0)).replace(',', '.'))
+                                    if price_unit < 0:
+                                        price_unit = Decimal('0')
+                                    order_detail.price_unit = price_unit.quantize(Decimal('0.01'))
+                                    details_prices_updated = True
+                                except (InvalidOperation, TypeError, ValueError):
+                                    pass
+                            if user_is_admin and 'quantity' in detail_data:
+                                try:
+                                    quantity = Decimal(str(detail_data.get('quantity', 0)).replace(',', '.'))
+                                    if quantity < 0:
+                                        quantity = Decimal('0')
+                                    order_detail.quantity = quantity.quantize(Decimal('0.01'))
+                                    details_prices_updated = True
+                                except (InvalidOperation, TypeError, ValueError):
+                                    pass
+                            order_detail.save()
+                        except OrderDetail.DoesNotExist:
+                            pass  # Si no existe el detalle, continuar
                 except (json.JSONDecodeError, ValueError) as e:
                     # Si hay error al parsear, continuar sin guardar los nombres editados
                     pass
+
+            # Recalcular totales de la orden si un admin modificó precios/cantidades
+            if user_is_admin and details_prices_updated:
+                order.calculate_totals()
+                order.refresh_from_db()
             
             # La detracción solo aplica a servicios. Forzar cero para bienes
             # evita que una petición manipulada envíe detracción a FACT.

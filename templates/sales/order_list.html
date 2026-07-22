@@ -4601,18 +4601,18 @@
                     if (response.success) {
                         // Crear modal dinámicamente
                         const modalHtml = `
-                    <div class="modal fade" id="orderDetailModal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal fade" id="orderDetailModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl order-detail-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header bg-info text-dark">
-                                    <h5 class="modal-title">
+                                    <h5 class="modal-title" id="orderDetailModalLabel">
                                         <i class="fas fa-eye mr-2"></i>Detalles de la Orden
                                     </h5>
-                                    <button type="button" class="close text-white" data-dismiss="modal">
-                                        <span>&times;</span>
+                                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                                        <span aria-hidden="true">&times;</span>
                                     </button>
                                 </div>
-                                <div class="modal-body">
+                                <div class="modal-body p-2 p-md-3">
                                     ${response.form}
                                 </div>
                                 <div class="modal-footer">
@@ -5648,23 +5648,45 @@
                     .attr('onchange', `updateEmitDetailField(${detail.id}, 'quantity', this.value)`);
                 row.append($('<td>').attr('style', 'padding: 0.3rem;').append(qtyInput));
                 
-                // Columna precio
+                // Columna precio (editable solo para administradores)
                 const priceInput = $('<input>')
                     .attr('type', 'number')
                     .addClass('form-control form-control-sm text-right emit-detail-price')
                     .val(detail.price_unit.toFixed(2))
                     .attr('step', '0.01')
                     .attr('min', '0')
-                    .attr('data-detail-id', detail.id)
-                    .attr('onchange', `updateEmitDetailField(${detail.id}, 'price_unit', this.value)`);
+                    .attr('data-detail-id', detail.id);
+                if (userHasAccessToAll) {
+                    priceInput.on('keyup', function () {
+                        updateEmitDetailField(detail.id, 'price_unit', this.value);
+                    });
+                } else {
+                    priceInput.prop('readonly', true).css('background-color', '#f8f9fa');
+                }
                 row.append($('<td>').attr('style', 'padding: 0.3rem;').append(priceInput));
                 
-                // Columna subtotal
-                const subtotalSpan = $('<span>')
-                    .addClass('emit-detail-subtotal')
-                    .attr('data-detail-id', detail.id)
-                    .text(detail.subtotal.toFixed(2));
-                row.append($('<td>').addClass('text-right font-weight-bold').attr('style', 'padding: 0.3rem;').html('S/ ').append(subtotalSpan));
+                // Columna subtotal (editable solo para administradores)
+                const subtotalCell = $('<td>').addClass('text-right font-weight-bold').attr('style', 'padding: 0.3rem;');
+                if (userHasAccessToAll) {
+                    const subtotalInput = $('<input>')
+                        .attr('type', 'number')
+                        .addClass('form-control form-control-sm text-right emit-detail-subtotal')
+                        .val(detail.subtotal.toFixed(2))
+                        .attr('step', '0.01')
+                        .attr('min', '0')
+                        .attr('data-detail-id', detail.id)
+                        .on('keyup', function () {
+                            updateEmitDetailField(detail.id, 'subtotal', this.value);
+                        });
+                    subtotalCell.append(subtotalInput);
+                } else {
+                    const subtotalSpan = $('<span>')
+                        .addClass('emit-detail-subtotal')
+                        .attr('data-detail-id', detail.id)
+                        .text(detail.subtotal.toFixed(2));
+                    subtotalCell.html('S/ ').append(subtotalSpan);
+                }
+                row.append(subtotalCell);
                 
                 tbody.append(row);
             });
@@ -5678,11 +5700,27 @@
             if (!detail) return;
 
             if (field === 'quantity' || field === 'price_unit') {
+                // Solo administradores pueden editar precio; cantidad sí para todos
+                if (field === 'price_unit' && !userHasAccessToAll) return;
+
                 detail[field] = parseFloat(value) || 0;
-                // Recalcular subtotal
                 detail.subtotal = detail.quantity * detail.price_unit;
-                // Actualizar subtotal en la tabla
-                $(`.emit-detail-subtotal[data-detail-id="${detailId}"]`).text(detail.subtotal.toFixed(2));
+
+                const $subtotal = $(`.emit-detail-subtotal[data-detail-id="${detailId}"]`);
+                if ($subtotal.is('input')) {
+                    $subtotal.val(detail.subtotal.toFixed(2));
+                } else {
+                    $subtotal.text(detail.subtotal.toFixed(2));
+                }
+            } else if (field === 'subtotal') {
+                if (!userHasAccessToAll) return;
+
+                detail.subtotal = parseFloat(value) || 0;
+                detail.price_unit = detail.quantity > 0
+                    ? detail.subtotal / detail.quantity
+                    : 0;
+                // Actualizar solo el precio (no el subtotal que se está editando)
+                $(`.emit-detail-price[data-detail-id="${detailId}"]`).val(detail.price_unit.toFixed(2));
             } else if (field === 'product_name') {
                 // Guardar exactamente lo que el usuario escribió, sin modificar
                 const userValue = value.trim();
@@ -5975,10 +6013,19 @@
                 
                 if (detailId) {
                     // Enviar el nombre exactamente como el usuario lo escribió
-                    detailsData.push({
+                    const item = {
                         'id': detailId,
                         'product_bill_name': productBillName.trim()
-                    });
+                    };
+                    // Administradores: enviar precio editado para que aplique al comprobante
+                    if (userHasAccessToAll) {
+                        const detail = emitOrderDetails.find(d => d.id === detailId);
+                        if (detail) {
+                            item.price_unit = detail.price_unit;
+                            item.quantity = detail.quantity;
+                        }
+                    }
+                    detailsData.push(item);
                 }
             });
             
