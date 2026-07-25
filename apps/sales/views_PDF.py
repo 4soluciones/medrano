@@ -1241,24 +1241,26 @@ def generate_bill_pdf(order_id):
             Paragraph(f"S/ {order.total:.2f}", styles['Helvetica_Bold_Right_8'])
         ])
 
-        total_detraction = decimal.Decimal(order.total_detraction or 0)
-        total_op = decimal.Decimal(order.total or 0)
-        # Si no quedó guardado en BD pero aplica regla SUNAT habitual (>700, 12%), mostrarlo en el PDF
-        if total_detraction <= 0 and total_op > decimal.Decimal("700.00"):
-            total_detraction = (total_op * decimal.Decimal("0.12")).quantize(decimal.Decimal("0.01"))
+        # La detracción solo aplica a facturas; las boletas de venta no la llevan
+        if order.bill_type == '1':
+            total_detraction = decimal.Decimal(order.total_detraction or 0)
+            total_op = decimal.Decimal(order.total or 0)
+            # Si no quedó guardado en BD pero aplica regla SUNAT habitual (>700, 12%), mostrarlo en el PDF
+            if total_detraction <= 0 and total_op > decimal.Decimal("700.00"):
+                total_detraction = (total_op * decimal.Decimal("0.12")).quantize(decimal.Decimal("0.01"))
 
-        if total_detraction > 0:
-            totales_data.append([
-                Paragraph("DETRACCIÓN (12%):", styles['Helvetica_Bold_Right_8']),
-                Paragraph(f"S/ {total_detraction:.2f}", styles['Helvetica_Right_8'])
-            ])
-            neto_pagar = total_op - total_detraction
-            if neto_pagar < 0:
-                neto_pagar = decimal.Decimal("0.00")
-            totales_data.append([
-                Paragraph("NETO A PAGAR:", styles['Helvetica_Bold_Right_8']),
-                Paragraph(f"S/ {neto_pagar:.2f}", styles['Helvetica_Bold_Right_8'])
-            ])
+            if total_detraction > 0:
+                totales_data.append([
+                    Paragraph("DETRACCIÓN (12%):", styles['Helvetica_Bold_Right_8']),
+                    Paragraph(f"S/ {total_detraction:.2f}", styles['Helvetica_Right_8'])
+                ])
+                neto_pagar = total_op - total_detraction
+                if neto_pagar < 0:
+                    neto_pagar = decimal.Decimal("0.00")
+                totales_data.append([
+                    Paragraph("NETO A PAGAR:", styles['Helvetica_Bold_Right_8']),
+                    Paragraph(f"S/ {neto_pagar:.2f}", styles['Helvetica_Bold_Right_8'])
+                ])
 
         # Crear tabla de totales
         totales_table = Table(totales_data, colWidths=[_wt * 0.70, _wt * 0.30])

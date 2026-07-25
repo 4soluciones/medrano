@@ -106,7 +106,7 @@
                 <div class="card-body p-2 p-md-3">
                     <!-- Vista tabla (tablet / desktop) -->
                     <div class="table-responsive d-none d-md-block">
-                        <table class="table table-hover table-sm order-items-table mb-0">
+                        <table class="table table-sm order-items-table mb-0">
                             <thead>
                                 <tr>
                                     <th class="text-center" style="width: 12%">Cantidad</th>
@@ -439,6 +439,11 @@ body.dark-mode .order-detail-card .order-section-title {
     font-size: 0.9rem;
 }
 
+/* Hover solo en modo claro (sin table-hover de Bootstrap/AdminLTE) */
+body:not(.dark-mode) .order-items-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075);
+}
+
 .order-item-name {
     color: #212529;
     font-weight: 600;
@@ -549,6 +554,96 @@ body.dark-mode .order-detail-card .order-section-title {
 
 .totals-mobile-row.totals-balance {
     background: #f8d7da;
+}
+
+/* Modo oscuro: ítems de la orden (unidad, nombre y totales) */
+body.dark-mode #orderDetailModal .order-items-table,
+body.dark-mode #orderDetailModal .order-items-table tbody,
+body.dark-mode #orderDetailModal .order-items-table tbody tr,
+body.dark-mode #orderDetailModal .order-items-table tbody tr td {
+    background-color: #2d2d2d !important;
+    background-image: none !important;
+}
+
+body.dark-mode #orderDetailModal .order-items-table thead th {
+    background: #3f474e !important;
+    background-image: none !important;
+    border-color: #4b545c;
+    color: #f8f9fa;
+}
+
+body.dark-mode #orderDetailModal .order-items-table tbody td {
+    color: #e9ecef;
+    border-color: #4b545c;
+}
+
+/* Anular hover / striped globales (home.html + order_list_grid.html) */
+body.dark-mode #orderDetailModal .order-items-table tbody tr:hover,
+body.dark-mode #orderDetailModal .order-items-table tbody tr:hover > td,
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(even),
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(even):hover,
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(even):hover > td,
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(odd),
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(odd):hover,
+body.dark-mode #orderDetailModal .order-items-table tbody tr:nth-child(odd):hover > td {
+    background-color: #2d2d2d !important;
+    background-image: none !important;
+    color: #e9ecef !important;
+}
+
+body.dark-mode #orderDetailModal .order-item-name {
+    color: #fff;
+}
+
+body.dark-mode #orderDetailModal .order-items-table .text-muted,
+body.dark-mode #orderDetailModal .order-item-card .text-muted {
+    color: #adb5bd !important;
+}
+
+body.dark-mode #orderDetailModal .badge-unit {
+    background: #17505c;
+    color: #d1ecf1;
+    border-color: #2a7f92;
+}
+
+body.dark-mode #orderDetailModal .order-items-table .totals-row td,
+body.dark-mode #orderDetailModal .totals-mobile-row {
+    color: #212529 !important;
+}
+
+body.dark-mode #orderDetailModal .order-items-table .totals-total td {
+    background-color: #fff3cd !important;
+}
+
+body.dark-mode #orderDetailModal .order-items-table .totals-advance td {
+    background-color: #d4edda !important;
+}
+
+body.dark-mode #orderDetailModal .order-items-table .totals-balance td {
+    background-color: #f8d7da !important;
+}
+
+body.dark-mode #orderDetailModal .order-item-card {
+    background: #343a40;
+    border-color: #4b545c;
+}
+
+body.dark-mode #orderDetailModal .order-item-card-header {
+    background: #3f474e;
+    border-color: #4b545c;
+}
+
+body.dark-mode #orderDetailModal .order-item-qty,
+body.dark-mode #orderDetailModal .order-item-meta .meta-value {
+    color: #f8f9fa;
+}
+
+body.dark-mode #orderDetailModal .order-item-meta {
+    border-top-color: #4b545c;
+}
+
+body.dark-mode #orderDetailModal .order-item-meta .meta-label {
+    color: #adb5bd;
 }
 
 .border-left-primary {
